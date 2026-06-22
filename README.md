@@ -158,6 +158,22 @@ Built for the **India Runs Data & AI Challenge: Intelligent Candidate Discovery*
 
 > **Git repo:** This folder is the submission repo (`recruitgpt-x`). Initialize here, not in the parent monorepo. Stage 4 reviewers look for incremental commits — commit as you build, not as one dump at the end.
 
+### Why does the UI show 12 candidates but rank.py uses 100,000?
+
+| System | Data source | Count |
+|---|---|---|
+| **Web app** (`/candidates`) | SQLite via `seed.py` (demo profiles) | 12 by default |
+| **Offline ranker** (`rank.py`) | `candidates.jsonl` (challenge file) | 100,000 |
+
+To load your **top-100 ranked** challenge candidates into the dashboard:
+
+```bash
+./scripts/import-challenge-candidates.sh
+# or: cd backend && python -m app.data.import_challenge --top-100 --replace
+```
+
+Importing all 100K into SQLite is possible (`--limit 100000`) but slow and heavy for local demo — the submission CSV only needs the offline ranker.
+
 ---
 
 ## Hackathon Offline Ranker
