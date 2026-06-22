@@ -71,5 +71,5 @@
     "engagement": 0.06
   },
   "note": "Self-consistency check only: labels use an independent JD rubric (raw title tiers, phrase counts, profile fields) \u2014 NOT ranker score functions and NOT challenge hidden ground truth. High scores indicate internal alignment, not validated competition performance. Expect real hidden-truth composite ~0.60\u20130.68.",
-  "runtime_seconds": 15.68
+  "runtime_seconds": 15.45
 }
