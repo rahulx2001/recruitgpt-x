@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date
 from typing import Any, Dict, List
 
 from challenge.text_match import norm_text
@@ -11,10 +11,10 @@ _REFERENCE_DATE = date(2026, 6, 22)
 
 
 def _parse_date(value: str | None) -> date | None:
-    if not value:
+    if not value or len(value) < 10:
         return None
     try:
-        return datetime.strptime(value[:10], "%Y-%m-%d").date()
+        return date(int(value[0:4]), int(value[5:7]), int(value[8:10]))
     except ValueError:
         return None
 
@@ -109,9 +109,8 @@ def honeypot_risk(raw: Dict[str, Any]) -> float:
     return min(1.0, risk)
 
 
-def honeypot_penalty(raw: Dict[str, Any]) -> float:
-    """Multiplicative demotion factor from structural honeypot risk."""
-    risk = honeypot_risk(raw)
+def risk_to_penalty(risk: float) -> float:
+    """Map honeypot_risk → multiplicative demotion (compute once per candidate)."""
     if risk >= 0.9:
         return 0.02
     if risk >= 0.75:
@@ -123,6 +122,10 @@ def honeypot_penalty(raw: Dict[str, Any]) -> float:
     if risk >= 0.2:
         return 0.72
     return max(0.85, 1.0 - risk * 0.35)
+
+
+def honeypot_penalty(raw: Dict[str, Any]) -> float:
+    return risk_to_penalty(honeypot_risk(raw))
 
 
 def is_structural_honeypot(raw: Dict[str, Any], threshold: float = 0.55) -> bool:

@@ -1,4 +1,4 @@
-"""Offline hybrid ranker v3 — trap-aware, availability-weighted, calibrated scores."""
+"""Offline hybrid ranker v4 — single-pass, compute-once, trap-aware."""
 
 from __future__ import annotations
 
@@ -7,11 +7,25 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from challenge.assessment import assessment_boost, assessment_penalty, assessment_score
+from challenge.assessment import (
+    _ir_vals_from_signals,
+    assessment_boost,
+    assessment_penalty,
+    assessment_score,
+    top_ir_assessments,
+)
 from challenge.availability import availability_modifier, availability_score
-from challenge.honeypot import honeypot_penalty, honeypot_risk, is_structural_honeypot
+from challenge.features import (
+    CandidateIndex,
+    build_index,
+    cv_language_hits,
+    ir_career_snippet,
+    jd_overlap_score,
+    production_score,
+    semantic_score,
+)
+from challenge.honeypot import honeypot_risk, risk_to_penalty
 from challenge.jd_config import (
-    CAREER_JD_WEIGHTS,
     CONSULTING_FIRMS,
     CORE_SKILL_PHRASES,
     CV_SPEECH_ROBOTICS,
@@ -21,22 +35,40 @@ from challenge.jd_config import (
     EXP_MIN,
     FAANG_CURRENT_PENALTY,
     FRAMEWORK_NOISE,
+    GENERAL_ML_SKILLS,
     GOOD_TITLES,
     HONEYPOT_SKILL_NOISE,
     INDIA_LOCATIONS,
-    JD_OVERLAP_PHRASES,
     PREFERRED_LOCATIONS,
-    PRODUCTION_SIGNAL_PHRASES,
     RESEARCH_ONLY_TITLES,
     SECONDARY_SKILL_PHRASES,
     STARTUP_BOOST_SIGNALS,
     STRONG_TITLES,
     WEAK_TITLES,
 )
-from challenge.semantic import career_semantic_score
-from challenge.text_match import count_phrases, norm_skill, norm_text, phrase_in_text
+from challenge.text_match import (
+    compile_multi_patterns,
+    count_phrases_fast,
+    norm_skill,
+    norm_text,
+    split_phrases,
+    tokenize,
+)
 
 _PROF_MAP = {"beginner": 1, "intermediate": 2, "advanced": 3, "expert": 4}
+
+_CORE_S, _CORE_M = split_phrases(CORE_SKILL_PHRASES)
+_SEC_S, _SEC_M = split_phrases(SECONDARY_SKILL_PHRASES)
+_NOISE_S, _NOISE_M = split_phrases(HONEYPOT_SKILL_NOISE)
+_CV_S, _CV_M = split_phrases(CV_SPEECH_ROBOTICS)
+_FW_S, _FW_M = split_phrases(FRAMEWORK_NOISE)
+_RESEARCH_S, _RESEARCH_M = split_phrases(("published", "paper", "academic", "phd", "thesis"))
+_RESEARCH_P = compile_multi_patterns(_RESEARCH_M)
+_FW_P = compile_multi_patterns(_FW_M)
+_CORE_M_P = compile_multi_patterns(_CORE_M)
+_SEC_M_P = compile_multi_patterns(_SEC_M)
+_NOISE_M_P = compile_multi_patterns(_NOISE_M)
+_GENERAL_S = frozenset(GENERAL_ML_SKILLS)
 
 
 @dataclass
@@ -47,17 +79,37 @@ class ScoredCandidate:
     components: Dict[str, float] = field(default_factory=dict)
     raw_score: float = 0.0
     core_skill_count: int = 0
+    core_skill_names: List[str] = field(default_factory=list)
+
+
+def _any_pattern(patterns: tuple, text: str) -> bool:
+    for pat in patterns:
+        if pat.search(text):
+            return True
+    return False
+
+
+def _skill_bucket_tokens(tokens: frozenset[str], norm_name: str) -> str:
+    if tokens & _CORE_S or _any_pattern(_CORE_M_P, norm_name):
+        return "core"
+    if tokens & _SEC_S or _any_pattern(_SEC_M_P, norm_name):
+        return "secondary"
+    if tokens & _NOISE_S or _any_pattern(_NOISE_M_P, norm_name):
+        return "noise"
+    return "other"
 
 
 def _skill_bucket(name: str) -> str:
     n = norm_skill(name)
-    if any(phrase_in_text(p, n) for p in CORE_SKILL_PHRASES):
-        return "core"
-    if any(phrase_in_text(p, n) for p in SECONDARY_SKILL_PHRASES):
-        return "secondary"
-    if any(phrase_in_text(p, n) for p in HONEYPOT_SKILL_NOISE):
-        return "noise"
-    return "other"
+    return _skill_bucket_tokens(tokenize(n), n)
+
+
+def _is_general_ml_skill_tokens(tokens: frozenset[str]) -> bool:
+    return bool(tokens & _GENERAL_S)
+
+
+def _is_general_ml_skill(name: str) -> bool:
+    return _is_general_ml_skill_tokens(tokenize(norm_skill(name)))
 
 
 def _title_score(title: str, history: List[Dict[str, Any]]) -> float:
@@ -100,20 +152,26 @@ def _experience_score(years: float, history: List[Dict[str, Any]]) -> float:
 
 def _skills_score(
     skills: List[Dict[str, Any]], signals: Dict[str, Any]
-) -> Tuple[float, int, int]:
+) -> Tuple[float, int, int, List[str]]:
     if not skills:
-        return 0.08, 0, 0
+        return 0.08, 0, 0, []
     core = secondary = noise = 0
     quality = 0.0
+    core_names: List[str] = []
     assess = signals.get("skill_assessment_scores") or {}
 
     for s in skills:
         name = s.get("name", "")
-        bucket = _skill_bucket(name)
+        n = norm_skill(name)
+        tokens = tokenize(n)
+        bucket = _skill_bucket_tokens(tokens, n)
         prof = _PROF_MAP.get(norm_text(s.get("proficiency", "")), 2)
         endorse = int(s.get("endorsements", 0) or 0)
         months = int(s.get("duration_months", 0) or 0)
-        verified = next((float(v) for k, v in assess.items() if phrase_in_text(name, k)), None)
+        verified = next(
+            (float(v) for k, v in assess.items() if name.lower() in k.lower()),
+            None,
+        )
         trust = min(1.0, 0.35 + min(endorse, 30) / 90 + min(months, 48) / 120)
         if verified is not None:
             trust = 0.55 * trust + 0.45 * (verified / 100.0)
@@ -123,6 +181,8 @@ def _skills_score(
         if bucket == "core":
             core += 1
             quality += (0.55 + prof * 0.1) * trust
+            if not _is_general_ml_skill_tokens(tokens):
+                core_names.append(name)
         elif bucket == "secondary":
             secondary += 1
             quality += (0.22 + prof * 0.05) * trust
@@ -130,35 +190,11 @@ def _skills_score(
             noise += 1
 
     if core == 0 and secondary == 0:
-        return 0.06, 0, noise
+        return 0.06, 0, noise, []
 
     raw = quality / max(1, core + secondary * 0.45)
     noise_penalty = max(0.30, 1.0 - noise * 0.09)
-    return min(1.0, raw * noise_penalty), core, noise
-
-
-def _profile_blob(profile: Dict[str, Any], history: List[Dict[str, Any]]) -> str:
-    return norm_text(
-        " ".join(
-            [
-                profile.get("summary", ""),
-                profile.get("headline", ""),
-                *[h.get("description", "") for h in history],
-            ]
-        )
-    )
-
-
-def _jd_overlap_score(profile: Dict[str, Any], history: List[Dict[str, Any]]) -> float:
-    career = norm_text(" ".join(h.get("description", "") for h in history))
-    hits = count_phrases(JD_OVERLAP_PHRASES, career)
-    return min(1.0, hits / 7.0)
-
-
-def _production_score(profile: Dict[str, Any], history: List[Dict[str, Any]]) -> float:
-    career = norm_text(" ".join(h.get("description", "") for h in history))
-    hits = count_phrases(PRODUCTION_SIGNAL_PHRASES, career)
-    return min(1.0, hits / 5.0)
+    return min(1.0, raw * noise_penalty), len(core_names), noise, core_names
 
 
 def _consulting_penalty(history: List[Dict[str, Any]]) -> float:
@@ -200,12 +236,13 @@ def _startup_boost(profile: Dict[str, Any], history: List[Dict[str, Any]]) -> fl
     return 1.0
 
 
-def _research_penalty(profile: Dict[str, Any], history: List[Dict[str, Any]], prod_s: float) -> float:
+def _research_penalty(
+    profile: Dict[str, Any], history: List[Dict[str, Any]], prod_s: float, idx: CandidateIndex
+) -> float:
     titles = [norm_text(profile.get("current_title", ""))]
     titles.extend(norm_text(h.get("title", "")) for h in history[:3])
     research = any(any(r in t for r in RESEARCH_ONLY_TITLES) for t in titles)
-    blob = _profile_blob(profile, history)
-    research_lang = count_phrases(("published", "paper", "academic", "phd", "thesis"), blob) >= 2
+    research_lang = count_phrases_fast(_RESEARCH_S, _RESEARCH_M, idx.full_tokens, idx.full_blob, _RESEARCH_P) >= 2
     if (research or research_lang) and prod_s < 0.45:
         return 0.55
     if research and prod_s < 0.65:
@@ -213,31 +250,48 @@ def _research_penalty(profile: Dict[str, Any], history: List[Dict[str, Any]], pr
     return 1.0
 
 
-def _cv_speech_penalty(skills: List[Dict[str, Any]], core_n: int) -> float:
-    cv = sum(1 for s in skills if any(phrase_in_text(p, s.get("name", "")) for p in CV_SPEECH_ROBOTICS))
-    if cv >= 2 and core_n <= 2:
-        return 0.60
-    if cv >= 3 and core_n <= 3:
-        return 0.75
-    return 1.0
+def _cv_speech_penalty(
+    idx: CandidateIndex,
+    core_ir_n: int,
+    title: str,
+    sem_s: float,
+) -> float:
+    cv_signal = cv_language_hits(idx)
+    if cv_signal == 0:
+        return 1.0
+
+    t = norm_text(title)
+    is_junior = "junior" in t or "intern" in t or ("associate" in t and "senior" not in t)
+
+    if is_junior and cv_signal >= 1:
+        return 0.30
+    if cv_signal >= 2 and core_ir_n <= 1:
+        return 0.40
+    if cv_signal >= 1 and core_ir_n <= 2 and sem_s < 0.45:
+        return 0.50
+    if cv_signal >= 3:
+        return 0.65
+    if cv_signal >= 2:
+        return 0.78
+    return 0.90
 
 
-def _framework_penalty(skills: List[Dict[str, Any]], core_n: int, history: List[Dict[str, Any]]) -> float:
-    fw = sum(1 for s in skills if any(phrase_in_text(n, s.get("name", "")) for n in FRAMEWORK_NOISE))
-    blob = _profile_blob({}, history)
-    fw_lang = count_phrases(FRAMEWORK_NOISE, blob)
-    if (fw >= 2 or fw_lang >= 2) and core_n <= 2:
+def _framework_penalty(core_ir_n: int, idx: CandidateIndex) -> float:
+    fw = len(_FW_S & idx.full_tokens)
+    fw += sum(1 for pat in _FW_P if pat.search(idx.full_blob))
+    fw_lang = count_phrases_fast(_FW_S, _FW_M, idx.career_tokens, idx.career_blob, _FW_P)
+    if (fw >= 2 or fw_lang >= 2) and core_ir_n <= 2:
         return 0.75
     if fw >= 3:
         return 0.85
     return 1.0
 
 
-def _weak_title_penalty(title: str, core_n: int, noise_n: int) -> float:
+def _weak_title_penalty(title: str, core_ir_n: int, noise_n: int) -> float:
     t = norm_text(title)
     if any(w in t for w in WEAK_TITLES):
-        return 0.12 if (core_n + noise_n) >= 4 else 0.25
-    if noise_n >= 5 and core_n <= 2:
+        return 0.12 if (core_ir_n + noise_n) >= 4 else 0.25
+    if noise_n >= 5 and core_ir_n <= 2:
         return 0.30
     return 1.0
 
@@ -249,20 +303,18 @@ def _engagement_score(signals: Dict[str, Any]) -> float:
     return min(1.0, 0.5 * min(1.0, rr * 1.1) + 0.3 * min(1.0, saved / 8) + 0.2 * icr)
 
 
-def _career_highlight(history: List[Dict[str, Any]], limit: int = 90) -> str:
-    for role in history[:2]:
-        desc = (role.get("description") or "").strip()
-        if len(desc) > 30:
-            snippet = desc[:limit].rsplit(" ", 1)[0] + "…" if len(desc) > limit else desc
-            return f"{role.get('title', 'Role')} @ {role.get('company', '?')}: {snippet}"
-    return ""
+def _truncate_snippet(text: str, limit: int = 88) -> str:
+    if len(text) <= limit:
+        return text
+    return text[:limit].rsplit(" ", 1)[0] + "…"
 
 
 def _build_reasoning(
     raw: Dict[str, Any],
     *,
     rank: int,
-    core_n: int,
+    core_ir_n: int,
+    core_names: List[str],
     components: Dict[str, float],
     calibrated_score: float,
 ) -> str:
@@ -278,22 +330,23 @@ def _build_reasoning(
     rr = float(signals.get("recruiter_response_rate", 0) or 0)
     notice = int(signals.get("notice_period_days", 0) or 0)
     otw = bool(signals.get("open_to_work_flag", False))
-    assess = signals.get("skill_assessment_scores") or {}
 
-    core_names = [s.get("name", "") for s in skills if _skill_bucket(s.get("name", "")) == "core"][:3]
-    skill_txt = ", ".join(core_names) if core_names else "no verified core IR stack in skills list"
+    skill_txt = ", ".join(core_names[:3]) if core_names else "no verified core IR stack in skills list"
+    ir_snippet = ir_career_snippet(history)
 
     strengths: List[str] = []
-    if components.get("career_semantic", 0) >= 0.55:
+    if ir_snippet and components.get("career_semantic", 0) >= 0.45:
         strengths.append("career history describes shipped retrieval/ranking work in plain language")
-    if core_n >= 4:
-        strengths.append(f"{core_n} core IR skills ({skill_txt})")
+    elif components.get("career_semantic", 0) >= 0.55:
+        strengths.append("career descriptions align with JD retrieval/ranking themes")
+    if core_ir_n >= 4:
+        strengths.append(f"{core_ir_n} core IR skills ({skill_txt})")
     elif core_names:
-        strengths.append(f"core skills: {skill_txt}")
-    if components.get("assessment", 0) >= 0.7:
-        top_a = sorted(assess.items(), key=lambda x: -float(x[1]))[:2]
+        strengths.append(f"core IR skills: {skill_txt}")
+    ir_assess = top_ir_assessments(signals)
+    if ir_assess and components.get("assessment", 0) >= 0.7:
         strengths.append(
-            "verified assessments: " + ", ".join(f"{k} {v:.0f}" for k, v in top_a)
+            "verified IR assessments: " + ", ".join(f"{k} {v:.0f}" for k, v in ir_assess)
         )
     if components.get("availability", 0) >= 0.65:
         strengths.append(f"actively available (open_to_work={otw}, response rate {rr:.0%})")
@@ -314,14 +367,15 @@ def _build_reasoning(
         concerns.append(f"low recruiter response ({rr:.0%})")
     if notice >= 60:
         concerns.append(f"{notice}-day notice period")
-    if core_n < 3:
+    if core_ir_n < 3:
         concerns.append("thin core IR skill depth")
     if components.get("faang", 1.0) < 1.0:
         concerns.append(f"currently at {company} — JD flags big-tech ladder seekers")
     if components.get("research", 1.0) < 0.8:
         concerns.append("research-heavy without strong production signals")
+    if components.get("cv_penalty", 1.0) < 0.8:
+        concerns.append("CV/speech/robotics focus without sufficient IR depth")
 
-    highlight = _career_highlight(history)
     co = f" @ {company}" if company else ""
     lead = f"{title}{co}, {yrs:.1f}y, {loc}."
 
@@ -339,7 +393,19 @@ def _build_reasoning(
     elif rank <= 10:
         concern_txt = " Concerns: founding-role scope may still need validation in technical screen."
 
-    extra = f" Career note: {highlight}." if highlight else ""
+    extra = ""
+    if ir_snippet:
+        extra = f" Career note: {ir_snippet}."
+    elif history:
+        for role in history[:2]:
+            desc = (role.get("description") or "").strip()
+            if len(desc) > 30:
+                extra = (
+                    f" Career note: {role.get('title', 'Role')} @ {role.get('company', '?')}: "
+                    f"{_truncate_snippet(desc)}."
+                )
+                break
+
     return f"{lead} {why}{concern_txt}{extra}"
 
 
@@ -350,17 +416,25 @@ def score_candidate(raw: Dict[str, Any]) -> ScoredCandidate:
     skills = raw.get("skills", [])
     signals = raw.get("redrob_signals", {})
 
+    idx = build_index(profile, history)
+
     title_s = _title_score(profile.get("current_title", ""), history)
     exp_s = _experience_score(float(profile.get("years_of_experience", 0) or 0), history)
-    skill_s, core_n, noise_n = _skills_score(skills, signals)
-    prod_s = _production_score(profile, history)
+    skill_s, core_ir_n, noise_n, core_names = _skills_score(skills, signals)
+    prod_s = production_score(idx)
     loc_s = _location_score(profile)
-    jd_s = _jd_overlap_score(profile, history)
-    sem_s = career_semantic_score(profile, history)
+    jd_s = jd_overlap_score(idx)
+    sem_s = semantic_score(idx)
     avail_s = availability_score(signals)
-    assess_s = assessment_score(signals, skills)
+    ir_vals = _ir_vals_from_signals(signals)
+    assess_s = assessment_score(signals, skills, ir_vals)
     engage_s = _engagement_score(signals)
+
     hp_risk = honeypot_risk(raw)
+    hp_pen = risk_to_penalty(hp_risk)
+    faang_mod = _faang_current_modifier(profile)
+    research_mod = _research_penalty(profile, history, prod_s, idx)
+    cv_mod = _cv_speech_penalty(idx, core_ir_n, profile.get("current_title", ""), sem_s)
 
     base = (
         0.17 * title_s
@@ -376,17 +450,17 @@ def score_candidate(raw: Dict[str, Any]) -> ScoredCandidate:
     )
 
     modifiers = (
-        honeypot_penalty(raw)
+        hp_pen
         * _consulting_penalty(history)
         * availability_modifier(signals)
-        * assessment_boost(signals, skills)
-        * assessment_penalty(signals, skills)
-        * _faang_current_modifier(profile)
+        * assessment_boost(signals, skills, ir_vals)
+        * assessment_penalty(signals, skills, ir_vals)
+        * faang_mod
         * _startup_boost(profile, history)
-        * _research_penalty(profile, history, prod_s)
-        * _cv_speech_penalty(skills, core_n)
-        * _framework_penalty(skills, core_n, history)
-        * _weak_title_penalty(profile.get("current_title", ""), core_n, noise_n)
+        * research_mod
+        * cv_mod
+        * _framework_penalty(core_ir_n, idx)
+        * _weak_title_penalty(profile.get("current_title", ""), core_ir_n, noise_n)
     )
 
     raw_final = base * modifiers
@@ -403,9 +477,10 @@ def score_candidate(raw: Dict[str, Any]) -> ScoredCandidate:
         "location": loc_s,
         "engagement": engage_s,
         "honeypot_risk": hp_risk,
-        "honeypot": honeypot_penalty(raw),
-        "faang": _faang_current_modifier(profile),
-        "research": _research_penalty(profile, history, prod_s),
+        "honeypot": hp_pen,
+        "faang": faang_mod,
+        "research": research_mod,
+        "cv_penalty": cv_mod,
     }
 
     return ScoredCandidate(
@@ -414,7 +489,8 @@ def score_candidate(raw: Dict[str, Any]) -> ScoredCandidate:
         reasoning="",
         components=components,
         raw_score=raw_final,
-        core_skill_count=core_n,
+        core_skill_count=core_ir_n,
+        core_skill_names=core_names,
     )
 
 
@@ -439,36 +515,29 @@ def _sort_key(x: ScoredCandidate) -> Tuple:
 
 
 def rank_candidates(candidates_path, top_k: int = 100) -> List[ScoredCandidate]:
-    """Two-pass: score all, keep top-K via min-heap of raw_score (evict lowest)."""
-    heap: list[Tuple[float, str, ScoredCandidate]] = []
+    """Single-pass: score all, keep top-K via min-heap, cache raw dicts on heap."""
+    heap: list[Tuple[float, str, ScoredCandidate, Dict[str, Any]]] = []
     for raw in load_candidates(candidates_path):
         sc = score_candidate(raw)
-        entry = (sc.raw_score, sc.candidate_id, sc)
+        entry = (sc.raw_score, sc.candidate_id, sc, raw)
         if len(heap) < top_k:
             heapq.heappush(heap, entry)
         elif sc.raw_score > heap[0][0]:
             heapq.heapreplace(heap, entry)
 
     finalists = sorted((x[2] for x in heap), key=_sort_key)
-    finalist_ids = {f.candidate_id for f in finalists}
-
-    raw_cache: Dict[str, Dict[str, Any]] = {}
-    for raw in load_candidates(candidates_path):
-        cid = raw["candidate_id"]
-        if cid in finalist_ids:
-            raw_cache[cid] = raw
-        if len(raw_cache) == len(finalist_ids):
-            break
+    raw_by_id = {x[2].candidate_id: x[3] for x in heap}
 
     calibrated = _calibrate_scores([f.raw_score for f in finalists])
     out: List[ScoredCandidate] = []
     for i, row in enumerate(finalists):
-        src = raw_cache.get(row.candidate_id, {})
+        src = raw_by_id.get(row.candidate_id, {})
         cal = calibrated[i]
         reasoning = _build_reasoning(
             src,
             rank=i + 1,
-            core_n=row.core_skill_count,
+            core_ir_n=row.core_skill_count,
+            core_names=row.core_skill_names,
             components=row.components,
             calibrated_score=cal,
         )
@@ -486,10 +555,7 @@ def rank_candidates(candidates_path, top_k: int = 100) -> List[ScoredCandidate]:
 
 
 def _calibrate_scores(raw_scores: List[float]) -> List[float]:
-    """
-    Map model scores → monotonic [0.99, 0.20] preserving real separation.
-    Uses actual relevance, not a fake linear ramp.
-    """
+    """Map model scores → monotonic [0.99, 0.20] preserving real separation."""
     if not raw_scores:
         return []
     lo = min(raw_scores)

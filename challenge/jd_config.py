@@ -11,7 +11,6 @@ STRONG_TITLES = (
     "senior machine learning engineer",
     "staff ml engineer",
     "applied scientist",
-    "research engineer",
 )
 
 GOOD_TITLES = (
@@ -42,7 +41,6 @@ WEAK_TITLES = (
 
 # Word-boundary skill phrases (no bare "map", "e5", "bge", "search")
 CORE_SKILL_PHRASES = (
-    "python",
     "embeddings",
     "embedding",
     "information retrieval",
@@ -67,6 +65,11 @@ CORE_SKILL_PHRASES = (
     "sentence transformer",
     "ndcg",
     "mrr",
+)
+
+# General ML tooling — not counted as core IR depth in reasoning
+GENERAL_ML_SKILLS = (
+    "python",
     "pytorch",
     "tensorflow",
 )
@@ -212,7 +215,6 @@ FAANG_CURRENT_PENALTY = {
     "facebook",
     "apple",
     "microsoft",
-    "amazon",
     "netflix",
 }
 
@@ -226,8 +228,6 @@ FRAMEWORK_NOISE = (
 RESEARCH_ONLY_TITLES = (
     "research scientist",
     "principal scientist",
-    "applied scientist",
-    "research engineer",
 )
 
 PRODUCTION_SIGNAL_PHRASES = (

@@ -47,14 +47,15 @@ ai_usage_summary: |
   ranking. The offline ranker (rank.py) runs entirely locally with no network calls.
 
 methodology_summary: |
-  Ranker v3: trap-aware hybrid scorer with career semantic matching (TF-IDF + plain-language
-  regex), verified skill_assessment_scores, and availability intelligence (open_to_work,
-  last_active, response rate, applications). Base weights: career semantic 15%, skills 16%,
-  title 17%, production 11%, assessments 10%, availability 10%, engagement 6%. Structural
-  honeypot detection (expert@0mo, impossible tenure, skill stuffing) — not title matching.
-  FAANG-current roles get a mild penalty per JD; Indian product startups boosted. Scores are
-  calibrated from real model output (not a fake linear ramp). Word-boundary token matching
-  avoids map/roadmap and search/research bugs. ~5min on 100K CPU, ~2GB RAM, zero network.
+  Ranker v4: trap-aware hybrid scorer with single-pass streaming heap (no second file read),
+  per-candidate text index (tokenize once, reuse across scorers), and compute-once modifiers.
+  Career semantic matching (TF-IDF + plain-language regex), IR-only skill_assessment_scores,
+  and availability intelligence (open_to_work, last_active, response rate). Base weights:
+  career semantic 15%, skills 16%, title 17%, production 11%, assessments 10%, availability
+  10%, engagement 6%. Structural honeypot detection (expert@0mo, impossible tenure, skill
+  stuffing). CV/speech disqualifier gate tightened for junior profiles. Core IR skills exclude
+  generic python/tensorflow. Scores calibrated from real model output. ~47s on 100K CPU,
+  low RAM, zero network.
 
 declarations:
   read_submission_spec: true
