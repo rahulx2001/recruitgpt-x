@@ -1,0 +1,68 @@
+{
+  "holdout": {
+    "seed": 42,
+    "sample_rate": 0.05,
+    "n_scored": 5000,
+    "n_relevant_proxy": 50,
+    "top_k": 100
+  },
+  "metrics_current_weights": {
+    "ndcg_10": 0.8508,
+    "ndcg_50": 0.919,
+    "map": 0.7666,
+    "p_at_10": 0.8
+  },
+  "weight_ablation": {
+    "current": {
+      "ndcg_10": 0.8508,
+      "ndcg_50": 0.919,
+      "map": 0.7666,
+      "p_at_10": 0.8
+    },
+    "semantic_heavy": {
+      "ndcg_10": 0.8811,
+      "ndcg_50": 0.9266,
+      "map": 0.765,
+      "p_at_10": 0.8
+    },
+    "title_heavy": {
+      "ndcg_10": 0.8241,
+      "ndcg_50": 0.9119,
+      "map": 0.7543,
+      "p_at_10": 0.8
+    },
+    "availability_heavy": {
+      "ndcg_10": 0.8391,
+      "ndcg_50": 0.9218,
+      "map": 0.7716,
+      "p_at_10": 0.8
+    },
+    "uniform": {
+      "ndcg_10": 0.8527,
+      "ndcg_50": 0.9257,
+      "map": 0.7758,
+      "p_at_10": 0.9
+    }
+  },
+  "best_preset_by_ndcg10": {
+    "name": "semantic_heavy",
+    "ndcg_10": 0.8811,
+    "ndcg_50": 0.9266,
+    "map": 0.765,
+    "p_at_10": 0.8
+  },
+  "weights_current": {
+    "title": 0.17,
+    "skills": 0.16,
+    "career_semantic": 0.15,
+    "production": 0.11,
+    "assessment": 0.1,
+    "availability": 0.1,
+    "jd_overlap": 0.06,
+    "experience": 0.05,
+    "location": 0.04,
+    "engagement": 0.06
+  },
+  "note": "Proxy expert labels derived from JD rubric (honeypots, IR depth, production, availability). Used for offline weight justification \u2014 not challenge hidden labels.",
+  "runtime_seconds": 16.32
+}

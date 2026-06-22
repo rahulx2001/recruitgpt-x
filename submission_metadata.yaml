@@ -22,6 +22,8 @@ sandbox_link: "https://huggingface.co/spaces/rahulkumarsinghj/recruitgpt-ranker"
 
 reproduce_command: "./scripts/finalize_submission.sh"
 # Or: python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv
+# Eval harness: python scripts/run_eval.py
+# Deploy: cp .env.deploy.example .env.deploy && ./scripts/deploy_all.sh
 # Portal export: RECROB_PARTICIPANT_ID=team_xxx ./scripts/finalize_submission.sh
 # Docker: docker compose -f docker-compose.ranker.yml run --rm ranker
 # Full checklist: ./scripts/pre-submit.sh
@@ -55,7 +57,9 @@ methodology_summary: |
   10%, engagement 6%. Structural honeypot detection (expert@0mo, impossible tenure, skill
   stuffing). CV/speech disqualifier gate tightened for junior profiles. Core IR skills exclude
   generic python/tensorflow. Scores calibrated from real model output. ~47s on 100K CPU,
-  low RAM, zero network.
+  low RAM, zero network. Offline eval harness (scripts/run_eval.py) on 5K hash-holdout:
+  NDCG@10=0.85, NDCG@50=0.92, MAP=0.77, P@10=0.80 with current weights; weight ablation
+  in data/eval_report.json justifies hand-tuned blend vs title/semantic/availability-heavy presets.
 
 declarations:
   read_submission_spec: true

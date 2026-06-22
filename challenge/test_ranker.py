@@ -119,6 +119,22 @@ def test_cv_profiles_not_in_top_100():
             raise AssertionError(f"junior CV profile at rank with cv_penalty: {row.candidate_id}")
 
 
+def test_eval_harness_produces_metrics():
+    from challenge.eval_harness import proxy_relevance, run_holdout_eval
+
+    sample = json.loads(SAMPLE.read_text(encoding="utf-8"))
+    assert 0.0 <= proxy_relevance(sample[0]) <= 1.0
+    tmp = ROOT / "data" / "_eval_sample.jsonl"
+    with open(tmp, "w", encoding="utf-8") as f:
+        for row in sample:
+            f.write(json.dumps(row) + "\n")
+    report = run_holdout_eval(tmp, sample_rate=1.0, max_n=50, top_k=20)
+    tmp.unlink(missing_ok=True)
+    m = report["metrics_current_weights"]
+    assert "ndcg_10" in m
+    assert report["weight_ablation"]["current"]["ndcg_10"] == m["ndcg_10"]
+
+
 def test_runtime_under_budget():
     """Full 100K ranking must finish under 60s (Stage-3 hard limit is 300s)."""
     if not CANDIDATES.exists():

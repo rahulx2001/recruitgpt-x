@@ -70,6 +70,19 @@ _SEC_M_P = compile_multi_patterns(_SEC_M)
 _NOISE_M_P = compile_multi_patterns(_NOISE_M)
 _GENERAL_S = frozenset(GENERAL_ML_SKILLS)
 
+DEFAULT_WEIGHTS: Dict[str, float] = {
+    "title": 0.17,
+    "skills": 0.16,
+    "career_semantic": 0.15,
+    "production": 0.11,
+    "assessment": 0.10,
+    "availability": 0.10,
+    "jd_overlap": 0.06,
+    "experience": 0.05,
+    "location": 0.04,
+    "engagement": 0.06,
+}
+
 
 @dataclass
 class ScoredCandidate:
@@ -409,7 +422,10 @@ def _build_reasoning(
     return f"{lead} {why}{concern_txt}{extra}"
 
 
-def score_candidate(raw: Dict[str, Any]) -> ScoredCandidate:
+def score_candidate(
+    raw: Dict[str, Any],
+    weights: Dict[str, float] | None = None,
+) -> ScoredCandidate:
     cid = raw["candidate_id"]
     profile = raw.get("profile", {})
     history = raw.get("career_history", [])
@@ -436,17 +452,18 @@ def score_candidate(raw: Dict[str, Any]) -> ScoredCandidate:
     research_mod = _research_penalty(profile, history, prod_s, idx)
     cv_mod = _cv_speech_penalty(idx, core_ir_n, profile.get("current_title", ""), sem_s)
 
+    w = weights or DEFAULT_WEIGHTS
     base = (
-        0.17 * title_s
-        + 0.16 * skill_s
-        + 0.15 * sem_s
-        + 0.11 * prod_s
-        + 0.10 * assess_s
-        + 0.10 * avail_s
-        + 0.06 * jd_s
-        + 0.05 * exp_s
-        + 0.04 * loc_s
-        + 0.06 * engage_s
+        w["title"] * title_s
+        + w["skills"] * skill_s
+        + w["career_semantic"] * sem_s
+        + w["production"] * prod_s
+        + w["assessment"] * assess_s
+        + w["availability"] * avail_s
+        + w["jd_overlap"] * jd_s
+        + w["experience"] * exp_s
+        + w["location"] * loc_s
+        + w["engagement"] * engage_s
     )
 
     modifiers = (

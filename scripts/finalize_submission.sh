@@ -32,6 +32,10 @@ python scripts/validate_reasoning.py submission.csv
 python -m pytest challenge/test_ranker.py -q
 echo
 
+echo "==> Offline eval harness (proxy labels + weight ablation)..."
+python scripts/run_eval.py --candidates ./data/candidates.jsonl --out ./data/eval_report.json
+echo
+
 if [[ -n "$PARTICIPANT_ID" ]]; then
   echo "==> Exporting portal file: ${PARTICIPANT_ID}.csv"
   cp submission.csv "./${PARTICIPANT_ID}.csv"

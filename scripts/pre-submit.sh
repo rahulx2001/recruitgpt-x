@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Pre-submit checklist — validation, eval, optional deploy.
 # Full pre-push / pre-portal-upload checklist for Redrob challenge.
 set -euo pipefail
 
@@ -86,9 +87,20 @@ else
   bad "data/candidates.jsonl missing (see data/README.md)"
 fi
 
-# ── 5. Tests ─────────────────────────────────────────────────────
+# ── 5. Eval harness ──────────────────────────────────────────────
+if [[ -f data/candidates.jsonl ]]; then
+  if python scripts/run_eval.py --candidates ./data/candidates.jsonl --out ./data/eval_report.json >/dev/null 2>&1; then
+    ok "eval harness (proxy NDCG + weight ablation)"
+  else
+    bad "scripts/run_eval.py failed"
+  fi
+else
+  bad "eval skipped — candidates.jsonl missing"
+fi
+
+# ── 6. Tests ─────────────────────────────────────────────────────
 if python -m pytest challenge/test_ranker.py -q >/dev/null 2>&1; then
-  ok "challenge tests (5)"
+  ok "challenge tests"
 else
   bad "challenge/test_ranker.py failed"
 fi
@@ -99,14 +111,28 @@ else
   bad "backend tests failed"
 fi
 
-# ── 6. Frontend typecheck ────────────────────────────────────────
+# ── 7. Deploy reachability (optional) ────────────────────────────
+gh_url=$(python3 -c "import yaml; print(yaml.safe_load(open('submission_metadata.yaml'))['github_repo'])" 2>/dev/null || echo "")
+hf_url=$(python3 -c "import yaml; print(yaml.safe_load(open('submission_metadata.yaml'))['sandbox_link'])" 2>/dev/null || echo "")
+if [[ -n "$gh_url" ]] && curl -sfI "$gh_url" >/dev/null 2>&1; then
+  ok "github_repo reachable: $gh_url"
+else
+  bad "github_repo not reachable — run: ./scripts/deploy_github.sh"
+fi
+if [[ -n "$hf_url" ]] && curl -sfI "$hf_url" >/dev/null 2>&1; then
+  ok "sandbox_link reachable: $hf_url"
+else
+  bad "sandbox_link not reachable — run: ./scripts/deploy_hf_space.sh"
+fi
+
+# ── 8. Frontend typecheck ────────────────────────────────────────
 if (cd frontend && npx tsc --noEmit >/dev/null 2>&1); then
   ok "TypeScript clean"
 else
   bad "frontend tsc errors"
 fi
 
-# ── 7. Live API (optional) ─────────────────────────────────────
+# ── 9. Live API (optional) ─────────────────────────────────────
 if curl -sf http://127.0.0.1:8000/health >/dev/null 2>&1; then
   mode=$(curl -sf http://127.0.0.1:8000/api/status | python3 -c "import sys,json; print(json.load(sys.stdin).get('llm_mode','?'))" 2>/dev/null || echo "?")
   ok "backend live (llm_mode=$mode)"
@@ -119,7 +145,7 @@ else
   echo "   [SKIP] backend not running on :8000"
 fi
 
-# ── 8. Docker ranker ───────────────────────────────────────────
+# ── 10. Docker ranker ───────────────────────────────────────────
 if bash scripts/validate-docker-config.sh >/dev/null 2>&1; then
   ok "Docker config validated (files + constraints)"
 else
