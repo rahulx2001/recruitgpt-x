@@ -1,0 +1,144 @@
+"""Parsed requirements from job_description.docx — Senior AI Engineer @ Redrob."""
+
+from __future__ import annotations
+
+# Titles strongly aligned with the JD (retrieval / ranking / ML systems)
+STRONG_TITLES = (
+    "senior ai engineer",
+    "ai engineer",
+    "machine learning engineer",
+    "ml engineer",
+    "senior machine learning engineer",
+    "staff ml engineer",
+    "applied scientist",
+    "research engineer",
+)
+
+GOOD_TITLES = (
+    "data scientist",
+    "ml scientist",
+    "nlp engineer",
+    "search engineer",
+    "recommendation engineer",
+    "software engineer",
+    "backend engineer",
+)
+
+# Honeypot titles — keyword stuffers often keep unrelated roles
+WEAK_TITLES = (
+    "hr manager",
+    "accountant",
+    "sales executive",
+    "marketing manager",
+    "graphic designer",
+    "content writer",
+    "customer support",
+    "civil engineer",
+    "mechanical engineer",
+    "operations manager",
+    "project manager",
+    "business analyst",
+    "qa engineer",
+)
+
+# Core skills from JD "absolutely need" section
+CORE_AI_SKILLS = {
+    "python",
+    "embeddings",
+    "embedding",
+    "retrieval",
+    "ranking",
+    "vector",
+    "faiss",
+    "qdrant",
+    "pinecone",
+    "weaviate",
+    "milvus",
+    "opensearch",
+    "elasticsearch",
+    "sentence transformers",
+    "sentence transformer",
+    "bge",
+    "e5",
+    "hybrid search",
+    "ndcg",
+    "mrr",
+    "map",
+    "learning to rank",
+    "pytorch",
+    "tensorflow",
+}
+
+SECONDARY_AI_SKILLS = {
+    "nlp",
+    "llm",
+    "fine-tuning",
+    "fine tuning",
+    "lora",
+    "qlora",
+    "mlops",
+    "mlflow",
+    "hugging face",
+    "transformers",
+    "deep learning",
+    "machine learning",
+    "recommendation",
+    "information retrieval",
+}
+
+# Skills that appear in honeypot profiles (high endorsements, not real AI depth)
+HONEYPOT_SKILL_NOISE = {
+    "html",
+    "tailwind",
+    "photoshop",
+    "css",
+    "react",
+    "javascript",
+    "excel",
+    "powerpoint",
+    "word",
+}
+
+CONSULTING_FIRMS = {
+    "tcs",
+    "tata consultancy",
+    "infosys",
+    "wipro",
+    "accenture",
+    "cognizant",
+    "capgemini",
+    "mindtree",
+    "ltimindtree",
+    "hcl",
+    "tech mahindra",
+    "deloitte consulting",
+    "ibm consulting",
+}
+
+# JD: Pune/Noida preferred; other Tier-1 India cities welcome
+PREFERRED_LOCATIONS = {
+    "pune",
+    "noida",
+}
+
+INDIA_LOCATIONS = {
+    "pune",
+    "noida",
+    "bangalore",
+    "bengaluru",
+    "hyderabad",
+    "mumbai",
+    "delhi",
+    "gurgaon",
+    "gurugram",
+    "chennai",
+    "india",
+}
+
+EXP_MIN = 4.0
+EXP_IDEAL_LO = 5.0
+EXP_IDEAL_HI = 9.0
+EXP_MAX = 15.0
+
+JOB_TITLE = "Senior AI Engineer — Founding Team"
+JOB_COMPANY = "Redrob AI"
