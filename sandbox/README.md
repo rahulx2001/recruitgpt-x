@@ -1,17 +1,44 @@
-# HuggingFace Spaces Sandbox
+---
+title: RecruitGPT X Ranker
+emoji: 🎯
+colorFrom: indigo
+colorTo: cyan
+sdk: gradio
+sdk_version: 4.44.0
+app_file: app.py
+pinned: false
+license: mit
+---
 
-Deploy this folder as a Gradio Space so judges can re-run the ranker on `sample_candidates.json`.
+# RecruitGPT X — Offline Ranker Sandbox
 
-## Quick deploy
+Hackathon **§10.5** hosted environment. Runs the same `challenge/redrob_ranker.py` on the official `sample_candidates.json` (no 100K upload required).
 
-1. Create a new HF Space (SDK: Gradio, hardware: CPU basic).
-2. Upload repo files: `sandbox/app.py`, `rank.py`, `challenge/`, `data/sample_candidates.json`.
-3. Set `app_file` to `app.py` or copy `app.py` to Space root.
-4. Update `submission_metadata.yaml` → `sandbox_link` with your Space URL.
+## Local prep
 
-## Local test
+From repo root:
 
 ```bash
-pip install gradio
-python sandbox/app.py
+./scripts/prepare_hf_space.sh
+```
+
+This copies `rank.py`, `challenge/`, and sample data into `sandbox/` for a self-contained Space.
+
+## Deploy to HuggingFace
+
+1. Create a new **Gradio** Space on [huggingface.co/new-space](https://huggingface.co/new-space).
+2. Upload the contents of `sandbox/` (after running `prepare_hf_space.sh`).
+3. Copy the Space URL into `submission_metadata.yaml` → `sandbox_link`.
+
+## Full reproduction (100K)
+
+```bash
+python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv
+```
+
+Or Docker (CPU, no network):
+
+```bash
+docker compose -f docker-compose.ranker.yml build
+docker compose -f docker-compose.ranker.yml run --rm ranker
 ```

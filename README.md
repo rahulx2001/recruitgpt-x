@@ -171,11 +171,26 @@ python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv
 python scripts/validate_submission.py submission.csv   # must print "Submission is valid."
 python scripts/check_honeypots.py submission.csv       # must print "PASS"
 RECROB_PARTICIPANT_ID=team_xxx ./scripts/export_submission.sh  # portal filename §2
-python -m pytest challenge/test_ranker.py -q
-python rank.py --self-test                             # quick sanity on sample_candidates.json
+./scripts/pre-submit.sh                                        # full checklist before push
 ```
 
-**Sandbox (§10.5):** deploy `sandbox/` to HuggingFace Spaces — see `sandbox/README.md`. Update `submission_metadata.yaml` → `sandbox_link` with your live Space URL.
+### Docker reproduction (Stage 3)
+
+```bash
+docker compose -f docker-compose.ranker.yml build
+docker compose -f docker-compose.ranker.yml run --rm ranker   # needs data/candidates.jsonl mounted
+```
+
+### HuggingFace sandbox (§10.5)
+
+```bash
+./scripts/prepare_hf_space.sh   # bundle sandbox/ for upload
+# Deploy sandbox/ to HF Space → set sandbox_link in submission_metadata.yaml
+python -m pytest challenge/test_ranker.py -q
+python rank.py --self-test
+```
+
+See `sandbox/README.md` for Space deploy steps.
 
 ### Deliverables in this repo
 

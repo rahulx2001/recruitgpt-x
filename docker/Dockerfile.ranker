@@ -1,0 +1,17 @@
+# Stage 3 reproduction image — CPU-only offline ranker (§5.3 / §3.2)
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Stdlib ranker + tests only (no torch/GPU)
+COPY rank.py pyproject.toml requirements-ranker.txt ./
+COPY challenge/ ./challenge/
+COPY data/sample_candidates.json ./data/sample_candidates.json
+COPY scripts/validate_submission.py scripts/check_honeypots.py ./scripts/
+
+RUN pip install --no-cache-dir -r requirements-ranker.txt
+
+# Self-test on sample; mount candidates.jsonl for full run:
+#   docker run -v $(pwd)/data/candidates.jsonl:/app/data/candidates.jsonl recruitgpt-ranker \
+#     python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv
+CMD ["python", "rank.py", "--self-test"]

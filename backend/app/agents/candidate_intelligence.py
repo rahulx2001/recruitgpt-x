@@ -90,6 +90,17 @@ async def extract_intelligence(
             f"source={linkedin_context.get('source')}"
         )
 
+    history = build_skill_history_from_profile(profile)
+    history_text = (
+        "\n".join(
+            f"- {h.year}: {h.skill_name} (prof {h.proficiency}, {h.source})"
+            + (f" — {h.context}" if h.context else "")
+            for h in sorted(history, key=lambda x: (x.year, x.skill_name))[:12]
+        )
+        or "—"
+    )
+    evolution = _skill_evolution_timeline(profile)
+
     user_prompt = f"""CANDIDATE: {profile.full_name}
 HEADLINE: {profile.headline or "—"}
 CURRENT ROLE: {profile.current_role or "—"}
@@ -126,16 +137,6 @@ Extract a structured intelligence profile. Return JSON with:
 - skill_evolution: list of strings (temporal skill growth narrative)
 - summary: 2-3 sentence profile summary
 """
-    history = build_skill_history_from_profile(profile)
-    history_text = (
-        "\n".join(
-            f"- {h.year}: {h.skill_name} (prof {h.proficiency}, {h.source})"
-            + (f" — {h.context}" if h.context else "")
-            for h in sorted(history, key=lambda x: (x.year, x.skill_name))[:12]
-        )
-        or "—"
-    )
-    evolution = _skill_evolution_timeline(profile)
     fallback = {
         "skills": [s.name for s in profile.skills],
         "technologies": [s.name for s in profile.skills if s.proficiency >= 3],

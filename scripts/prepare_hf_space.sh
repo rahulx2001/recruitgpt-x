@@ -1,3 +1,21 @@
+#!/usr/bin/env bash
+# Bundle sandbox/ with everything needed for a HuggingFace Gradio Space push.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SB="$ROOT/sandbox"
+
+echo "==> Preparing HF Space bundle in sandbox/"
+
+cp "$ROOT/rank.py" "$SB/rank.py"
+rm -rf "$SB/challenge" "$SB/data"
+cp -R "$ROOT/challenge" "$SB/challenge"
+mkdir -p "$SB/data"
+cp "$ROOT/data/sample_candidates.json" "$SB/data/sample_candidates.json"
+cp "$ROOT/scripts/validate_submission.py" "$SB/validate_submission.py"
+
+# Flat layout for HF (app.py imports from same directory)
+cat > "$SB/app.py" << 'PYEOF'
 """HuggingFace Spaces — RecruitGPT X offline ranker (sample set)."""
 from __future__ import annotations
 
@@ -54,3 +72,8 @@ with gr.Blocks(title="RecruitGPT X Ranker") as demo:
     run_btn.click(run_ranker, inputs=[top_k], outputs=[csv_out, meta_out])
 
 demo.launch()
+PYEOF
+
+echo "==> Done. Deploy sandbox/ to HF Space:"
+echo "    cd sandbox && huggingface-cli upload recruitgpt-ranker . --repo-type=space"
+echo "    (or create Space on huggingface.co and push sandbox/ contents)"

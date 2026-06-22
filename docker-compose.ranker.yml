@@ -1,0 +1,14 @@
+# Offline ranker reproduction — hackathon compute constraints (CPU, no network)
+services:
+  ranker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.ranker
+    image: recruitgpt-ranker:3.11
+    network_mode: none
+    volumes:
+      - ./data/candidates.jsonl:/app/data/candidates.jsonl:ro
+    command: >
+      python rank.py
+      --candidates ./data/candidates.jsonl
+      --out ./submission.csv

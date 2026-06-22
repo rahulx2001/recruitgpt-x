@@ -21,7 +21,9 @@ sandbox_link: "https://huggingface.co/spaces/rahulkumarsinghj/recruitgpt-ranker"
 # (Replace this URL with the real Space URL after `hf spaces push`.)
 
 reproduce_command: "python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv"
-# Portal upload filename (§2): RECROB_PARTICIPANT_ID=team_xxx ./scripts/export_submission.sh
+# Portal CSV filename (§2): RECROB_PARTICIPANT_ID=team_xxx ./scripts/export_submission.sh
+# Docker alternative: docker compose -f docker-compose.ranker.yml run --rm ranker
+# Pre-push checklist: ./scripts/pre-submit.sh
 
 compute:
   platform: "MacBook Pro (Apple Silicon)"
