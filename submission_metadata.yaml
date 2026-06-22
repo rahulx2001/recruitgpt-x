@@ -39,14 +39,13 @@ ai_usage_summary: |
   ranking. The offline ranker (rank.py) runs entirely locally with no network calls.
 
 methodology_summary: |
-  Ranker v5: bi-encoder retrieval (precomputed MiniLM embeddings in embeddings.fp16.npz;
-  TF-IDF JD proxy when npy absent — top-10 set overlap 10/10 vs artifact path)
-  → hybrid JD scorer (title/skills/production/availability/trap modifiers) → cross-encoder
-  rerank on top-500 (ms-marco-MiniLM) → calibrated top-100. Resolves JD tensions: shipper over
-  pure researcher, anti-keyword-stuffing, availability-weighted, anti-consulting, FAANG yellow-flag.
-  Structural honeypot detection; CV/junior gate; IR-only assessments. ~48–120s rank on 100K CPU
-  (embeddings loaded from artifact; no network). Eval: hand labels on sample + behavioral proxy
-  (education tier, recruiter saves/views) — NOT hidden ground truth; expect composite ~0.60–0.68.
+  Ranker v5 (canonical / Stage 3): committed MiniLM bi-encoder (embeddings.fp16.npz) → hybrid
+  JD-aligned scorer (title/skills/production/availability/trap modifiers) → calibrated top-100.
+  Cross-encoder rerank is opt-in only (RANKER_USE_CROSS_ENCODER=1); submission artifact is
+  generated with CE OFF for byte-identical offline reproduction. TF-IDF JD proxy when npy absent.
+  Resolves JD tensions: shipper over researcher, anti-keyword-stuffing, availability-weighted,
+  anti-consulting, FAANG yellow-flag. Structural honeypot detection; CV/junior gate. ~49s on 100K
+  CPU, no network. Eval: hand labels + behavioral proxy — NOT hidden ground truth.
 
 declarations:
   read_submission_spec: true

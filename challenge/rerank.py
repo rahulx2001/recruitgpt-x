@@ -1,7 +1,12 @@
-"""Cross-encoder re-rank for top pool — graceful fallback when model unavailable."""
+"""Cross-encoder re-rank for top pool — OFF by default (network + env-dependent).
+
+Canonical Stage-3 reproduction uses bi-encoder + hybrid scorer only.
+Set RANKER_USE_CROSS_ENCODER=1 to enable (requires offline HF model cache).
+"""
 
 from __future__ import annotations
 
+import os
 from typing import Any, Dict, List, Optional, Sequence
 
 from challenge.embeddings import candidate_text
@@ -20,8 +25,19 @@ _model = None
 _model_available: Optional[bool] = None
 
 
+def cross_encoder_enabled() -> bool:
+    """Cross-encoder is opt-in; default OFF for deterministic offline reproduction."""
+    return os.environ.get("RANKER_USE_CROSS_ENCODER", "0").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+
+
 def _get_model():
     global _model, _model_available
+    if not cross_encoder_enabled():
+        return None
     if _model_available is False:
         return None
     if _model is not None:

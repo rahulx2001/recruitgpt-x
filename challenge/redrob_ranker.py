@@ -1,4 +1,4 @@
-"""Offline hybrid ranker v5 — bi-encoder + cross-encoder rerank, trap-aware."""
+"""Offline hybrid ranker v5 — bi-encoder + hybrid scorer (CE opt-in), trap-aware."""
 
 from __future__ import annotations
 
@@ -16,7 +16,11 @@ from challenge.assessment import (
 )
 from challenge.availability import availability_modifier, availability_score
 from challenge.embeddings import EmbeddingStore
-from challenge.rerank import blend_stage1_cross_encoder, rerank_scores
+from challenge.rerank import (
+    blend_stage1_cross_encoder,
+    cross_encoder_enabled,
+    rerank_scores,
+)
 from challenge.features import (
     CandidateIndex,
     build_index,
@@ -560,9 +564,10 @@ def _sort_key(x: ScoredCandidate) -> Tuple:
 
 def rank_candidates(candidates_path, top_k: int = 100) -> List[ScoredCandidate]:
     """
-    Two-stage ranking:
+    Ranking pipeline (canonical / Stage 3):
     1) Hybrid score all candidates → keep top RERANK_POOL_SIZE
-    2) Cross-encoder rerank pool → take top_k (graceful fallback if model missing)
+    2) Optional cross-encoder rerank (RANKER_USE_CROSS_ENCODER=1 only)
+    3) Calibrated top_k with grounded reasoning
     """
     pool_size = max(top_k, RERANK_POOL_SIZE)
     heap: list[Tuple[float, str, ScoredCandidate, Dict[str, Any]]] = []
@@ -577,7 +582,9 @@ def rank_candidates(candidates_path, top_k: int = 100) -> List[ScoredCandidate]:
     pool = sorted((x[2] for x in heap), key=_sort_key)
     raw_by_id = {x[2].candidate_id: x[3] for x in heap}
 
-    ce_scores = rerank_scores([raw_by_id[s.candidate_id] for s in pool])
+    ce_scores = None
+    if cross_encoder_enabled():
+        ce_scores = rerank_scores([raw_by_id[s.candidate_id] for s in pool])
     if ce_scores:
         for sc, ce in zip(pool, ce_scores):
             blended = blend_stage1_cross_encoder(

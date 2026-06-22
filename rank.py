@@ -11,12 +11,16 @@ No network calls. Runs on CPU. Produces hackathon submission CSV (top 100).
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
+
+# Stage-3 canonical path: cross-encoder OFF unless explicitly enabled.
+os.environ.setdefault("RANKER_USE_CROSS_ENCODER", "0")
 
 from challenge.data_paths import challenge_file
 from challenge.redrob_ranker import rank_candidates, run_self_test, write_submission

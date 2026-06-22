@@ -7,12 +7,6 @@ from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
-# Official bundle (user Downloads). Override with CHALLENGE_DATA_ROOT.
-_DEFAULT_OFFICIAL = Path(
-    "/Users/rahulkumarsinghj/Downloads/"
-    "[PUB] India_runs_data_and_ai_challenge/India_runs_data_and_ai_challenge"
-)
-
 OFFICIAL_FILES = (
     "candidates.jsonl",
     "sample_candidates.json",
@@ -32,18 +26,22 @@ def official_challenge_root() -> Path:
     override = os.environ.get("CHALLENGE_DATA_ROOT", "").strip()
     if override:
         return Path(override).expanduser().resolve()
-    return _DEFAULT_OFFICIAL
+    return _REPO_ROOT / "data"
 
 
 def challenge_file(name: str) -> Path:
-    """Resolve a challenge file — official bundle first, then synced data/ symlink."""
+    """Resolve a challenge file — repo data/ first, then CHALLENGE_DATA_ROOT."""
+    synced = _REPO_ROOT / "data" / name
+    try:
+        if synced.is_file() or (synced.is_symlink() and synced.resolve().is_file()):
+            return synced.resolve()
+    except OSError:
+        pass
+
     official = official_challenge_root() / name
     if official.is_file():
         return official
-    synced = _REPO_ROOT / "data" / name
-    if synced.is_file() or synced.is_symlink():
-        return synced.resolve()
-    return official
+    return synced
 
 
 def repo_data_dir() -> Path:
@@ -55,6 +53,7 @@ def ensure_challenge_data_synced() -> list[str]:
     root = official_challenge_root()
     missing = []
     for name in OFFICIAL_FILES:
-        if not (root / name).is_file():
+        path = challenge_file(name)
+        if not path.is_file():
             missing.append(name)
     return missing

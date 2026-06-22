@@ -11,12 +11,26 @@ if [[ -f "$ROOT/.env.deploy" ]]; then
   set -a && source "$ROOT/.env.deploy" && set +a
 fi
 
-OFFICIAL="${CHALLENGE_DATA_ROOT:-/Users/rahulkumarsinghj/Downloads/[PUB] India_runs_data_and_ai_challenge/India_runs_data_and_ai_challenge}"
+if [[ -z "${CHALLENGE_DATA_ROOT:-}" ]]; then
+  # Common local paths (dev convenience only — judges should set CHALLENGE_DATA_ROOT)
+  for candidate in \
+    "$HOME/Downloads/[PUB] India_runs_data_and_ai_challenge/India_runs_data_and_ai_challenge" \
+    "$HOME/Downloads/India_runs_data_and_ai_challenge" \
+    ; do
+    if [[ -d "$candidate" ]]; then
+      CHALLENGE_DATA_ROOT="$candidate"
+      break
+    fi
+  done
+fi
 
-if [[ ! -d "$OFFICIAL" ]]; then
-  echo "ERROR: Official challenge folder not found:"
-  echo "  $OFFICIAL"
-  echo "Set CHALLENGE_DATA_ROOT to your bundle path, then re-run."
+OFFICIAL="${CHALLENGE_DATA_ROOT:-}"
+
+if [[ -z "$OFFICIAL" || ! -d "$OFFICIAL" ]]; then
+  echo "ERROR: Official challenge folder not found."
+  echo "Set CHALLENGE_DATA_ROOT to your bundle path, e.g.:"
+  echo "  export CHALLENGE_DATA_ROOT=\"/path/to/India_runs_data_and_ai_challenge\""
+  echo "Or place candidates.jsonl at data/candidates.jsonl and skip sync."
   exit 1
 fi
 

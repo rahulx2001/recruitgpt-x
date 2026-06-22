@@ -1,9 +1,11 @@
-# Offline ranker — stdlib path works without ML deps (graceful fallback).
+# Offline ranker — Stage 3 reproduction (CPU, network_mode: none)
 pytest>=8.0
-numpy>=1.24.0
+numpy>=1.24.0,<3.0.0
 PyYAML>=6.0
 
-# Optional (bi-encoder precompute + cross-encoder rerank):
-# pip install sentence-transformers torch
-sentence-transformers>=2.7.0
-torch>=2.0.0
+# NOT required for canonical reproduction (bi-encoder uses committed embeddings.fp16.npz):
+# sentence-transformers>=2.7.0
+# torch>=2.0.0
+#
+# Optional: precompute embeddings on a networked machine (scripts/precompute_embeddings.py)
+# Optional: RANKER_USE_CROSS_ENCODER=1 (requires offline HF cache; not used for submission)

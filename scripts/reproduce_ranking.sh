@@ -5,6 +5,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# Canonical pipeline: bi-encoder + hybrid scorer only (no network-dependent CE).
+export RANKER_USE_CROSS_ENCODER=0
+
 echo "╔══════════════════════════════════════════════════╗"
 echo "║  RecruitGPT X — Reproduce Ranking (Stage 3)      ║"
 echo "╚══════════════════════════════════════════════════╝"

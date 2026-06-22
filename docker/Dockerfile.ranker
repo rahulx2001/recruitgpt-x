@@ -3,7 +3,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# v5 ranker: bi-encoder artifact + cross-encoder rerank (graceful lexical fallback if artifacts missing)
+# v5 ranker: bi-encoder artifact + hybrid scorer (CE off by default; no torch required)
 COPY rank.py pyproject.toml requirements-ranker.txt ./
 COPY challenge/ ./challenge/
 COPY data/sample_candidates.json ./data/sample_candidates.json

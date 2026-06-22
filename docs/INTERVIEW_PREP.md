@@ -1,7 +1,7 @@
 # RecruitGPT X — Interview Prep (private)
 
 ## Architecture (30-second pitch)
-Bi-encoder retrieval (precomputed MiniLM embeddings) → hybrid JD-aligned scorer (trap/availability modifiers) → cross-encoder rerank on top-500 → calibrated top-100 with grounded reasoning.
+Bi-encoder (committed embeddings.fp16.npz) → hybrid JD-aligned scorer → calibrated top-100. Cross-encoder is opt-in only (`RANKER_USE_CROSS_ENCODER=1`); submission uses CE OFF for byte-identical reproduction.
 
 ## Cold questions
 

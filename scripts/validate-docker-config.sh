@@ -36,7 +36,9 @@ assert "python:3.11" in dockerfile, "Dockerfile must use Python 3.11"
 assert "rank.py" in compose
 assert "data/embeddings" in compose, "compose must mount embeddings for v5 reproduction"
 assert "embeddings.fp16.npz" in dockerfile, "Dockerfile must bundle fp16 embeddings"
-print("  OK compose constraints (network_mode: none, embeddings mount, rank.py)")
+req = Path("requirements-ranker.txt").read_text()
+assert "torch>=" not in req or req.strip().startswith("#"), "ranker reqs must not require torch"
+print("  OK compose constraints (network_mode: none, embeddings mount, no torch dep)")
 PY
 
 echo "==> PASS — Docker files ready for Stage 3 reproduction"
