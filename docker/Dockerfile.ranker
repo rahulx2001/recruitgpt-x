@@ -7,7 +7,7 @@ WORKDIR /app
 COPY rank.py pyproject.toml requirements-ranker.txt ./
 COPY challenge/ ./challenge/
 COPY data/sample_candidates.json ./data/sample_candidates.json
-COPY scripts/validate_submission.py scripts/check_honeypots.py ./scripts/
+COPY scripts/validate_submission.py scripts/check_honeypots.py scripts/validate_submission_ids.py ./scripts/
 
 RUN pip install --no-cache-dir -r requirements-ranker.txt
 

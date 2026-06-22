@@ -119,7 +119,12 @@ else
   echo "   [SKIP] backend not running on :8000"
 fi
 
-# ── 8. Docker ranker (optional) ────────────────────────────────
+# ── 8. Docker ranker ───────────────────────────────────────────
+if bash scripts/validate-docker-config.sh >/dev/null 2>&1; then
+  ok "Docker config validated (files + constraints)"
+else
+  bad "Docker config validation failed"
+fi
 if command -v docker >/dev/null 2>&1; then
   if docker compose -f docker-compose.ranker.yml build >/dev/null 2>&1; then
     ok "Docker ranker image builds"
@@ -127,7 +132,7 @@ if command -v docker >/dev/null 2>&1; then
     bad "Docker ranker build failed"
   fi
 else
-  echo "   [SKIP] docker not installed"
+  echo "   [SKIP] docker daemon not installed (config files OK)"
 fi
 
 echo
