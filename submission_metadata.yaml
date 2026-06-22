@@ -1,0 +1,62 @@
+# Redrob Hackathon — Submission Metadata
+# Fill team contact details before portal upload.
+
+team_name: "RecruitGPT X"
+
+primary_contact:
+  name: "Rahul Kumar Singh"
+  email: "rahulkumarsinghj@example.com"
+  phone: "+91-XXXXXXXXXX"
+
+team_members:
+  - name: "Rahul Kumar Singh"
+    email: "rahulkumarsinghj@example.com"
+    role: "Team Lead / ML Engineer"
+
+github_repo: "https://github.com/rahulkumarsinghj/recruitgpt-x"
+
+sandbox_link: "https://huggingface.co/spaces/rahulkumarsinghj/recruitgpt-ranker"
+# Hosted sandbox where the ranker can be re-run on the sample.
+# See docs/DEPLOY.md for the HuggingFace Spaces deploy instructions.
+# (Replace this URL with the real Space URL after `hf spaces push`.)
+
+reproduce_command: "python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv"
+# Portal upload filename (§2): RECROB_PARTICIPANT_ID=team_xxx ./scripts/export_submission.sh
+
+compute:
+  platform: "MacBook Pro (Apple Silicon)"
+  cpu_cores: 8
+  ram_gb: 16
+  python_version: "3.11.9"
+  os: "macOS 25.5"
+  uses_gpu_for_inference: false
+  has_network_during_ranking: false
+  pre_computation_required: false
+  pre_computation_time_minutes: 0
+
+ai_tools_used:
+  - "Grok"
+  - "Cursor"
+
+ai_usage_summary: |
+  Used Grok and Cursor for architecture discussion, code review, and implementation
+  assistance. No candidate records from candidates.jsonl were sent to any LLM during
+  ranking. The offline ranker (rank.py) runs entirely locally with no network calls.
+
+methodology_summary: |
+  Hybrid offline ranker that mirrors how a senior recruiter shortlists for Redrob's
+  Senior AI Engineer role. We parse the JD into weighted components: title/career
+  alignment (32%), core AI/IR skills with endorsement-duration trust (28%), production
+  deployment signals in summaries (18%), experience band 5–9 years (12%), and India
+  location (10%). Redrob behavioral signals (response rate, GitHub, recruiter saves)
+  apply as a bounded multiplier. Honeypot defense combines weak-title caps, noise-skill
+  penalties (HTML/Tailwind stuffing), and explicit traps for unrelated titles with
+  inflated AI skill counts. Tie-breaking uses raw score, core skill depth, and
+  production signals — not candidate ID alone. Ranks 100K profiles in ~7s on CPU.
+
+declarations:
+  read_submission_spec: true
+  code_is_original_work: true
+  no_collusion: true
+  honeypot_check_done: true  # verified via: python scripts/check_honeypots.py submission.csv
+  reproduction_tested: true

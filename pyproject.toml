@@ -1,0 +1,19 @@
+[project]
+name = "recruitgpt-x"
+version = "0.1.0"
+description = "AI recruiter platform + Redrob hackathon offline ranker"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = []
+
+[project.optional-dependencies]
+backend = []  # install via: pip install -r backend/requirements.txt
+ranker = []     # rank.py uses stdlib; tests: pip install -r requirements-ranker.txt
+
+[tool.pytest.ini_options]
+testpaths = ["challenge", "backend/app/tests"]
+pythonpath = [".", "backend"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"

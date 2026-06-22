@@ -1,0 +1,5 @@
+# Redrob challenge offline ranker (stdlib only at runtime)
+-r requirements-ranker.txt
+
+# Full demo API — install when running the web app
+-r backend/requirements.txt

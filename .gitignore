@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+.env.local
+backend/.env
+frontend/.env.local
+*.db
+recruitgpt.db
+*.egg-info/
+
+# Node
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Hackathon dataset (465MB — download separately, see data/README.md)
+data/candidates.jsonl
+
+# Generated submission (export with scripts/export_submission.sh)
+submission.csv
+team_*.csv
+
+

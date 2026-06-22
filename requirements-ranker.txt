@@ -1,0 +1,3 @@
+# Minimal deps for hackathon offline ranker + tests
+# rank.py itself uses only Python stdlib.
+pytest>=8.0
