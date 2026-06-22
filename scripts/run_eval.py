@@ -61,7 +61,11 @@ def main() -> int:
     if b:
         print(f"Behavioral independent proxy — NDCG@10={b.get('ndcg_10')} MAP={b.get('map')}")
     if h:
-        print(f"Hand labels (sample) — NDCG@10={h.get('metrics', {}).get('ndcg_10')} n={h.get('n_labeled')}")
+        m50 = h.get("metrics_at_0.5") or h.get("metrics", {})
+        print(
+            f"Hand labels — NDCG@10={m50.get('ndcg_10')} p@10={m50.get('p_at_10')} "
+            f"n={h.get('n_labeled')} relevant@0.5={h.get('n_relevant_threshold_0.5')}"
+        )
     if best:
         print(f"Best ablation (behavioral proxy): {best.get('name')} NDCG@10={best.get('ndcg_10')}")
     print(f"Wrote {args.out} in {elapsed:.1f}s")

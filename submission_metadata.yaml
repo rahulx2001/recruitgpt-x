@@ -45,7 +45,8 @@ methodology_summary: |
   generated with CE OFF for byte-identical offline reproduction. TF-IDF JD proxy when npy absent.
   Resolves JD tensions: shipper over researcher, anti-keyword-stuffing, availability-weighted,
   anti-consulting, FAANG yellow-flag. Structural honeypot detection; CV/junior gate. ~49s on 100K
-  CPU, no network. Eval: hand labels + behavioral proxy — NOT hidden ground truth.
+  CPU, no network. Eval: 150 hand JD-tier labels + non-circular behavioral proxy (education/github
+  only; excludes recruiter saves/response rate). Embeddings: all-MiniLM-L6-v2@1110a243. NOT hidden GT.
 
 declarations:
   read_submission_spec: true

@@ -17,6 +17,26 @@ from challenge.embeddings import EmbeddingStore, candidate_text
 from challenge.redrob_ranker import load_candidates
 
 
+def _resolve_model_revision(model_name: str) -> str:
+    """Pin HF model revision for reproducible embeddings (offline meta only)."""
+    try:
+        from huggingface_hub import model_info
+
+        info = model_info(model_name)
+        return getattr(info, "sha", "") or "unknown"
+    except Exception:
+        pass
+    try:
+        import urllib.request
+
+        url = f"https://huggingface.co/api/models/{model_name}"
+        with urllib.request.urlopen(url, timeout=15) as resp:
+            data = json.loads(resp.read().decode())
+        return data.get("sha", "unknown")
+    except Exception:
+        return "unknown"
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description="Precompute career embeddings")
     p.add_argument(
@@ -72,11 +92,15 @@ def main() -> int:
         jd_embedding=jd_f32.astype(np.float16),
     )
     (args.out / "candidate_ids.json").write_text(json.dumps(ids), encoding="utf-8")
+    model_revision = _resolve_model_revision(model_name)
     meta = {
         "model": model_name,
+        "model_revision": model_revision,
         "n_candidates": len(ids),
         "dim": int(matrix.shape[1]),
         "elapsed_seconds": round(elapsed, 2),
+        "dtype_committed": "float16",
+        "artifact": "embeddings.fp16.npz",
     }
     (args.out / "meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
     print(f"==> Wrote {args.out} ({len(ids)} x {matrix.shape[1]}) in {elapsed:.1f}s")

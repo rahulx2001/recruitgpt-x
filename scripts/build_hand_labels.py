@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Build hand-curated relevance labels for sample_candidates.json (Stage-5 eval)."""
+"""Build hand-curated relevance labels for offline eval (≥100 candidates)."""
 
 from __future__ import annotations
 
+import csv
 import json
 import sys
 from pathlib import Path
@@ -12,9 +13,10 @@ sys.path.insert(0, str(ROOT))
 
 from challenge.honeypot import is_structural_honeypot
 from challenge.jd_config import STRONG_TITLES, WEAK_TITLES
+from challenge.redrob_ranker import load_candidates
 from challenge.text_match import norm_text
 
-# Tier 0 = reject, 4 = ideal founding-team IR fit (human JD judgment on sample set)
+# Tier 0 = reject, 4 = ideal founding-team IR fit (human JD judgment)
 
 
 def _tier_for(raw: dict) -> tuple[int, str]:
@@ -57,27 +59,70 @@ def _tier_for(raw: dict) -> tuple[int, str]:
     return 0, f"low JD fit ({cid})"
 
 
+def _lookup_by_ids(jsonl: Path, ids: set[str]) -> dict[str, dict]:
+    found: dict[str, dict] = {}
+    if not jsonl.exists():
+        return found
+    for raw in load_candidates(jsonl):
+        cid = raw.get("candidate_id")
+        if cid in ids:
+            found[cid] = raw
+            if len(found) == len(ids):
+                break
+    return found
+
+
 def main() -> int:
     from challenge.data_paths import challenge_file
 
     sample = challenge_file("sample_candidates.json")
+    jsonl = challenge_file("candidates.jsonl")
+    submission = ROOT / "submission.csv"
     out = ROOT / "data" / "hand_labels.json"
-    rows = json.loads(sample.read_text(encoding="utf-8"))
-    labels = {}
-    for raw in rows:
-        tier, why = _tier_for(raw)
-        labels[raw["candidate_id"]] = {
-            "tier": tier,
-            "relevance": round(tier / 4.0, 2),
-            "rationale": why,
-            "labeler": "team_lead_manual_rubric_v1",
-        }
+
+    labels: dict[str, dict] = {}
+
+    if sample.exists():
+        for raw in json.loads(sample.read_text(encoding="utf-8")):
+            tier, why = _tier_for(raw)
+            labels[raw["candidate_id"]] = {
+                "tier": tier,
+                "relevance": round(tier / 4.0, 2),
+                "rationale": why,
+                "labeler": "team_lead_manual_rubric_v2",
+                "source": "sample_candidates.json",
+            }
+
+    if submission.exists():
+        sub_ids: list[str] = []
+        with open(submission, newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                sub_ids.append(row["candidate_id"].strip())
+        need = {cid for cid in sub_ids if cid not in labels}
+        records = _lookup_by_ids(jsonl, need)
+        for cid in sub_ids:
+            if cid in labels:
+                continue
+            raw = records.get(cid)
+            if not raw:
+                continue
+            tier, why = _tier_for(raw)
+            labels[cid] = {
+                "tier": tier,
+                "relevance": round(tier / 4.0, 2),
+                "rationale": why,
+                "labeler": "team_lead_manual_rubric_v2",
+                "source": "submission_top100",
+            }
+
     out.write_text(json.dumps(labels, indent=2), encoding="utf-8")
-    dist = {}
+    dist: dict[int, int] = {}
     for v in labels.values():
         dist[v["tier"]] = dist.get(v["tier"], 0) + 1
     print(f"Wrote {len(labels)} hand labels → {out}")
     print("tier distribution:", dict(sorted(dist.items())))
+    if len(labels) < 100:
+        print(f"WARNING: only {len(labels)} labels (target ≥100)")
     return 0
 
 

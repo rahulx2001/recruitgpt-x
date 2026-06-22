@@ -160,6 +160,17 @@ def test_calibrated_scores_have_floor():
     assert all(cal[i] >= cal[i + 1] for i in range(len(cal) - 1))
 
 
+def test_behavioral_proxy_excludes_ranker_signals():
+    from challenge.eval_harness import behavioral_proxy_relevance
+
+    base = json.loads(SAMPLE.read_text(encoding="utf-8"))[0]
+    twin = json.loads(json.dumps(base))
+    twin["redrob_signals"]["saved_by_recruiters_30d"] = 99
+    twin["redrob_signals"]["recruiter_response_rate"] = 0.99
+    twin["redrob_signals"]["applications_submitted_30d"] = 50
+    assert behavioral_proxy_relevance(base) == behavioral_proxy_relevance(twin)
+
+
 def test_eval_harness_produces_metrics():
     from challenge.eval_harness import proxy_relevance, run_holdout_eval
 

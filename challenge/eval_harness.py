@@ -279,8 +279,13 @@ def evaluate_ranking(
 
 def behavioral_proxy_relevance(raw: Dict[str, Any]) -> float:
     """
-    Non-circular weak proxy: behavioral + education signals the ranker does NOT
-    use as primary features (no title/skills/semantic/production scoring).
+    Non-circular holdout proxy — signals the ranker does NOT consume.
+
+    Excludes: saved_by_recruiters_30d, profile_views, recruiter_response_rate,
+    applications_submitted_30d, open_to_work (used in engagement/availability).
+
+    Uses: education tier, github_activity_score, profile_completeness,
+    search_appearance_30d only.
     """
     signals = raw.get("redrob_signals", {}) or {}
     education = raw.get("education") or []
@@ -295,50 +300,65 @@ def behavioral_proxy_relevance(raw: Dict[str, Any]) -> float:
         elif t == "tier_3":
             tier_score = max(tier_score, 0.40)
 
-    saved = int(signals.get("saved_by_recruiters_30d", 0) or 0)
-    views = int(signals.get("profile_views_received_30d", 0) or 0)
     github = float(signals.get("github_activity_score", 0) or 0)
-    apps = int(signals.get("applications_submitted_30d", 0) or 0)
     search_app = int(signals.get("search_appearance_30d", 0) or 0)
+    completeness = float(signals.get("profile_completeness_score", 0) or 0)
 
-    beh = 0.15
-    beh += min(0.25, saved / 10.0)
-    beh += min(0.20, views / 50.0)
-    beh += min(0.15, github / 80.0)
-    beh += min(0.10, search_app / 30.0)
-    if apps > 25 and saved == 0:
-        beh *= 0.45
+    beh = 0.20
+    beh += min(0.35, github / 80.0)
+    beh += min(0.25, search_app / 40.0)
+    beh += min(0.20, completeness)
 
-    return round(min(1.0, 0.40 * tier_score + 0.60 * beh), 4)
+    return round(min(1.0, 0.45 * tier_score + 0.55 * beh), 4)
+
+
+def _metrics_dict(m: EvalMetrics) -> Dict[str, float]:
+    return {
+        "ndcg_10": m.ndcg_10,
+        "ndcg_50": m.ndcg_50,
+        "map": m.map_score,
+        "p_at_10": m.precision_10,
+    }
 
 
 def run_hand_label_eval(
-    sample_path: Path,
-    labels_path: Path,
+    rows: Sequence[Dict[str, Any]],
+    labels: Dict[str, Dict[str, Any]],
     *,
-    top_k: int = 25,
+    top_k: int | None = None,
 ) -> Dict[str, Any]:
-    rows = json.loads(sample_path.read_text(encoding="utf-8"))
-    labels = json.loads(labels_path.read_text(encoding="utf-8"))
+    """Evaluate ranker on human-tier labels (full labeled pool, not a truncated slice)."""
+    pool = [r for r in rows if r["candidate_id"] in labels]
     relevance = {
-        r["candidate_id"]: float(labels[r["candidate_id"]]["relevance"])
-        for r in rows
-        if r["candidate_id"] in labels
+        r["candidate_id"]: float(labels[r["candidate_id"]]["relevance"]) for r in pool
     }
-    ranked = rank_pool(rows, weights=DEFAULT_WEIGHTS)
-    ranked_ids = [cid for cid, _ in ranked[:top_k]]
-    m = evaluate_ranking(ranked_ids, relevance, relevant_threshold=0.5)
+    ranked = rank_pool(pool, weights=DEFAULT_WEIGHTS)
+    ranked_ids = [cid for cid, _ in ranked]
+    eval_k = top_k or len(ranked_ids)
+
+    m50 = evaluate_ranking(ranked_ids[:eval_k], relevance, relevant_threshold=0.5)
+    m25 = evaluate_ranking(ranked_ids[:eval_k], relevance, relevant_threshold=0.25)
+    n_rel_50 = sum(1 for v in relevance.values() if v >= 0.5)
+    n_rel_25 = sum(1 for v in relevance.values() if v >= 0.25)
+    n_rel_top10_50 = sum(
+        1 for cid in ranked_ids[:10] if relevance.get(cid, 0) >= 0.5
+    )
+
     return {
         "n_labeled": len(relevance),
-        "top_k": top_k,
-        "label_method": "hand_curated_sample_tiers",
-        "metrics": {
-            "ndcg_10": m.ndcg_10,
-            "ndcg_50": m.ndcg_50,
-            "map": m.map_score,
-            "p_at_10": m.precision_10,
-        },
-        "note": "Human-tier labels on sample_candidates.json — strongest defensible offline eval.",
+        "n_relevant_threshold_0.5": n_rel_50,
+        "n_relevant_threshold_0.25": n_rel_25,
+        "n_relevant_in_top10_at_0.5": n_rel_top10_50,
+        "eval_pool_size": eval_k,
+        "label_method": "hand_curated_jd_tiers_v2",
+        "metrics_at_0.5": _metrics_dict(m50),
+        "metrics_at_0.25": _metrics_dict(m25),
+        "metrics": _metrics_dict(m50),
+        "note": (
+            "Human JD tiers on sample + submission top-100. Sparse positives at 0.5 "
+            f"({n_rel_50}/{len(relevance)} labeled) explain p@10={m50.precision_10} "
+            f"with MAP={m50.map_score} when few tier≥2 labels exist."
+        ),
     }
 
 
@@ -372,9 +392,11 @@ def run_holdout_eval(
     best = max(ablation.items(), key=lambda x: x[1]["ndcg_10"])
     hand_block: Dict[str, Any] = {}
     hand_path = candidates_path.parent / "hand_labels.json"
-    sample_path = candidates_path.parent / "sample_candidates.json"
-    if hand_path.exists() and sample_path.exists():
-        hand_block = run_hand_label_eval(sample_path, hand_path, top_k=min(25, top_k))
+    if hand_path.exists():
+        labels = json.loads(hand_path.read_text(encoding="utf-8"))
+        pool_rows = _load_labeled_rows(candidates_path, labels)
+        if pool_rows:
+            hand_block = run_hand_label_eval(pool_rows, labels)
 
     return {
         "holdout": {
@@ -409,11 +431,35 @@ def run_holdout_eval(
         "weights_current": DEFAULT_WEIGHTS,
         "note": (
             "JD-rubric proxy is self-consistency only. Behavioral proxy uses education tier + "
-            "recruiter saves/views/github — signals NOT used as ranker features. Hand-label eval "
-            "on sample_candidates.json is the most defensible metric. NOT challenge hidden GT; "
-            "expect real composite ~0.60–0.68."
+            "github/search/completeness only (excludes saved_by_recruiters, response_rate, "
+            "applications — all ranker inputs). Hand-label eval is the most defensible metric. "
+            "NOT challenge hidden GT; expect real composite ~0.60–0.68."
         ),
     }
+
+
+def _load_labeled_rows(
+    candidates_path: Path, labels: Dict[str, Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """Load raw records for hand-labeled IDs from sample JSON and/or jsonl."""
+    want = set(labels)
+    found: Dict[str, Dict[str, Any]] = {}
+    sample_path = candidates_path.parent / "sample_candidates.json"
+    if sample_path.exists():
+        for raw in json.loads(sample_path.read_text(encoding="utf-8")):
+            cid = raw.get("candidate_id")
+            if cid in want:
+                found[cid] = raw
+    remaining = want - set(found)
+    if remaining and candidates_path.exists():
+        for raw in load_candidates(candidates_path):
+            cid = raw.get("candidate_id")
+            if cid in remaining:
+                found[cid] = raw
+                remaining.discard(cid)
+                if not remaining:
+                    break
+    return [found[cid] for cid in sorted(found)]
 
 
 def write_eval_report(path: Path, report: Dict[str, Any]) -> None:

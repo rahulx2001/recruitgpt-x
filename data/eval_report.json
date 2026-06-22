@@ -14,22 +14,37 @@
     "p_at_10": 0.9
   },
   "metrics_behavioral_independent_proxy": {
-    "ndcg_10": 0.8964,
-    "ndcg_50": 0.9396,
-    "map": 0.9982,
+    "ndcg_10": 0.8687,
+    "ndcg_50": 0.9162,
+    "map": 0.9916,
     "p_at_10": 1.0
   },
   "hand_label_eval": {
-    "n_labeled": 50,
-    "top_k": 25,
-    "label_method": "hand_curated_sample_tiers",
-    "metrics": {
-      "ndcg_10": 0.9448,
-      "ndcg_50": 0.9448,
-      "map": 1.0,
-      "p_at_10": 0.1
+    "n_labeled": 150,
+    "n_relevant_threshold_0.5": 88,
+    "n_relevant_threshold_0.25": 102,
+    "n_relevant_in_top10_at_0.5": 10,
+    "eval_pool_size": 150,
+    "label_method": "hand_curated_jd_tiers_v2",
+    "metrics_at_0.5": {
+      "ndcg_10": 0.6888,
+      "ndcg_50": 0.7893,
+      "map": 0.9681,
+      "p_at_10": 1.0
     },
-    "note": "Human-tier labels on sample_candidates.json \u2014 strongest defensible offline eval."
+    "metrics_at_0.25": {
+      "ndcg_10": 0.6888,
+      "ndcg_50": 0.7893,
+      "map": 0.9998,
+      "p_at_10": 1.0
+    },
+    "metrics": {
+      "ndcg_10": 0.6888,
+      "ndcg_50": 0.7893,
+      "map": 0.9681,
+      "p_at_10": 1.0
+    },
+    "note": "Human JD tiers on sample + submission top-100. Sparse positives at 0.5 (88/150 labeled) explain p@10=1.0 with MAP=0.9681 when few tier\u22652 labels exist."
   },
   "metrics_current_weights": {
     "ndcg_10": 0.8648,
@@ -39,41 +54,41 @@
   },
   "weight_ablation_on_behavioral_proxy": {
     "current": {
-      "ndcg_10": 0.8964,
-      "ndcg_50": 0.9396,
-      "map": 0.9982,
+      "ndcg_10": 0.8687,
+      "ndcg_50": 0.9162,
+      "map": 0.9916,
       "p_at_10": 1.0
     },
     "semantic_heavy": {
-      "ndcg_10": 0.8945,
-      "ndcg_50": 0.9407,
-      "map": 0.9968,
+      "ndcg_10": 0.8748,
+      "ndcg_50": 0.9197,
+      "map": 0.9902,
       "p_at_10": 1.0
     },
     "title_heavy": {
-      "ndcg_10": 0.9099,
-      "ndcg_50": 0.9392,
-      "map": 0.9968,
+      "ndcg_10": 0.8834,
+      "ndcg_50": 0.9148,
+      "map": 0.987,
       "p_at_10": 1.0
     },
     "availability_heavy": {
-      "ndcg_10": 0.8895,
-      "ndcg_50": 0.9332,
-      "map": 1.0,
+      "ndcg_10": 0.8749,
+      "ndcg_50": 0.9122,
+      "map": 0.9934,
       "p_at_10": 1.0
     },
     "uniform": {
-      "ndcg_10": 0.8719,
-      "ndcg_50": 0.9353,
-      "map": 1.0,
+      "ndcg_10": 0.8435,
+      "ndcg_50": 0.9118,
+      "map": 0.9905,
       "p_at_10": 1.0
     }
   },
   "best_preset_by_ndcg10": {
     "name": "title_heavy",
-    "ndcg_10": 0.9099,
-    "ndcg_50": 0.9392,
-    "map": 0.9968,
+    "ndcg_10": 0.8834,
+    "ndcg_50": 0.9148,
+    "map": 0.987,
     "p_at_10": 1.0
   },
   "weights_current": {
@@ -88,6 +103,6 @@
     "location": 0.04,
     "engagement": 0.06
   },
-  "note": "JD-rubric proxy is self-consistency only. Behavioral proxy uses education tier + recruiter saves/views/github \u2014 signals NOT used as ranker features. Hand-label eval on sample_candidates.json is the most defensible metric. NOT challenge hidden GT; expect real composite ~0.60\u20130.68.",
-  "runtime_seconds": 15.85
+  "note": "JD-rubric proxy is self-consistency only. Behavioral proxy uses education tier + github/search/completeness only (excludes saved_by_recruiters, response_rate, applications \u2014 all ranker inputs). Hand-label eval is the most defensible metric. NOT challenge hidden GT; expect real composite ~0.60\u20130.68.",
+  "runtime_seconds": 17.31
 }

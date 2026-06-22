@@ -1,6 +1,9 @@
 {
   "model": "sentence-transformers/all-MiniLM-L6-v2",
+  "model_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
   "n_candidates": 100000,
   "dim": 384,
-  "elapsed_seconds": 624.89
+  "elapsed_seconds": 624.89,
+  "dtype_committed": "float16",
+  "artifact": "embeddings.fp16.npz"
 }
