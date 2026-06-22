@@ -37,22 +37,42 @@ class EmbeddingStore:
         self._load()
 
     def _load(self) -> None:
-        emb_path = self.root / "embeddings.npy"
-        jd_path = self.root / "jd_embedding.npy"
         ids_path = self.root / "candidate_ids.json"
-        if not (emb_path.exists() and jd_path.exists() and ids_path.exists()):
+        if not ids_path.exists():
             return
-        try:
-            matrix = np.load(emb_path)
-            jd = np.load(jd_path)
-            ids = json.loads(ids_path.read_text(encoding="utf-8"))
-            if len(ids) != matrix.shape[0]:
+
+        matrix: np.ndarray | None = None
+        jd: np.ndarray | None = None
+
+        npz_path = self.root / "embeddings.fp16.npz"
+        if npz_path.exists():
+            try:
+                with np.load(npz_path) as z:
+                    matrix = z["embeddings"].astype(np.float32)
+                    jd = z["jd_embedding"].astype(np.float32)
+            except (OSError, ValueError, KeyError):
+                matrix = jd = None
+
+        if matrix is None:
+            emb_path = self.root / "embeddings.npy"
+            jd_path = self.root / "jd_embedding.npy"
+            if not (emb_path.exists() and jd_path.exists()):
                 return
-            self._matrix = matrix.astype(np.float32)
-            self._jd = jd.astype(np.float32)
+            try:
+                matrix = np.load(emb_path).astype(np.float32)
+                jd = np.load(jd_path).astype(np.float32)
+            except OSError:
+                return
+
+        try:
+            ids = json.loads(ids_path.read_text(encoding="utf-8"))
+            if matrix is None or jd is None or len(ids) != matrix.shape[0]:
+                return
+            self._matrix = matrix
+            self._jd = jd
             self._ids = {cid: i for i, cid in enumerate(ids)}
             self.available = True
-        except (OSError, ValueError, json.JSONDecodeError):
+        except (ValueError, json.JSONDecodeError):
             self.available = False
 
     def cosine_vs_jd(self, candidate_id: str) -> Optional[float]:

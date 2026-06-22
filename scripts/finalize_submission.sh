@@ -25,11 +25,7 @@ if [[ ! -f data/embeddings/embeddings.npy ]]; then
   echo
 fi
 
-echo "==> Ranking 100K candidates (CPU, offline)..."
-t0=$(date +%s%N)
-python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv
-elapsed_ms=$(( ($(date +%s%N) - t0) / 1000000 ))
-echo "    Done in ${elapsed_ms}ms"
+bash scripts/reproduce_ranking.sh
 echo
 
 echo "==> Validation suite..."

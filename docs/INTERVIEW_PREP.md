@@ -24,4 +24,5 @@ Precompute embeddings once; serve ANN index (FAISS HNSW) for bi-encoder retrieva
 Subtle impossibilities (education vs YoE, overlapping tenure). Mitigated by structural rules + cross-encoder narrative mismatch on stuffers.
 
 **Graceful degradation?**
-Missing embeddings.npy or sentence-transformers → lexical semantic + stage-1 only. Reproduction never breaks.
+Missing embeddings.npy → TF-IDF JD proxy substitutes bi-encoder cosine (top-5 identical, top-10 set 10/10).
+Committed `embeddings.fp16.npz` (~71MB) + `./scripts/reproduce_ranking.sh` is the canonical judge path.

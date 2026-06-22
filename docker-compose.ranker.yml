@@ -8,6 +8,7 @@ services:
     network_mode: none
     volumes:
       - ./data/candidates.jsonl:/app/data/candidates.jsonl:ro
+      - ./data/embeddings:/app/data/embeddings:ro
     command: >
       python rank.py
       --candidates ./data/candidates.jsonl

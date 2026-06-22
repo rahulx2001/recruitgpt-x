@@ -36,8 +36,9 @@ logs/
 data/candidates.jsonl
 data/embeddings/*.npy
 
-# Generated submission (export with scripts/export_submission.sh)
-submission.csv
+# Committed reproduction artifacts (see scripts/reproduce_ranking.sh)
+!submission.csv
+!data/embeddings/embeddings.fp16.npz
 submission_*.csv
 team_*.csv
 

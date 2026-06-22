@@ -62,8 +62,15 @@ def main() -> int:
     elapsed = time.perf_counter() - t0
 
     args.out.mkdir(parents=True, exist_ok=True)
-    np.save(args.out / "embeddings.npy", matrix.astype("float32"))
-    np.save(args.out / "jd_embedding.npy", jd_emb.astype("float32"))
+    matrix_f32 = matrix.astype(np.float32)
+    jd_f32 = jd_emb.astype(np.float32)
+    np.save(args.out / "embeddings.npy", matrix_f32)
+    np.save(args.out / "jd_embedding.npy", jd_f32)
+    np.savez_compressed(
+        args.out / "embeddings.fp16.npz",
+        embeddings=matrix_f32.astype(np.float16),
+        jd_embedding=jd_f32.astype(np.float16),
+    )
     (args.out / "candidate_ids.json").write_text(json.dumps(ids), encoding="utf-8")
     meta = {
         "model": model_name,

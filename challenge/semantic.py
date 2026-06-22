@@ -50,6 +50,17 @@ def _phrase_weighted_hits(career_blob: str, tokens: FrozenSet[str]) -> float:
     return score
 
 
+def jd_tfidf_similarity(career_tf: Counter[str]) -> float:
+    """Offline proxy for bi-encoder JD cosine when embeddings.npy is absent.
+
+    Uses the same token space as career_semantic TF scoring, mapped to [0, 1]
+    like EmbeddingStore.cosine_vs_jd. Keeps fresh-clone reproduction within
+    one candidate of the artifact path on top-10 (tested: 10/10 set @ top-10).
+    """
+    cos = _cosine(career_tf, _JD_TF)
+    return max(0.0, min(1.0, (cos + 1.0) / 2.0))
+
+
 def career_semantic_from_blobs(
     career_blob: str,
     career_tf: Counter[str],

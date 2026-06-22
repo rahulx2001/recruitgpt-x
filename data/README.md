@@ -40,4 +40,12 @@ export CHALLENGE_DATA_ROOT="/path/to/India_runs_data_and_ai_challenge"
 python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv
 ```
 
-Generated outputs (`submission.csv`, `embeddings/`, `eval_report.json`) stay in the repo; **inputs** always come from the official bundle.
+Reproduction artifacts committed for judges:
+
+| File | Purpose |
+|------|---------|
+| `submission.csv` | Canonical top-100 (regenerate with `./scripts/reproduce_ranking.sh`) |
+| `data/embeddings/embeddings.fp16.npz` | ~71MB bi-encoder bundle (GitHub-safe; Docker + offline rank) |
+| `data/embeddings/candidate_ids.json` | ID index aligned with npz |
+
+Full-precision `embeddings.npy` stays local/gitignored. **Inputs** always come from the official bundle.

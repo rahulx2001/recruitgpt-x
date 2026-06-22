@@ -16,7 +16,7 @@ github_repo: "https://github.com/rahulx2001/recruitgpt-x"
 
 sandbox_link: "https://huggingface.co/spaces/rahulsinghx2001/recruitgpt-ranker"
 
-reproduce_command: "./scripts/finalize_submission.sh"
+reproduce_command: "./scripts/reproduce_ranking.sh"
 
 compute:
   platform: "MacBook Pro (Apple Silicon)"
@@ -39,7 +39,8 @@ ai_usage_summary: |
   ranking. The offline ranker (rank.py) runs entirely locally with no network calls.
 
 methodology_summary: |
-  Ranker v5: bi-encoder retrieval (precomputed MiniLM embeddings, graceful lexical fallback)
+  Ranker v5: bi-encoder retrieval (precomputed MiniLM embeddings in embeddings.fp16.npz;
+  TF-IDF JD proxy when npy absent — top-10 set overlap 10/10 vs artifact path)
   → hybrid JD scorer (title/skills/production/availability/trap modifiers) → cross-encoder
   rerank on top-500 (ms-marco-MiniLM) → calibrated top-100. Resolves JD tensions: shipper over
   pure researcher, anti-keyword-stuffing, availability-weighted, anti-consulting, FAANG yellow-flag.

@@ -8,6 +8,8 @@ COPY rank.py pyproject.toml requirements-ranker.txt ./
 COPY challenge/ ./challenge/
 COPY data/sample_candidates.json ./data/sample_candidates.json
 COPY data/embeddings/candidate_ids.json data/embeddings/meta.json ./data/embeddings/
+# fp16 bundle (~71MB) enables v5 ranker without network; falls back to TF-IDF proxy if absent
+COPY data/embeddings/embeddings.fp16.npz ./data/embeddings/
 COPY scripts/validate_submission.py scripts/check_honeypots.py scripts/validate_submission_ids.py ./scripts/
 COPY scripts/precompute_embeddings.py ./scripts/
 

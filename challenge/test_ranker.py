@@ -258,3 +258,46 @@ def test_runtime_under_budget():
     elapsed = time.perf_counter() - t0
     assert elapsed < 300.0, f"ranking took {elapsed:.1f}s — exceeds 300s budget"
     assert elapsed < 180.0, f"ranking took {elapsed:.1f}s — target <180s with rerank"
+
+
+def test_no_embeddings_top10_overlap():
+    """Fresh clone without npy must stay within 1 ID of artifact path on top-10."""
+    if not CANDIDATES.exists():
+        return
+    import challenge.embeddings as emb_mod
+
+    emb_top = rank_candidates(CANDIDATES, top_k=100)
+    emb_ids = [r.candidate_id for r in emb_top]
+
+    empty = ROOT / "data" / "_no_emb_dir"
+    empty.mkdir(exist_ok=True)
+    old_root = emb_mod._DEFAULT_DIR
+    emb_mod._DEFAULT_DIR = empty
+    import challenge.redrob_ranker as rr
+
+    rr._EMBED_STORE = None
+    try:
+        no_top = rank_candidates(CANDIDATES, top_k=100)
+    finally:
+        emb_mod._DEFAULT_DIR = old_root
+        rr._EMBED_STORE = None
+
+    no_ids = [r.candidate_id for r in no_top]
+    overlap10 = len(set(emb_ids[:10]) & set(no_ids[:10]))
+    assert overlap10 >= 9, f"no-embeddings top-10 overlap {overlap10}/10"
+    assert no_ids[:5] == emb_ids[:5], f"top-5 drift without embeddings: {no_ids[:5]} vs {emb_ids[:5]}"
+
+
+def test_submission_artifact_matches_ranker():
+    """Committed submission.csv must match fresh rank.py on top-100 set."""
+    artifact = ROOT / "submission.csv"
+    if not artifact.exists() or not CANDIDATES.exists():
+        return
+    import csv
+
+    with open(artifact, newline="", encoding="utf-8") as f:
+        committed = [row["candidate_id"] for row in csv.DictReader(f)]
+    fresh = rank_candidates(CANDIDATES, top_k=100)
+    fresh_ids = [r.candidate_id for r in fresh]
+    assert len(committed) == 100 and len(fresh_ids) == 100
+    assert set(committed) == set(fresh_ids), "submission.csv stale vs current ranker"

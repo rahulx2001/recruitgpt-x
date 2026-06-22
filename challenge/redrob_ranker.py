@@ -26,6 +26,7 @@ from challenge.features import (
     production_score,
     semantic_score,
 )
+from challenge.semantic import jd_tfidf_similarity
 from challenge.honeypot import honeypot_risk, risk_to_penalty
 from challenge.jd_config import (
     CONSULTING_FIRMS,
@@ -463,6 +464,8 @@ def score_candidate(
     loc_s = _location_score(profile)
     jd_s = jd_overlap_score(idx)
     bi_enc = _embedding_store().cosine_vs_jd(cid)
+    if bi_enc is None:
+        bi_enc = jd_tfidf_similarity(idx.career_tf)
     sem_s = semantic_score(idx, bi_enc)
     avail_s = availability_score(signals)
     ir_vals = _ir_vals_from_signals(signals)
