@@ -19,6 +19,8 @@ fi
 
 python rank.py --candidates ./data/candidates.jsonl --out "./${PARTICIPANT_ID}.csv"
 python scripts/validate_submission.py "./${PARTICIPANT_ID}.csv"
+python scripts/validate_submission_ids.py "./${PARTICIPANT_ID}.csv"
 python scripts/check_honeypots.py "./${PARTICIPANT_ID}.csv"
+python scripts/validate_reasoning.py "./${PARTICIPANT_ID}.csv"
 
 echo "Ready for upload: ${PARTICIPANT_ID}.csv"

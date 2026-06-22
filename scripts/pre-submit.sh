@@ -70,6 +70,18 @@ if [[ -f data/candidates.jsonl ]]; then
   else
     bad "honeypot check failed"
   fi
+
+  if python scripts/validate_submission_ids.py submission.csv >/dev/null 2>&1; then
+    ok "candidate IDs verified in jsonl"
+  else
+    bad "unknown candidate IDs in submission"
+  fi
+
+  if python scripts/validate_reasoning.py submission.csv >/dev/null 2>&1; then
+    ok "reasoning quality checks"
+  else
+    bad "reasoning validation failed"
+  fi
 else
   bad "data/candidates.jsonl missing (see data/README.md)"
 fi

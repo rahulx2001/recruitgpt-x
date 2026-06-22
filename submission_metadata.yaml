@@ -20,10 +20,11 @@ sandbox_link: "https://huggingface.co/spaces/rahulkumarsinghj/recruitgpt-ranker"
 # See docs/DEPLOY.md for the HuggingFace Spaces deploy instructions.
 # (Replace this URL with the real Space URL after `hf spaces push`.)
 
-reproduce_command: "python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv"
-# Portal CSV filename (§2): RECROB_PARTICIPANT_ID=team_xxx ./scripts/export_submission.sh
-# Docker alternative: docker compose -f docker-compose.ranker.yml run --rm ranker
-# Pre-push checklist: ./scripts/pre-submit.sh
+reproduce_command: "./scripts/finalize_submission.sh"
+# Or: python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv
+# Portal export: RECROB_PARTICIPANT_ID=team_xxx ./scripts/finalize_submission.sh
+# Docker: docker compose -f docker-compose.ranker.yml run --rm ranker
+# Full checklist: ./scripts/pre-submit.sh
 
 compute:
   platform: "MacBook Pro (Apple Silicon)"
@@ -46,15 +47,17 @@ ai_usage_summary: |
   ranking. The offline ranker (rank.py) runs entirely locally with no network calls.
 
 methodology_summary: |
-  Hybrid offline ranker that mirrors how a senior recruiter shortlists for Redrob's
-  Senior AI Engineer role. We parse the JD into weighted components: title/career
-  alignment (32%), core AI/IR skills with endorsement-duration trust (28%), production
-  deployment signals in summaries (18%), experience band 5–9 years (12%), and India
-  location (10%). Redrob behavioral signals (response rate, GitHub, recruiter saves)
-  apply as a bounded multiplier. Honeypot defense combines weak-title caps, noise-skill
-  penalties (HTML/Tailwind stuffing), and explicit traps for unrelated titles with
-  inflated AI skill counts. Tie-breaking uses raw score, core skill depth, and
-  production signals — not candidate ID alone. Ranks 100K profiles in ~7s on CPU.
+  Hybrid offline ranker mirroring a senior recruiter shortlisting for Redrob's founding
+  Senior AI Engineer role. Weighted components: title/career alignment (30%), core
+  AI/IR skills with endorsement-duration trust (27%), production deployment signals
+  (17%), JD lexical overlap for retrieval/ranking mandate (6%), experience band 5–9y
+  (11%), and India location with Pune/Noida boost (9%). Modifiers: product-company
+  pedigree, notice-period, consulting penalty, framework-chaser demotion, behavioral
+  signals (response rate, GitHub, recruiter saves), and honeypot traps for weak titles
+  with inflated AI skill counts. Recommendation Systems and Search Engineer titles get
+  explicit boosts per JD's ranking/retrieval ownership mandate. Tie-breaking: raw score,
+  core skill depth, production, JD overlap, skills — not candidate ID alone. ~15s on
+  100K CPU, zero network calls.
 
 declarations:
   read_submission_spec: true

@@ -75,3 +75,33 @@ def test_full_dataset_top100_no_honeypots():
     for row in top:
         title = row.reasoning.split(" with ")[0].lower()
         assert not any(w in title for w in WEAK_TITLES), row.reasoning
+
+
+def test_top10_reasoning_varied_openers():
+    candidates = ROOT / "data" / "candidates.jsonl"
+    if not candidates.exists():
+        return
+    top = rank_candidates(candidates, top_k=10)
+    openers = {r.reasoning.split(".")[0] for r in top}
+    assert len(openers) >= 7, f"Top-10 reasoning too repetitive: {openers}"
+    stale = sum(1 for r in top if "Top pick for Redrob Senior AI Engineer" in r.reasoning)
+    assert stale < 3, "Top-10 still uses old template"
+
+
+def test_recommendation_engineers_rank_well():
+    candidates = ROOT / "data" / "candidates.jsonl"
+    if not candidates.exists():
+        return
+    top = rank_candidates(candidates, top_k=50)
+    rec_in_top = sum(
+        1
+        for r in top
+        if "recommendation" in r.reasoning.lower().split("—")[0]
+    )
+    assert rec_in_top >= 3, "Recommendation Systems Engineers under-represented in top 50"
+
+
+def test_jd_overlap_component_present():
+    data = json.loads(SAMPLE.read_text(encoding="utf-8"))
+    row = score_candidate(data[0])
+    assert "jd_overlap" in row.components

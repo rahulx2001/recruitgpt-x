@@ -16,10 +16,13 @@ from challenge.jd_config import (
     EXP_IDEAL_LO,
     EXP_MAX,
     EXP_MIN,
+    FRAMEWORK_NOISE,
     GOOD_TITLES,
     HONEYPOT_SKILL_NOISE,
     INDIA_LOCATIONS,
+    JD_OVERLAP_PHRASES,
     PREFERRED_LOCATIONS,
+    PRODUCT_COMPANY_SIGNALS,
     SECONDARY_AI_SKILLS,
     STRONG_TITLES,
     WEAK_TITLES,
@@ -66,16 +69,17 @@ def _title_score(title: str, history: List[Dict[str, Any]]) -> float:
     for ti in titles:
         if "senior ai engineer" in ti:
             best = max(best, 1.08)
+        elif "recommendation systems" in ti:
+            best = max(best, 1.07)
         elif any(
             s in ti
             for s in (
-                "recommendation systems",
                 "search engineer",
                 "information retrieval",
                 "nlp engineer",
             )
         ):
-            best = max(best, 1.04)
+            best = max(best, 1.05)
         elif any(s in ti for s in STRONG_TITLES):
             best = max(best, 1.0)
         elif any(g in ti for g in GOOD_TITLES):
@@ -129,14 +133,69 @@ def _skills_score(skills: List[Dict[str, Any]]) -> Tuple[float, int, int]:
     return min(1.0, raw * noise_penalty), core, noise
 
 
-def _production_score(profile: Dict[str, Any], history: List[Dict[str, Any]]) -> float:
-    blob = " ".join(
+def _profile_blob(profile: Dict[str, Any], history: List[Dict[str, Any]]) -> str:
+    return " ".join(
         [
             profile.get("summary", ""),
             profile.get("headline", ""),
             *[h.get("description", "") for h in history],
         ]
     ).lower()
+
+
+def _jd_overlap_score(profile: Dict[str, Any], history: List[Dict[str, Any]]) -> float:
+    """Lexical overlap with JD mandate — lightweight semantic proxy, no embeddings."""
+    blob = _profile_blob(profile, history)
+    hits = sum(1 for phrase in JD_OVERLAP_PHRASES if phrase in blob)
+    return min(1.0, hits / 8.0)
+
+
+def _product_company_boost(profile: Dict[str, Any], history: List[Dict[str, Any]]) -> float:
+    firms = [_norm(profile.get("current_company", ""))]
+    firms.extend(_norm(h.get("company", "")) for h in history[:3])
+    product_hits = sum(
+        1 for f in firms if any(p in f for p in PRODUCT_COMPANY_SIGNALS)
+    )
+    if product_hits >= 2:
+        return 1.05
+    if product_hits == 1:
+        return 1.02
+    return 1.0
+
+
+def _notice_modifier(signals: Dict[str, Any]) -> float:
+    notice = int(signals.get("notice_period_days", 0) or 0)
+    if notice >= 90:
+        return 0.92
+    if notice >= 60:
+        return 0.96
+    if notice <= 30:
+        return 1.02
+    return 1.0
+
+
+def _title_chaser_penalty(history: List[Dict[str, Any]]) -> float:
+    if len(history) < 3:
+        return 1.0
+    short = sum(1 for h in history if int(h.get("duration_months", 0) or 0) < 18)
+    if short >= 3:
+        return 0.88
+    if short >= 2:
+        return 0.94
+    return 1.0
+
+
+def _framework_penalty(skills: List[Dict[str, Any]], core_n: int) -> float:
+    fw = sum(1 for s in skills if any(n in _norm_skill(s.get("name", "")) for n in FRAMEWORK_NOISE))
+    if fw >= 2 and core_n <= 3:
+        return 0.9
+    if fw >= 3:
+        return 0.93
+    return 1.0
+
+
+def _production_score(profile: Dict[str, Any], history: List[Dict[str, Any]]) -> float:
+    blob = _profile_blob(profile, history)
     signals = [
         "production",
         "deployed",
@@ -210,6 +269,14 @@ def _top_skill_names(skills: List[Dict[str, Any]], bucket: str, limit: int = 3) 
     return names[:limit]
 
 
+def _prior_product_role(history: List[Dict[str, Any]]) -> str:
+    for h in history[:4]:
+        co = h.get("company", "")
+        if co and any(p in _norm(co) for p in PRODUCT_COMPANY_SIGNALS):
+            return co
+    return ""
+
+
 def _build_reasoning(
     raw: Dict[str, Any],
     *,
@@ -232,15 +299,21 @@ def _build_reasoning(
     rr = float(signals.get("recruiter_response_rate", 0) or 0)
     notice = int(signals.get("notice_period_days", 0) or 0)
     gh = float(signals.get("github_activity_score", -1) or -1)
+    prior_co = _prior_product_role(history)
 
     core_names = _top_skill_names(skills, "core", 3)
     skill_phrase = ", ".join(core_names) if core_names else "limited core IR stack"
 
     jd_bits: List[str] = []
-    if "senior ai engineer" in _norm(title):
+    norm_title = _norm(title)
+    if "senior ai engineer" in norm_title:
         jd_bits.append("exact JD title match")
-    elif any(t in _norm(title) for t in ("nlp", "search", "recommendation", "retrieval")):
-        jd_bits.append("strong IR/NLP alignment for embeddings+retrieval work")
+    elif "recommendation systems" in norm_title:
+        jd_bits.append("shipped ranking/recommendation systems — core Redrob product mandate")
+    elif any(t in norm_title for t in ("search engineer", "information retrieval")):
+        jd_bits.append("search/IR background maps directly to hybrid retrieval ownership")
+    elif any(t in norm_title for t in ("nlp", "retrieval")):
+        jd_bits.append("NLP+retrieval depth for embeddings-based matching")
     elif core_n >= 5:
         jd_bits.append("deep vector-search stack")
     elif core_n >= 3:
@@ -250,10 +323,14 @@ def _build_reasoning(
 
     if prod_s >= 0.85:
         jd_bits.append("production deployment language in career history")
+    if components.get("jd_overlap", 0) >= 0.75:
+        jd_bits.append("high lexical overlap with JD retrieval/ranking requirements")
     if EXP_IDEAL_LO <= yrs <= EXP_IDEAL_HI:
         jd_bits.append("experience in JD's 5–9y band")
     if any(c in _norm(loc) for c in PREFERRED_LOCATIONS):
         jd_bits.append("Pune/Noida-preferred location")
+    if components.get("product", 1.0) > 1.0 and company:
+        jd_bits.append(f"product-company pedigree ({company})")
 
     concerns: List[str] = []
     if yrs < EXP_MIN:
@@ -281,10 +358,39 @@ def _build_reasoning(
     co = f" @ {company}" if company else ""
     lead = f"{title}{co} — {yrs:.1f}y in {loc}; skills: {skill_phrase}."
 
+    if rank == 1:
+        tone = (
+            f"Best overall fit for Redrob's founding Senior AI Engineer role — "
+            f"{'; '.join(jd_bits[:3])}."
+        )
+    elif rank <= 3:
+        tone = (
+            f"Near-perfect match for owning retrieval/ranking at Redrob — "
+            f"{jd_bits[0]}"
+            + (f"; previously at {prior_co}" if prior_co and prior_co != company else "")
+            + "."
+        )
+    elif rank <= 5:
+        tone = (
+            f"Strong founding-team shortlist — {', '.join(jd_bits[:2])}; "
+            f"matches JD's shipper-over-researcher profile."
+        )
+    elif rank <= 7:
+        tone = (
+            f"Would advance to technical screen — {jd_bits[0]} with "
+            f"{core_n} core IR skills and {rr:.0%} recruiter response."
+        )
+    elif rank <= 10:
+        tone = (
+            f"Top-decile candidate for embeddings+retrieval work — "
+            f"{', '.join(jd_bits[:2])}."
+        )
+    else:
+        tone = ""
+
     if rank <= 10:
-        tone = f"Top pick for Redrob Senior AI Engineer: {', '.join(jd_bits)}."
         if concerns:
-            tone += f" Minor flags: {'; '.join(concerns[:2])}."
+            tone += f" Watch: {'; '.join(concerns[:2])}."
         return f"{lead} {tone}"
 
     if rank <= 50:
@@ -336,20 +442,28 @@ def score_candidate(raw: Dict[str, Any]) -> ScoredCandidate:
     skill_s, core_n, noise_n = _skills_score(skills)
     prod_s = _production_score(profile, history)
     loc_s = _location_score(profile)
+    jd_s = _jd_overlap_score(profile, history)
     consult_m = _consulting_penalty(history)
     beh_m = _behavioral_modifier(signals)
+    product_m = _product_company_boost(profile, history)
+    notice_m = _notice_modifier(signals)
+    chaser_m = _title_chaser_penalty(history)
+    framework_m = _framework_penalty(skills, core_n)
     honey_m = _honeypot_penalty(
         profile.get("current_title", ""), core_n, noise_n, title_s
     )
 
     base = (
-        title_s * 0.32
-        + skill_s * 0.28
-        + exp_s * 0.12
-        + prod_s * 0.18
-        + loc_s * 0.10
+        title_s * 0.30
+        + skill_s * 0.27
+        + exp_s * 0.11
+        + prod_s * 0.17
+        + loc_s * 0.09
+        + jd_s * 0.06
     )
-    raw_final = base * consult_m * beh_m * honey_m
+    raw_final = (
+        base * consult_m * beh_m * honey_m * product_m * notice_m * chaser_m * framework_m
+    )
     final = round(min(0.9999, max(0.0001, raw_final)), 4)
 
     components = {
@@ -358,7 +472,9 @@ def score_candidate(raw: Dict[str, Any]) -> ScoredCandidate:
         "experience": exp_s,
         "production": prod_s,
         "location": loc_s,
+        "jd_overlap": jd_s,
         "behavioral": beh_m,
+        "product": product_m,
         "honeypot": honey_m,
     }
     # Placeholder; write_submission fills rank-aware reasoning per §3.4
@@ -398,6 +514,7 @@ def rank_candidates(
             -x.raw_score,
             -x.core_skill_count,
             -x.components["production"],
+            -x.components["jd_overlap"],
             -x.components["skills"],
             -x.components["behavioral"],
             x.candidate_id,

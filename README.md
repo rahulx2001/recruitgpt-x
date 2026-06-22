@@ -181,13 +181,14 @@ Importing all 100K into SQLite is possible (`--limit 100000`) but slow and heavy
 The challenge requires a **CPU-only, no-network** ranker over `candidates.jsonl`. Use the `challenge/` module at the repo root:
 
 ```bash
-# Dataset already copied to data/candidates.jsonl (100K profiles)
-pip install -r requirements-ranker.txt   # pytest only; rank.py uses stdlib
-python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv
-python scripts/validate_submission.py submission.csv   # must print "Submission is valid."
-python scripts/check_honeypots.py submission.csv       # must print "PASS"
-RECROB_PARTICIPANT_ID=team_xxx ./scripts/export_submission.sh  # portal filename §2
-./scripts/pre-submit.sh                                        # full checklist before push
+# One-command pipeline (rank + validate + tests):
+./scripts/finalize_submission.sh
+
+# Portal export with your registered participant ID:
+RECROB_PARTICIPANT_ID=team_xxx ./scripts/finalize_submission.sh
+
+# Full pre-push checklist (metadata, docker, backend):
+./scripts/pre-submit.sh
 ```
 
 ### Docker reproduction (Stage 3)
@@ -221,10 +222,11 @@ See `sandbox/README.md` for Space deploy steps.
 
 ### Ranking approach (summary)
 
-1. **Title + career** — Strong match for Senior AI / ML / IR roles; honeypot titles (HR Manager, Accountant, etc.) heavily penalized.
-2. **Skills** — Core AI/IR skills (embeddings, retrieval, vector DBs, PyTorch) with endorsement + duration trust; noise skills demoted.
-3. **Production signals** — Deployment, scale, NDCG/MRR language in summaries and history.
-4. **Redrob behavioral modifier** — Response rate, GitHub activity, recruiter saves, profile completeness.
-5. **Honeypot traps** — Unrelated title + inflated AI skill count → multiplicative penalty.
+1. **Title + career** — Senior AI / Recommendation Systems / Search / ML roles boosted; honeypot titles heavily penalized.
+2. **Skills** — Core AI/IR skills (embeddings, retrieval, vector DBs, ranking) with endorsement + duration trust.
+3. **JD overlap** — Lexical match to retrieval/ranking mandate (no embeddings, CPU-safe).
+4. **Production + product pedigree** — Deployment signals; product-company history over pure consulting.
+5. **Behavioral + logistics** — Response rate, GitHub, notice period, title-chaser penalty.
+6. **Honeypot traps** — Unrelated title + inflated AI skill count → multiplicative penalty.
 
-Top result: **CAND_0002025** (Senior AI Engineer, 7 core IR skills, 0.80 response rate). Zero honeypot titles in top 100.
+Top result: **CAND_0002025** (Senior AI Engineer @ Apple). Recommendation Systems @ Amazon #6. Zero honeypots in top 100.

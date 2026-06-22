@@ -36,6 +36,16 @@ def main() -> int:
     if unique_ratio < 0.5:
         errors.append(f"low variation: only {unique_ratio:.0%} unique reasoning strings")
 
+    top10 = [r for r in rows if int(r["rank"]) <= 10]
+    repetitive = sum(1 for r in top10 if "Top pick for Redrob Senior AI Engineer" in r["reasoning"])
+    if repetitive >= 5:
+        errors.append(
+            f"top-10 uses stale template {repetitive}/10 times — vary Stage-4 reasoning"
+        )
+    top_openers = {t.split(".")[0] for t in texts[:10]}
+    if len(top_openers) < 7:
+        errors.append(f"top-10 opener diversity low ({len(top_openers)}/10 unique leads)")
+
     sample = random.sample(rows, min(10, len(rows)))
     for r in sample:
         reason = (r.get("reasoning") or "").strip()
