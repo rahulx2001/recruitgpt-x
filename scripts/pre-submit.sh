@@ -47,10 +47,12 @@ else
   ok "submission_metadata.yaml contact info filled"
 fi
 
-if grep -q 'rahulkumarsinghj/recruitgpt-ranker' submission_metadata.yaml 2>/dev/null; then
-  bad "sandbox_link still placeholder — deploy HF Space first"
+if grep -q 'example.com\|Replace this URL' submission_metadata.yaml 2>/dev/null; then
+  bad "sandbox_link or contact still placeholder"
+elif bash scripts/verify_deploy.sh >/dev/null 2>&1; then
+  ok "github_repo and sandbox_link reachable"
 else
-  ok "sandbox_link appears configured"
+  bad "github_repo or sandbox_link not reachable — run ./scripts/deploy_all.sh"
 fi
 
 # ── 4. Offline ranker ────────────────────────────────────────────

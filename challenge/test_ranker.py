@@ -119,6 +119,45 @@ def test_cv_profiles_not_in_top_100():
             raise AssertionError(f"junior CV profile at rank with cv_penalty: {row.candidate_id}")
 
 
+def test_applied_scientist_not_research_only_penalty():
+    """Applied scientist is strong-title only; not in RESEARCH_ONLY_TITLES."""
+    from challenge.jd_config import RESEARCH_ONLY_TITLES, STRONG_TITLES
+    from challenge.redrob_ranker import _research_penalty
+    from challenge.features import build_index
+
+    assert "applied scientist" in STRONG_TITLES
+    assert "applied scientist" not in RESEARCH_ONLY_TITLES
+    assert "research engineer" not in STRONG_TITLES
+
+    raw = {
+        "candidate_id": "TEST_APPLIED",
+        "profile": {
+            "current_title": "Applied Scientist",
+            "years_of_experience": 6.0,
+        },
+        "career_history": [
+            {
+                "title": "Applied Scientist",
+                "company": "CRED",
+                "description": "Shipped hybrid retrieval and ranking in production for 2M users.",
+            }
+        ],
+        "skills": [{"name": "Information Retrieval", "proficiency": "expert"}],
+        "redrob_signals": {},
+    }
+    idx = build_index(raw["profile"], raw["career_history"])
+    assert _research_penalty(raw["profile"], raw["career_history"], 0.7, idx) == 1.0
+
+
+def test_calibrated_scores_have_floor():
+    from challenge.redrob_ranker import _calibrate_scores
+
+    raw = [1.0, 1.0, 0.5, 0.5, 0.1]
+    cal = _calibrate_scores(raw)
+    assert all(s >= 0.20 for s in cal)
+    assert all(cal[i] >= cal[i + 1] for i in range(len(cal) - 1))
+
+
 def test_eval_harness_produces_metrics():
     from challenge.eval_harness import proxy_relevance, run_holdout_eval
 
@@ -130,8 +169,10 @@ def test_eval_harness_produces_metrics():
             f.write(json.dumps(row) + "\n")
     report = run_holdout_eval(tmp, sample_rate=1.0, max_n=50, top_k=20)
     tmp.unlink(missing_ok=True)
-    m = report["metrics_current_weights"]
+    assert report.get("label_method") == "independent_jd_rubric"
+    m = report["metrics_self_consistency_proxy"]
     assert "ndcg_10" in m
+    assert "not challenge hidden" in report.get("note", "").lower()
     assert report["weight_ablation"]["current"]["ndcg_10"] == m["ndcg_10"]
 
 

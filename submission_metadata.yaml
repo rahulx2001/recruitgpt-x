@@ -1,28 +1,24 @@
 # Redrob Hackathon — Submission Metadata
-# Fill team contact details before portal upload.
 
 team_name: "RecruitGPT X"
 
 primary_contact:
   name: "Rahul Kumar Singh"
-  email: "rahulkumarsinghj@example.com"
-  phone: "+91-XXXXXXXXXX"
+  email: "rahulsinghx2001@gmail.com"
+  phone: "+91-8539816642"
 
 team_members:
   - name: "Rahul Kumar Singh"
-    email: "rahulkumarsinghj@example.com"
+    email: "rahulsinghx2001@gmail.com"
     role: "Team Lead / ML Engineer"
 
-github_repo: "https://github.com/rahulkumarsinghj/recruitgpt-x"
+github_repo: "https://github.com/rahulx2001/recruitgpt-x"
 
-sandbox_link: "https://huggingface.co/spaces/rahulkumarsinghj/recruitgpt-ranker"
-# Hosted sandbox where the ranker can be re-run on the sample.
-# See docs/DEPLOY.md for the HuggingFace Spaces deploy instructions.
-# (Replace this URL with the real Space URL after `hf spaces push`.)
+sandbox_link: "https://huggingface.co/spaces/rahulx2001/recruitgpt-ranker"
 
 reproduce_command: "./scripts/finalize_submission.sh"
 # Or: python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv
-# Eval harness: python scripts/run_eval.py
+# Eval (self-consistency proxy): python scripts/run_eval.py
 # Deploy: cp .env.deploy.example .env.deploy && ./scripts/deploy_all.sh
 # Portal export: RECROB_PARTICIPANT_ID=team_xxx ./scripts/finalize_submission.sh
 # Docker: docker compose -f docker-compose.ranker.yml run --rm ranker
@@ -56,10 +52,10 @@ methodology_summary: |
   career semantic 15%, skills 16%, title 17%, production 11%, assessments 10%, availability
   10%, engagement 6%. Structural honeypot detection (expert@0mo, impossible tenure, skill
   stuffing). CV/speech disqualifier gate tightened for junior profiles. Core IR skills exclude
-  generic python/tensorflow. Scores calibrated from real model output. ~47s on 100K CPU,
-  low RAM, zero network. Offline eval harness (scripts/run_eval.py) on 5K hash-holdout:
-  NDCG@10=0.85, NDCG@50=0.92, MAP=0.77, P@10=0.80 with current weights; weight ablation
-  in data/eval_report.json justifies hand-tuned blend vs title/semantic/availability-heavy presets.
+  generic python/tensorflow. Scores calibrated from real model output (~48s on 100K CPU, low
+  RAM, zero network). Offline eval (scripts/run_eval.py) is a self-consistency proxy using
+  an independent JD rubric — not challenge hidden ground truth; see data/eval_report.json.
+  Weight ablation compares presets on that proxy only; we expect real composite ~0.60–0.68.
 
 declarations:
   read_submission_spec: true

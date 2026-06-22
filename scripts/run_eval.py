@@ -52,11 +52,13 @@ def main() -> int:
 
     write_eval_report(args.out, report)
 
-    m = report["metrics_current_weights"]
+    m = report["metrics_self_consistency_proxy"]
     best = report["best_preset_by_ndcg10"]
     print(f"Eval holdout: n={report['holdout']['n_scored']} relevant={report['holdout']['n_relevant_proxy']}")
-    print(f"Current weights — NDCG@10={m['ndcg_10']} NDCG@50={m['ndcg_50']} MAP={m['map']} P@10={m['p_at_10']}")
+    print(f"Label method: {report.get('label_method', 'independent_jd_rubric')} (self-consistency proxy, NOT hidden GT)")
+    print(f"Self-consistency — NDCG@10={m['ndcg_10']} NDCG@50={m['ndcg_50']} MAP={m['map']} P@10={m['p_at_10']}")
     print(f"Best ablation preset: {best['name']} (NDCG@10={best['ndcg_10']})")
+    print(f"Note: {report.get('note', '')[:120]}…")
     print(f"Wrote {args.out} in {elapsed:.1f}s")
     return 0
 

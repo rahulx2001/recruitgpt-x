@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 REPO_NAME="${GITHUB_REPO:-recruitgpt-x}"
-GITHUB_USER="${GITHUB_USER:-rahulkumarsinghj}"
+GITHUB_USER="${GITHUB_USER:-rahulx2001}"
 REMOTE="https://github.com/${GITHUB_USER}/${REPO_NAME}.git"
 
 # Load deploy secrets if present

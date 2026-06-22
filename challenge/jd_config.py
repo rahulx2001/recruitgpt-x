@@ -10,7 +10,7 @@ STRONG_TITLES = (
     "ml engineer",
     "senior machine learning engineer",
     "staff ml engineer",
-    "applied scientist",
+    "applied scientist",  # product/applied ML — not in RESEARCH_ONLY_TITLES
 )
 
 GOOD_TITLES = (
@@ -225,6 +225,7 @@ FRAMEWORK_NOISE = (
     "crewai",
 )
 
+# Pure research ladder titles only — excludes applied scientist / research engineer
 RESEARCH_ONLY_TITLES = (
     "research scientist",
     "principal scientist",

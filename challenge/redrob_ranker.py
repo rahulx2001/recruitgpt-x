@@ -583,9 +583,10 @@ def _calibrate_scores(raw_scores: List[float]) -> List[float]:
         norm = (s - lo) / span
         cal = 0.20 + 0.79 * norm
         out.append(round(cal, 4))
+    floor = 0.20
     for i in range(1, len(out)):
         if out[i] >= out[i - 1]:
-            out[i] = round(out[i - 1] - 0.0001, 4)
+            out[i] = round(max(floor, out[i - 1] - 0.0001), 4)
     return out
 
 

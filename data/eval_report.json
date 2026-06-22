@@ -3,53 +3,60 @@
     "seed": 42,
     "sample_rate": 0.05,
     "n_scored": 5000,
-    "n_relevant_proxy": 50,
+    "n_relevant_proxy": 68,
     "top_k": 100
   },
+  "label_method": "independent_jd_rubric",
+  "metrics_self_consistency_proxy": {
+    "ndcg_10": 0.8819,
+    "ndcg_50": 0.929,
+    "map": 0.8252,
+    "p_at_10": 0.9
+  },
   "metrics_current_weights": {
-    "ndcg_10": 0.8508,
-    "ndcg_50": 0.919,
-    "map": 0.7666,
-    "p_at_10": 0.8
+    "ndcg_10": 0.8819,
+    "ndcg_50": 0.929,
+    "map": 0.8252,
+    "p_at_10": 0.9
   },
   "weight_ablation": {
     "current": {
-      "ndcg_10": 0.8508,
-      "ndcg_50": 0.919,
-      "map": 0.7666,
-      "p_at_10": 0.8
+      "ndcg_10": 0.8819,
+      "ndcg_50": 0.929,
+      "map": 0.8252,
+      "p_at_10": 0.9
     },
     "semantic_heavy": {
-      "ndcg_10": 0.8811,
-      "ndcg_50": 0.9266,
-      "map": 0.765,
-      "p_at_10": 0.8
+      "ndcg_10": 0.9139,
+      "ndcg_50": 0.9291,
+      "map": 0.8408,
+      "p_at_10": 0.9
     },
     "title_heavy": {
-      "ndcg_10": 0.8241,
-      "ndcg_50": 0.9119,
-      "map": 0.7543,
-      "p_at_10": 0.8
+      "ndcg_10": 0.8611,
+      "ndcg_50": 0.9182,
+      "map": 0.8143,
+      "p_at_10": 0.9
     },
     "availability_heavy": {
-      "ndcg_10": 0.8391,
-      "ndcg_50": 0.9218,
-      "map": 0.7716,
-      "p_at_10": 0.8
+      "ndcg_10": 0.8617,
+      "ndcg_50": 0.933,
+      "map": 0.8358,
+      "p_at_10": 0.9
     },
     "uniform": {
-      "ndcg_10": 0.8527,
-      "ndcg_50": 0.9257,
-      "map": 0.7758,
-      "p_at_10": 0.9
+      "ndcg_10": 0.8885,
+      "ndcg_50": 0.9433,
+      "map": 0.8561,
+      "p_at_10": 1.0
     }
   },
   "best_preset_by_ndcg10": {
     "name": "semantic_heavy",
-    "ndcg_10": 0.8811,
-    "ndcg_50": 0.9266,
-    "map": 0.765,
-    "p_at_10": 0.8
+    "ndcg_10": 0.9139,
+    "ndcg_50": 0.9291,
+    "map": 0.8408,
+    "p_at_10": 0.9
   },
   "weights_current": {
     "title": 0.17,
@@ -63,6 +70,6 @@
     "location": 0.04,
     "engagement": 0.06
   },
-  "note": "Proxy expert labels derived from JD rubric (honeypots, IR depth, production, availability). Used for offline weight justification \u2014 not challenge hidden labels.",
-  "runtime_seconds": 15.66
+  "note": "Self-consistency check only: labels use an independent JD rubric (raw title tiers, phrase counts, profile fields) \u2014 NOT ranker score functions and NOT challenge hidden ground truth. High scores indicate internal alignment, not validated competition performance. Expect real hidden-truth composite ~0.60\u20130.68.",
+  "runtime_seconds": 15.68
 }

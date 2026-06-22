@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-SPACE="${HF_SPACE:-rahulkumarsinghj/recruitgpt-ranker}"
+SPACE="${HF_SPACE:-rahulx2001/recruitgpt-ranker}"
 SPACE_NAME="${SPACE##*/}"
 SPACE_USER="${SPACE%%/*}"
 

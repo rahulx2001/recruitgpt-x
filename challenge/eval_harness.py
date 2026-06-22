@@ -1,19 +1,32 @@
-"""Offline eval harness — proxy expert labels, NDCG/MAP/P@k, weight ablation."""
+"""Offline eval harness — independent JD rubric labels, NDCG/MAP, weight ablation."""
 
 from __future__ import annotations
 
 import hashlib
 import json
 import math
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Sequence, Tuple
 
-from challenge.features import build_index, cv_language_hits, production_score, semantic_score
-from challenge.honeypot import honeypot_risk, is_structural_honeypot
-from challenge.jd_config import EXP_IDEAL_HI, EXP_IDEAL_LO, EXP_MIN, GOOD_TITLES, STRONG_TITLES, WEAK_TITLES
-from challenge.redrob_ranker import DEFAULT_WEIGHTS, _skills_score, _title_score, load_candidates, score_candidate
-from challenge.text_match import norm_text
+from challenge.honeypot import is_structural_honeypot
+from challenge.jd_config import (
+    CORE_SKILL_PHRASES,
+    CV_SPEECH_ROBOTICS,
+    EXP_IDEAL_HI,
+    EXP_IDEAL_LO,
+    EXP_MIN,
+    GENERAL_ML_SKILLS,
+    GOOD_TITLES,
+    JD_OVERLAP_PHRASES,
+    PRODUCTION_SIGNAL_PHRASES,
+    RESEARCH_ONLY_TITLES,
+    STRONG_TITLES,
+    WEAK_TITLES,
+)
+from challenge.redrob_ranker import DEFAULT_WEIGHTS, load_candidates, score_candidate
+from challenge.text_match import count_phrases_fast, norm_skill, norm_text, split_phrases, tokenize
 
 # Alternate weight presets for ablation (sum ≈ 1.0)
 WEIGHT_PRESETS: Dict[str, Dict[str, float]] = {
@@ -57,6 +70,16 @@ WEIGHT_PRESETS: Dict[str, Dict[str, float]] = {
     "uniform": {k: 0.10 for k in DEFAULT_WEIGHTS},
 }
 
+_CORE_S, _CORE_M = split_phrases(CORE_SKILL_PHRASES)
+_JD_S, _JD_M = split_phrases(JD_OVERLAP_PHRASES)
+_PROD_S, _PROD_M = split_phrases(PRODUCTION_SIGNAL_PHRASES)
+_CV_S, _CV_M = split_phrases(CV_SPEECH_ROBOTICS)
+_GENERAL_S = frozenset(GENERAL_ML_SKILLS)
+_CV_REGEX = re.compile(
+    r"computer vision|image moderation|object detection|speech recognition|robotics|autonomous driving",
+    re.I,
+)
+
 
 @dataclass
 class EvalMetrics:
@@ -68,10 +91,58 @@ class EvalMetrics:
     n_relevant: int
 
 
+def _career_blob(history: List[Dict[str, Any]]) -> str:
+    return norm_text(" ".join(h.get("description", "") for h in history))
+
+
+def _independent_title_tier(title: str, history: List[Dict[str, Any]]) -> float:
+    """Substring title tiers only — does not call ranker _title_score."""
+    titles = [norm_text(title)] + [norm_text(h.get("title", "")) for h in history[:3]]
+    best = 0.1
+    for ti in titles:
+        if any(w in ti for w in WEAK_TITLES):
+            return 0.05
+        if any(s in ti for s in STRONG_TITLES):
+            best = max(best, 0.95)
+        elif any(g in ti for g in GOOD_TITLES):
+            best = max(best, 0.65)
+        elif "engineer" in ti or "scientist" in ti:
+            best = max(best, 0.35)
+    return best
+
+
+def _independent_ir_skill_count(skills: List[Dict[str, Any]]) -> int:
+    """Count IR skills from names only — no ranker _skills_score."""
+    n = 0
+    for s in skills:
+        name = norm_skill(s.get("name", ""))
+        tokens = tokenize(name)
+        if tokens & _GENERAL_S:
+            continue
+        if tokens & _CORE_S:
+            n += 1
+            continue
+        for phrase in _CORE_M:
+            if phrase in name:
+                n += 1
+                break
+    return n
+
+
+def _independent_career_signals(career: str) -> Tuple[float, float]:
+    tokens = tokenize(career)
+    jd_hits = count_phrases_fast(_JD_S, _JD_M, tokens, career)
+    prod_hits = count_phrases_fast(_PROD_S, _PROD_M, tokens, career)
+    return min(1.0, jd_hits / 8.0), min(1.0, prod_hits / 6.0)
+
+
 def proxy_relevance(raw: Dict[str, Any]) -> float:
     """
-    JD-aligned expert proxy label in [0, 1]. Independent of ranker weights.
-    Used for offline calibration — not challenge ground truth.
+    Independent JD rubric label in [0, 1].
+
+    Does NOT call ranker scoring functions (_title_score, _skills_score,
+    semantic_score, production_score, cv_language_hits). Uses raw profile
+    fields + phrase/token matching only. Structural honeypots excluded.
     """
     if is_structural_honeypot(raw):
         return 0.0
@@ -81,65 +152,52 @@ def proxy_relevance(raw: Dict[str, Any]) -> float:
     skills = raw.get("skills", [])
     signals = raw.get("redrob_signals", {})
     title = norm_text(profile.get("current_title", ""))
+    career = _career_blob(history)
 
     if any(w in title for w in WEAK_TITLES):
         return 0.05
 
-    idx = build_index(profile, history)
-    title_s = _title_score(profile.get("current_title", ""), history)
-    _, core_ir_n, noise_n, _ = _skills_score(skills, signals)
-    sem_s = semantic_score(idx)
-    prod_s = production_score(idx)
+    title_tier = _independent_title_tier(title, history)
+    core_ir = _independent_ir_skill_count(skills)
+    jd_sig, prod_sig = _independent_career_signals(career)
     yrs = float(profile.get("years_of_experience", 0) or 0)
-    cv_hits = cv_language_hits(idx)
     rr = float(signals.get("recruiter_response_rate", 0) or 0)
     otw = bool(signals.get("open_to_work_flag", False))
 
-    grade = 0.0
+    cv_hits = len(_CV_S & tokenize(career))
+    cv_hits += sum(1 for m in _CV_M if m in career)
+    if _CV_REGEX.search(career):
+        cv_hits = max(cv_hits, 2)
 
-    if any(s in title for s in STRONG_TITLES):
-        grade += 1.4
-    elif any(g in title for g in GOOD_TITLES):
-        grade += 0.9
-    elif "engineer" in title or "scientist" in title:
-        grade += 0.45
-    else:
-        grade += 0.15
-
-    grade += min(1.2, core_ir_n * 0.22)
-    grade += sem_s * 1.0
-    grade += prod_s * 0.8
+    grade = title_tier * 1.5
+    grade += min(1.0, core_ir * 0.18)
+    grade += jd_sig * 0.9
+    grade += prod_sig * 0.7
 
     if EXP_IDEAL_LO <= yrs <= EXP_IDEAL_HI:
-        grade += 0.35
+        grade += 0.3
     elif yrs >= EXP_MIN:
-        grade += 0.15
+        grade += 0.12
     else:
-        grade *= 0.6
+        grade *= 0.55
 
     if otw:
-        grade += 0.12
+        grade += 0.1
     if rr >= 0.5:
-        grade += 0.08
+        grade += 0.06
 
-    if cv_hits >= 2 and core_ir_n <= 2:
-        grade *= 0.25
-    elif cv_hits >= 1 and core_ir_n <= 1:
-        grade *= 0.4
-
-    if "junior" in title and cv_hits >= 1:
+    if cv_hits >= 2 and core_ir <= 2:
+        grade *= 0.22
+    elif cv_hits >= 1 and core_ir <= 1:
         grade *= 0.35
-
-    if noise_n >= 5 and core_ir_n <= 2:
-        grade *= 0.5
-
-    if honeypot_risk(raw) >= 0.35:
+    if "junior" in title and cv_hits >= 1:
         grade *= 0.3
 
-    if title_s >= 1.0:
-        grade += 0.25
+    # Research-only titles without production language in career
+    if any(r in title for r in RESEARCH_ONLY_TITLES) and prod_sig < 0.35:
+        grade *= 0.65
 
-    return round(min(1.0, grade / 4.0), 4)
+    return round(min(1.0, grade / 3.8), 4)
 
 
 def _dcg(rels: Sequence[float], k: int) -> float:
@@ -253,6 +311,13 @@ def run_holdout_eval(
             "n_relevant_proxy": metrics.n_relevant,
             "top_k": top_k,
         },
+        "label_method": "independent_jd_rubric",
+        "metrics_self_consistency_proxy": {
+            "ndcg_10": metrics.ndcg_10,
+            "ndcg_50": metrics.ndcg_50,
+            "map": metrics.map_score,
+            "p_at_10": metrics.precision_10,
+        },
         "metrics_current_weights": {
             "ndcg_10": metrics.ndcg_10,
             "ndcg_50": metrics.ndcg_50,
@@ -263,8 +328,10 @@ def run_holdout_eval(
         "best_preset_by_ndcg10": {"name": best[0], **best[1]},
         "weights_current": DEFAULT_WEIGHTS,
         "note": (
-            "Proxy expert labels derived from JD rubric (honeypots, IR depth, production, "
-            "availability). Used for offline weight justification — not challenge hidden labels."
+            "Self-consistency check only: labels use an independent JD rubric (raw title "
+            "tiers, phrase counts, profile fields) — NOT ranker score functions and NOT "
+            "challenge hidden ground truth. High scores indicate internal alignment, not "
+            "validated competition performance. Expect real hidden-truth composite ~0.60–0.68."
         ),
     }
 
