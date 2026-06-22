@@ -202,6 +202,114 @@ def _behavioral_modifier(signals: Dict[str, Any]) -> float:
     return min(1.15, 0.85 + mod * 0.26)
 
 
+def _top_skill_names(skills: List[Dict[str, Any]], bucket: str, limit: int = 3) -> List[str]:
+    names: List[str] = []
+    for s in skills:
+        if _skill_bucket(s.get("name", "")) == bucket:
+            names.append(s.get("name", ""))
+    return names[:limit]
+
+
+def _build_reasoning(
+    raw: Dict[str, Any],
+    *,
+    rank: int,
+    core_n: int,
+    prod_s: float,
+    components: Dict[str, float],
+) -> str:
+    """Stage-4 reasoning: specific facts, JD tie-in, honest concerns, varied tone."""
+    profile = raw.get("profile", {})
+    skills = raw.get("skills", [])
+    signals = raw.get("redrob_signals", {})
+    history = raw.get("career_history", [])
+
+    title = profile.get("current_title", "Candidate")
+    company = profile.get("current_company", "")
+    yrs = float(profile.get("years_of_experience", 0) or 0)
+    loc = profile.get("location", "unknown")
+    country = profile.get("country", "India")
+    rr = float(signals.get("recruiter_response_rate", 0) or 0)
+    notice = int(signals.get("notice_period_days", 0) or 0)
+    gh = float(signals.get("github_activity_score", -1) or -1)
+
+    core_names = _top_skill_names(skills, "core", 3)
+    skill_phrase = ", ".join(core_names) if core_names else "limited core IR stack"
+
+    jd_bits: List[str] = []
+    if "senior ai engineer" in _norm(title):
+        jd_bits.append("exact JD title match")
+    elif any(t in _norm(title) for t in ("nlp", "search", "recommendation", "retrieval")):
+        jd_bits.append("strong IR/NLP alignment for embeddings+retrieval work")
+    elif core_n >= 5:
+        jd_bits.append("deep vector-search stack")
+    elif core_n >= 3:
+        jd_bits.append("partial JD skill coverage")
+    else:
+        jd_bits.append("adjacent ML profile")
+
+    if prod_s >= 0.85:
+        jd_bits.append("production deployment language in career history")
+    if EXP_IDEAL_LO <= yrs <= EXP_IDEAL_HI:
+        jd_bits.append("experience in JD's 5–9y band")
+    if any(c in _norm(loc) for c in PREFERRED_LOCATIONS):
+        jd_bits.append("Pune/Noida-preferred location")
+
+    concerns: List[str] = []
+    if yrs < EXP_MIN:
+        concerns.append(f"only {yrs:.1f}y experience (JD prefers 4+)")
+    elif yrs > EXP_MAX:
+        concerns.append(f"{yrs:.1f}y may be senior-heavy for founding IC role")
+    if core_n < 4:
+        concerns.append(f"only {core_n} core IR skills vs JD's retrieval/ranking depth")
+    if prod_s < 0.5:
+        concerns.append("weak production-shipping signals in profile text")
+    if rr < 0.4:
+        concerns.append(f"low recruiter response rate ({rr:.2f})")
+    if notice >= 60:
+        concerns.append(f"long notice period ({notice}d)")
+    if gh >= 0 and gh < 40:
+        concerns.append(f"muted GitHub activity ({gh:.0f})")
+    if country and _norm(country) not in ("india", "") and "india" not in _norm(loc):
+        concerns.append(f"based in {country}, not India-first")
+    if components.get("honeypot", 1.0) < 1.0:
+        concerns.append("title/skill mismatch pattern flagged")
+    firms = [_norm(h.get("company", "")) for h in history]
+    if firms and all(any(c in f for c in CONSULTING_FIRMS) for f in firms[:2]):
+        concerns.append("consulting-heavy career vs JD's product-company preference")
+
+    co = f" @ {company}" if company else ""
+    lead = f"{title}{co} — {yrs:.1f}y in {loc}; skills: {skill_phrase}."
+
+    if rank <= 10:
+        tone = f"Top pick for Redrob Senior AI Engineer: {', '.join(jd_bits)}."
+        if concerns:
+            tone += f" Minor flags: {'; '.join(concerns[:2])}."
+        return f"{lead} {tone}"
+
+    if rank <= 50:
+        tone = f"Solid JD fit ({', '.join(jd_bits[:2])}); response rate {rr:.2f}."
+        if gh >= 0:
+            tone += f" GitHub {gh:.0f}."
+        if concerns:
+            tone += f" Concerns: {'; '.join(concerns[:2])}."
+        else:
+            tone += " No major red flags."
+        return f"{lead} {tone}"
+
+    if rank <= 85:
+        tone = f"Qualified but not top-tier for this JD ({jd_bits[0] if jd_bits else 'partial fit'})."
+        if concerns:
+            tone += f" Gaps: {'; '.join(concerns[:3])}."
+        return f"{lead} {tone}"
+
+    concern_txt = "; ".join(concerns[:3]) if concerns else "weaker title/skill match vs top of shortlist"
+    return (
+        f"{lead} Included at rank {rank} as shortlist filler — {concern_txt}; "
+        f"still shows {core_n} core IR skills and {rr:.2f} response rate."
+    )
+
+
 def _honeypot_penalty(title: str, core: int, noise: int, title_s: float) -> float:
     """Demote unrelated titles with inflated AI skill counts."""
     t = _norm(title)
@@ -244,30 +352,23 @@ def score_candidate(raw: Dict[str, Any]) -> ScoredCandidate:
     raw_final = base * consult_m * beh_m * honey_m
     final = round(min(0.9999, max(0.0001, raw_final)), 4)
 
-    title = profile.get("current_title", "Candidate")
-    yrs = profile.get("years_of_experience", 0)
-    loc = profile.get("location", "unknown")
-    rr = float(signals.get("recruiter_response_rate", 0) or 0)
-    gh = float(signals.get("github_activity_score", -1) or -1)
-    gh_txt = f"{gh:.0f}" if gh >= 0 else "n/a"
-    reasoning = (
-        f"{title} with {yrs:.1f} yrs in {loc}; {core_n} core AI/IR skills; "
-        f"response rate {rr:.2f}; GitHub {gh_txt}; production signals {prod_s:.2f}."
-    )
+    components = {
+        "title": title_s,
+        "skills": skill_s,
+        "experience": exp_s,
+        "production": prod_s,
+        "location": loc_s,
+        "behavioral": beh_m,
+        "honeypot": honey_m,
+    }
+    # Placeholder; write_submission fills rank-aware reasoning per §3.4
+    reasoning = ""
 
     return ScoredCandidate(
         candidate_id=cid,
         score=final,
         reasoning=reasoning,
-        components={
-            "title": title_s,
-            "skills": skill_s,
-            "experience": exp_s,
-            "production": prod_s,
-            "location": loc_s,
-            "behavioral": beh_m,
-            "honeypot": honey_m,
-        },
+        components=components,
         raw_score=raw_final,
         core_skill_count=core_n,
     )
@@ -287,7 +388,9 @@ def rank_candidates(
 ) -> List[ScoredCandidate]:
     """Score all candidates and return top_k sorted by score desc, id asc tie-break."""
     scored: List[ScoredCandidate] = []
+    raw_by_id: Dict[str, Dict[str, Any]] = {}
     for raw in load_candidates(candidates_path):
+        raw_by_id[raw["candidate_id"]] = raw
         scored.append(score_candidate(raw))
 
     scored.sort(
@@ -300,7 +403,25 @@ def rank_candidates(
             x.candidate_id,
         )
     )
-    return scored[:top_k]
+    top = scored[:top_k]
+    for i, row in enumerate(top):
+        src = raw_by_id.get(row.candidate_id, {})
+        reasoning = _build_reasoning(
+            src,
+            rank=i + 1,
+            core_n=row.core_skill_count,
+            prod_s=row.components["production"],
+            components=row.components,
+        )
+        top[i] = ScoredCandidate(
+            candidate_id=row.candidate_id,
+            score=row.score,
+            reasoning=reasoning,
+            components=row.components,
+            raw_score=row.raw_score,
+            core_skill_count=row.core_skill_count,
+        )
+    return top
 
 
 def write_submission(rows: List[ScoredCandidate], out_path: Path) -> None:
