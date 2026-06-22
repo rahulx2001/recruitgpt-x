@@ -64,5 +64,5 @@
     "engagement": 0.06
   },
   "note": "Proxy expert labels derived from JD rubric (honeypots, IR depth, production, availability). Used for offline weight justification \u2014 not challenge hidden labels.",
-  "runtime_seconds": 16.32
+  "runtime_seconds": 15.66
 }
