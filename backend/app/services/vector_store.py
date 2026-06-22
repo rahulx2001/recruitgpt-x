@@ -175,6 +175,19 @@ class VectorStore:
         )
         return [(str(r.id), float(r.score), r.payload or {}) for r in results]
 
+    def clear_candidates(self) -> None:
+        """Drop all candidate vectors (e.g. after DB replace / challenge import)."""
+        if self.client is None:
+            self._memory[self.COLLECTION_CANDIDATES] = InMemoryStore(
+                self.settings.embedding_dim
+            )
+            return
+        try:
+            self.client.delete_collection(self.COLLECTION_CANDIDATES)
+        except Exception:
+            pass
+        self._ensure_collection(self.COLLECTION_CANDIDATES)
+
     def count_candidates(self) -> int:
         if self.client is None:
             store = self._memory.get(self.COLLECTION_CANDIDATES)

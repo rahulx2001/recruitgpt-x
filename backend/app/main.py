@@ -136,6 +136,21 @@ async def health():
     return {"status": "ok"}
 
 
+@app.post("/api/reindex")
+async def reindex_vector_store():
+    """Rebuild in-process vector index from DB (needed after challenge import)."""
+    from app.services.vector_store import get_vector_store
+
+    vs = get_vector_store()
+    vs.clear_candidates()
+    await _index_all_at_startup()
+    return {
+        "status": "ok",
+        "candidates_indexed": vs.count_candidates(),
+        "jobs_indexed": vs.count_jobs(),
+    }
+
+
 @app.get("/ready")
 async def ready():
     """Readiness check — index counts for demo acceptance."""

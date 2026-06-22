@@ -12,4 +12,9 @@ JSONL="${1:-$ROOT/data/candidates.jsonl}"
 source .venv/bin/activate
 python -m app.data.import_challenge --jsonl "$JSONL" --top-100 --replace
 
-echo "Restart backend (or wait for reload) then open /candidates — you should see 100 profiles."
+API="${API_URL:-http://127.0.0.1:8000}"
+if curl -sf -X POST "${API}/api/reindex" >/dev/null 2>&1; then
+  echo "Vector index rebuilt via ${API}/api/reindex"
+else
+  echo "Restart backend (or POST ${API}/api/reindex) then open /candidates — you should see 100 profiles."
+fi

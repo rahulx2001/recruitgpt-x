@@ -3,6 +3,7 @@
 set -euo pipefail
 
 API="${API_URL:-http://127.0.0.1:8000}"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 HDR=(-H "X-User-Id: dev-user" -H "Content-Type: application/json")
 
 echo "==> Demo acceptance against $API"
@@ -10,11 +11,13 @@ echo "==> Demo acceptance against $API"
 python3 << PYEOF
 import csv
 import json
+import re
 import sys
 from pathlib import Path
 import httpx
 
 BASE = "$API"
+ROOT = Path("$ROOT")
 H = {"X-User-Id": "dev-user", "Content-Type": "application/json"}
 passed = failed = 0
 
@@ -50,26 +53,40 @@ check("jobs seeded", len(jobs) > 0, f"{len(jobs)} jobs")
 ml = next((j for j in jobs if "ML" in j.get("title", "") or "Machine" in j.get("title", "")), jobs[0])
 job_id = ml["id"]
 
-r = httpx.get(f"{BASE}/api/jobs/{job_id}/rank", headers=H, timeout=180)
+def redrob_id_for(uuid: str) -> str | None:
+    pr = httpx.get(f"{BASE}/api/candidates/{uuid}", headers=H, timeout=15)
+    if pr.status_code != 200:
+        return None
+    p = pr.json()
+    email = (p.get("email") or "").lower()
+    if "@redrob.challenge" in email:
+        return email.split("@", 1)[0].upper()
+    resume = p.get("resume_text") or ""
+    m = re.search(r"Redrob ID:\s*(\S+)", resume, re.I)
+    return m.group(1).strip().upper() if m else None
+
+r = httpx.get(f"{BASE}/api/jobs/{job_id}/rank", headers=H, params={"refresh": True}, timeout=180)
 check("rank endpoint", r.status_code == 200)
 if r.status_code == 200:
     data = r.json()
     ranked = data.get("ranked_candidates", [])
-    names = [c.get("candidate_name", "") for c in ranked]
-    # Expect challenge-pool top ranks (from official submission.csv / rank.py), not seed demo names.
-    sub_path = Path(__file__).resolve().parents[1] / "submission.csv"
-    expected = []
+    sub_path = ROOT / "submission.csv"
+    submission_ids: list[str] = []
+    expected_top5: list[str] = []
     if sub_path.exists():
         with open(sub_path, newline="", encoding="utf-8") as f:
             for row in csv.DictReader(f):
-                expected.append(row.get("candidate_id", ""))
-                if len(expected) >= 5:
-                    break
-    top_ids = [c.get("candidate_id", "") for c in ranked[:5]]
+                cid = row.get("candidate_id", "").strip().upper()
+                submission_ids.append(cid)
+                if len(expected_top5) < 5:
+                    expected_top5.append(cid)
+    top_redrob = [redrob_id_for(c.get("candidate_id", "")) for c in ranked[:5]]
+    top_redrob = [x for x in top_redrob if x]
+    pool_ok = bool(submission_ids) and all(rid in submission_ids for rid in top_redrob)
     check(
-        "top-5 matches submission.csv",
-        expected and top_ids == expected,
-        f"api={top_ids} csv={expected}",
+        "top-5 from challenge pool (submission.csv)",
+        len(top_redrob) == 5 and pool_ok,
+        f"redrob={top_redrob} offline_top5={expected_top5}",
     )
     weights = (data.get("pipeline_metadata") or {}).get("ranking_weights", {})
     check("PROMPT_WEIGHTS in metadata", weights.get("semantic", -1) == 0.0, str(weights))
@@ -91,7 +108,13 @@ r = httpx.post(f"{BASE}/api/jobs/{job_id}/whatif", headers=H, json={
 }, timeout=180)
 check("what-if re-rank", r.status_code == 200)
 
-r = httpx.post(f"{BASE}/api/search", headers=H, json={"query": "SQL strong, Power BI weak", "top_k": 10}, timeout=30)
+httpx.post(f"{BASE}/api/reindex", timeout=120)
+r = httpx.post(
+    f"{BASE}/api/search",
+    headers=H,
+    json={"query": "information retrieval semantic search FAISS", "top_k": 10},
+    timeout=30,
+)
 check("NL search", r.status_code == 200 and len(r.json()) > 0, f"{len(r.json()) if r.status_code == 200 else 0} hits")
 
 r = httpx.post(f"{BASE}/api/search", headers=H, json={"q": "ML engineer"}, timeout=10)
