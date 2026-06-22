@@ -24,7 +24,6 @@ GOOD_TITLES = (
     "backend engineer",
 )
 
-# Honeypot titles — keyword stuffers often keep unrelated roles
 WEAK_TITLES = (
     "hr manager",
     "accountant",
@@ -41,18 +40,21 @@ WEAK_TITLES = (
     "qa engineer",
 )
 
-# Core skills from JD "absolutely need" section
-CORE_AI_SKILLS = {
+# Word-boundary skill phrases (no bare "map", "e5", "bge", "search")
+CORE_SKILL_PHRASES = (
     "python",
     "embeddings",
     "embedding",
+    "information retrieval",
     "retrieval",
-    "ranking",
     "ranking systems",
-    "vector",
-    "vector representations",
+    "learning to rank",
     "vector search",
+    "vector database",
+    "vector representations",
     "semantic search",
+    "hybrid search",
+    "hybrid retrieval",
     "faiss",
     "qdrant",
     "pinecone",
@@ -63,20 +65,13 @@ CORE_AI_SKILLS = {
     "pgvector",
     "sentence transformers",
     "sentence transformer",
-    "bge",
-    "e5",
-    "hybrid search",
-    "hybrid retrieval",
     "ndcg",
     "mrr",
-    "map",
-    "learning to rank",
-    "information retrieval systems",
     "pytorch",
     "tensorflow",
-}
+)
 
-SECONDARY_AI_SKILLS = {
+SECONDARY_SKILL_PHRASES = (
     "nlp",
     "llm",
     "fine-tuning",
@@ -90,11 +85,10 @@ SECONDARY_AI_SKILLS = {
     "deep learning",
     "machine learning",
     "recommendation",
-    "information retrieval",
-}
+    "recommendation systems",
+)
 
-# Skills that appear in honeypot profiles (high endorsements, not real AI depth)
-HONEYPOT_SKILL_NOISE = {
+HONEYPOT_SKILL_NOISE = (
     "html",
     "tailwind",
     "photoshop",
@@ -104,9 +98,19 @@ HONEYPOT_SKILL_NOISE = {
     "excel",
     "powerpoint",
     "word",
-}
+)
 
-CONSULTING_FIRMS = {
+# JD disqualifier domains without NLP/IR depth
+CV_SPEECH_ROBOTICS = (
+    "computer vision",
+    "object detection",
+    "speech recognition",
+    "asr",
+    "robotics",
+    "autonomous driving",
+)
+
+CONSULTING_FIRMS = (
     "tcs",
     "tata consultancy",
     "infosys",
@@ -120,15 +124,11 @@ CONSULTING_FIRMS = {
     "tech mahindra",
     "deloitte consulting",
     "ibm consulting",
-}
+)
 
-# JD: Pune/Noida preferred; other Tier-1 India cities welcome
-PREFERRED_LOCATIONS = {
-    "pune",
-    "noida",
-}
+PREFERRED_LOCATIONS = ("pune", "noida")
 
-INDIA_LOCATIONS = {
+INDIA_LOCATIONS = (
     "pune",
     "noida",
     "bangalore",
@@ -140,7 +140,7 @@ INDIA_LOCATIONS = {
     "gurugram",
     "chennai",
     "india",
-}
+)
 
 EXP_MIN = 4.0
 EXP_IDEAL_LO = 5.0
@@ -150,70 +150,101 @@ EXP_MAX = 15.0
 JOB_TITLE = "Senior AI Engineer — Founding Team"
 JOB_COMPANY = "Redrob AI"
 
-# JD text overlap — retrieval/ranking mandate (§3.4 reasoning + ranker signal)
-JD_OVERLAP_PHRASES = (
+# JD excerpt for TF-IDF semantic layer (offline, no API)
+JD_DOCUMENT = """
+senior ai engineer founding team embeddings retrieval ranking hybrid search vector database
+production deployed users evaluation ndcg mrr map learning to rank recommendation systems
+sentence transformers faiss pinecone qdrant weaviate milvus opensearch elasticsearch python
+fine-tuning lora shipper product company recruiter matching marketplace hiring
+"""
+
+# Weighted phrases for career-description matching (Tier-5 plain language)
+CAREER_JD_WEIGHTS = {
+    "recommendation system": 0.22,
+    "recommendation systems": 0.22,
+    "ranking system": 0.20,
+    "search system": 0.18,
+    "vector search": 0.18,
+    "hybrid search": 0.16,
+    "hybrid retrieval": 0.16,
+    "embedding": 0.14,
+    "retrieval": 0.14,
+    "ndcg": 0.12,
+    "learning to rank": 0.12,
+    "deployed to": 0.10,
+    "production": 0.08,
+    "a/b test": 0.08,
+    "recruiter": 0.06,
+}
+
+JD_OVERLAP_PHRASES = tuple(CAREER_JD_WEIGHTS.keys()) + (
     "embeddings",
-    "retrieval",
     "ranking",
     "vector",
-    "hybrid search",
-    "hybrid retrieval",
-    "ndcg",
-    "mrr",
-    "production",
-    "deployed",
     "serving",
-    "a/b",
-    "evaluation",
-    "fine-tuning",
-    "lora",
-    "sentence transformer",
-    "faiss",
-    "pinecone",
-    "qdrant",
-    "weaviate",
-    "milvus",
-    "opensearch",
-    "elasticsearch",
-    "learning to rank",
-    "recommendation",
-    "search",
-    "recruiter",
+    "pipeline",
     "matching",
 )
 
-# Product-company pedigree (JD: product over consulting/research)
-PRODUCT_COMPANY_SIGNALS = {
+# Indian product startups — JD wants shipper mindset, not FAANG ladder
+STARTUP_BOOST_SIGNALS = {
+    "zomato",
+    "phonepe",
+    "swiggy",
+    "flipkart",
+    "cred",
+    "razorpay",
+    "krutrim",
+    "sarvam",
+    "rephrase",
+    "unacademy",
+    "nykaa",
+    "zoho",
+    "aganitha",
+    "niramai",
+    "verloop",
+}
+
+# FAANG/big-tech at *current* role — JD yellow flag, not green
+FAANG_CURRENT_PENALTY = {
     "google",
     "meta",
     "facebook",
     "apple",
-    "netflix",
-    "amazon",
     "microsoft",
-    "uber",
-    "flipkart",
-    "phonepe",
-    "swiggy",
-    "zomato",
-    "cred",
-    "razorpay",
-    "linkedin",
-    "adobe",
-    "salesforce",
-    "krutrim",
-    "sarvam",
-    "rephrase",
-    "glance",
-    "unacademy",
-    "zoho",
-    "nykaa",
+    "amazon",
+    "netflix",
 }
 
-# Framework-chaser noise (JD explicitly discourages LangChain-only profiles)
-FRAMEWORK_NOISE = {
+FRAMEWORK_NOISE = (
     "langchain",
     "llamaindex",
     "autogen",
     "crewai",
-}
+)
+
+RESEARCH_ONLY_TITLES = (
+    "research scientist",
+    "principal scientist",
+    "applied scientist",
+    "research engineer",
+)
+
+PRODUCTION_SIGNAL_PHRASES = (
+    "production",
+    "deployed",
+    "serving",
+    "shipped",
+    "users",
+    "a/b",
+    "ndcg",
+    "mrr",
+    "retrieval",
+    "embedding",
+    "vector",
+    "ranking",
+    "pipeline",
+    "scale",
+    "online",
+    "offline",
+)

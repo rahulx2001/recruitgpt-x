@@ -47,21 +47,18 @@ ai_usage_summary: |
   ranking. The offline ranker (rank.py) runs entirely locally with no network calls.
 
 methodology_summary: |
-  Hybrid offline ranker mirroring a senior recruiter shortlisting for Redrob's founding
-  Senior AI Engineer role. Weighted components: title/career alignment (30%), core
-  AI/IR skills with endorsement-duration trust (27%), production deployment signals
-  (17%), JD lexical overlap for retrieval/ranking mandate (6%), experience band 5–9y
-  (11%), and India location with Pune/Noida boost (9%). Modifiers: product-company
-  pedigree, notice-period, consulting penalty, framework-chaser demotion, behavioral
-  signals (response rate, GitHub, recruiter saves), and honeypot traps for weak titles
-  with inflated AI skill counts. Recommendation Systems and Search Engineer titles get
-  explicit boosts per JD's ranking/retrieval ownership mandate. Tie-breaking: raw score,
-  core skill depth, production, JD overlap, skills — not candidate ID alone. ~15s on
-  100K CPU, zero network calls.
+  Ranker v3: trap-aware hybrid scorer with career semantic matching (TF-IDF + plain-language
+  regex), verified skill_assessment_scores, and availability intelligence (open_to_work,
+  last_active, response rate, applications). Base weights: career semantic 15%, skills 16%,
+  title 17%, production 11%, assessments 10%, availability 10%, engagement 6%. Structural
+  honeypot detection (expert@0mo, impossible tenure, skill stuffing) — not title matching.
+  FAANG-current roles get a mild penalty per JD; Indian product startups boosted. Scores are
+  calibrated from real model output (not a fake linear ramp). Word-boundary token matching
+  avoids map/roadmap and search/research bugs. ~5min on 100K CPU, ~2GB RAM, zero network.
 
 declarations:
   read_submission_spec: true
   code_is_original_work: true
   no_collusion: true
-  honeypot_check_done: true  # verified via: python scripts/check_honeypots.py submission.csv
+  honeypot_check_done: true  # structural honeypot_risk via scripts/check_honeypots.py
   reproduction_tested: true
