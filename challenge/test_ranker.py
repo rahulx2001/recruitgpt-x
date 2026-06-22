@@ -1,4 +1,4 @@
-"""Tests for offline Redrob ranker v4."""
+"""Tests for offline Redrob ranker v5."""
 
 from __future__ import annotations
 
