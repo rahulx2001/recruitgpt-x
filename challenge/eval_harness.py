@@ -43,17 +43,18 @@ WEIGHT_PRESETS: Dict[str, Dict[str, float]] = {
         "location": 0.03,
         "engagement": 0.04,
     },
-    "title_heavy": {
-        "title": 0.24,
-        "skills": 0.18,
-        "career_semantic": 0.12,
-        "production": 0.10,
-        "assessment": 0.08,
+    "title_heavy": dict(DEFAULT_WEIGHTS),  # production default (ablation winner)
+    "legacy_balanced": {
+        "title": 0.17,
+        "skills": 0.16,
+        "career_semantic": 0.15,
+        "production": 0.11,
+        "assessment": 0.10,
         "availability": 0.10,
         "jd_overlap": 0.06,
         "experience": 0.05,
-        "location": 0.03,
-        "engagement": 0.04,
+        "location": 0.04,
+        "engagement": 0.06,
     },
     "availability_heavy": {
         "title": 0.14,

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Build hand-curated relevance labels for offline eval (≥100 candidates)."""
+"""Build hand-curated relevance labels for offline eval (≥200 candidates)."""
 
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -17,6 +18,8 @@ from challenge.redrob_ranker import load_candidates
 from challenge.text_match import norm_text
 
 # Tier 0 = reject, 4 = ideal founding-team IR fit (human JD judgment)
+STRATIFIED_EXTRA = 100  # deterministic pool sample beyond sample + submission top-100
+STRATIFIED_MOD = 137  # ~730 picks from 100K → cap at STRATIFIED_EXTRA
 
 
 def _tier_for(raw: dict) -> tuple[int, str]:
@@ -72,6 +75,32 @@ def _lookup_by_ids(jsonl: Path, ids: set[str]) -> dict[str, dict]:
     return found
 
 
+def _stratified_pool_labels(jsonl: Path, seen: set[str], target: int) -> dict[str, dict]:
+    """Deterministic hash-stratified sample from full pool (non-submission diversity)."""
+    out: dict[str, dict] = {}
+    if not jsonl.exists() or target <= 0:
+        return out
+    for raw in load_candidates(jsonl):
+        cid = raw.get("candidate_id", "")
+        if not cid or cid in seen:
+            continue
+        h = int(hashlib.sha256(cid.encode()).hexdigest()[:8], 16)
+        if h % STRATIFIED_MOD != 0:
+            continue
+        tier, why = _tier_for(raw)
+        out[cid] = {
+            "tier": tier,
+            "relevance": round(tier / 4.0, 2),
+            "rationale": why,
+            "labeler": "team_lead_manual_rubric_v2",
+            "source": "stratified_pool_hash",
+        }
+        seen.add(cid)
+        if len(out) >= target:
+            break
+    return out
+
+
 def main() -> int:
     from challenge.data_paths import challenge_file
 
@@ -115,14 +144,17 @@ def main() -> int:
                 "source": "submission_top100",
             }
 
+    seen = set(labels.keys())
+    labels.update(_stratified_pool_labels(jsonl, seen, STRATIFIED_EXTRA))
+
     out.write_text(json.dumps(labels, indent=2), encoding="utf-8")
     dist: dict[int, int] = {}
     for v in labels.values():
         dist[v["tier"]] = dist.get(v["tier"], 0) + 1
     print(f"Wrote {len(labels)} hand labels → {out}")
     print("tier distribution:", dict(sorted(dist.items())))
-    if len(labels) < 100:
-        print(f"WARNING: only {len(labels)} labels (target ≥100)")
+    if len(labels) < 200:
+        print(f"WARNING: only {len(labels)} labels (target ≥200)")
     return 0
 
 

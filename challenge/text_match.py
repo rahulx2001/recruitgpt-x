@@ -25,6 +25,40 @@ def norm_skill(name: str) -> str:
     return re.sub(r"[-_/]+", " ", n)
 
 
+def truncate_at_word_boundary(text: str, limit: int, ellipsis: str = "…") -> str:
+    """Truncate without mid-word cuts (Stage-4 reasoning quality)."""
+    text = text.strip()
+    if len(text) <= limit:
+        return text
+    cut = text[:limit]
+    if " " in cut:
+        cut = cut.rsplit(" ", 1)[0]
+    elif limit < len(text):
+        cut = text[: max(1, limit - len(ellipsis))]
+    return cut + ellipsis
+
+
+def align_to_word_start(text: str, pos: int) -> int:
+    """Move forward to the next word boundary when pos lands inside a token."""
+    if pos <= 0 or pos >= len(text):
+        return max(0, pos)
+    if not text[pos - 1].isalnum() or not text[pos].isalnum():
+        return pos
+    ws = text.find(" ", pos)
+    return pos if ws == -1 else min(ws + 1, len(text))
+
+
+def clean_leading_ellipsis_fragment(text: str) -> str:
+    """Remove orphan prefix tokens after '…' (e.g. '…and shipped' → '…shipped')."""
+    if not text.startswith("…"):
+        return text
+    rest = text[1:].lstrip()
+    parts = rest.split(None, 1)
+    if len(parts) == 2 and len(parts[0]) <= 3 and parts[0].isalpha():
+        return "…" + parts[1]
+    return text
+
+
 def tokenize(text: str) -> FrozenSet[str]:
     return frozenset(_TOKEN_RE.findall(norm_text(text)))
 

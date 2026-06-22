@@ -14,7 +14,16 @@ from challenge.jd_config import (
     PRODUCTION_SIGNAL_PHRASES,
 )
 from challenge.semantic import career_semantic_from_blobs
-from challenge.text_match import compile_multi_patterns, count_phrases_fast, norm_text, split_phrases, tokenize
+from challenge.text_match import (
+    align_to_word_start,
+    clean_leading_ellipsis_fragment,
+    compile_multi_patterns,
+    count_phrases_fast,
+    norm_text,
+    split_phrases,
+    tokenize,
+    truncate_at_word_boundary,
+)
 
 _CAREER_JD_S, _CAREER_JD_M = split_phrases(tuple(CAREER_JD_WEIGHTS.keys()))
 _JD_OVR_S, _JD_OVR_M = split_phrases(JD_OVERLAP_PHRASES)
@@ -90,7 +99,7 @@ def cv_language_hits(idx: CandidateIndex) -> int:
 
 
 def _snippet_around_match(text: str, match: re.Match[str], limit: int = 88) -> str:
-    start = max(0, match.start() - 24)
+    start = align_to_word_start(text, max(0, match.start() - 24))
     end = min(len(text), match.end() + 48)
     chunk = text[start:end].strip()
     if start > 0:
@@ -98,7 +107,7 @@ def _snippet_around_match(text: str, match: re.Match[str], limit: int = 88) -> s
     if end < len(text):
         chunk = chunk + "…"
     if len(chunk) > limit + 4:
-        chunk = chunk[:limit].rsplit(" ", 1)[0] + "…"
+        chunk = truncate_at_word_boundary(chunk, limit)
     return chunk
 
 
@@ -109,6 +118,6 @@ def ir_career_snippet(history: List[Dict[str, Any]], limit: int = 88) -> str:
             continue
         m = _IR_REGEX.search(desc)
         if m:
-            snippet = _snippet_around_match(desc, m, limit)
+            snippet = clean_leading_ellipsis_fragment(_snippet_around_match(desc, m, limit))
             return f"{role.get('title', 'Role')} @ {role.get('company', '?')}: {snippet}"
     return ""

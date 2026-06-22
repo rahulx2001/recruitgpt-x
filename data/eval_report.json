@@ -8,55 +8,55 @@
   },
   "label_method": "independent_jd_rubric",
   "metrics_self_consistency_proxy": {
-    "ndcg_10": 0.8648,
-    "ndcg_50": 0.9267,
-    "map": 0.8195,
+    "ndcg_10": 0.863,
+    "ndcg_50": 0.9224,
+    "map": 0.8216,
     "p_at_10": 0.9
   },
   "metrics_behavioral_independent_proxy": {
-    "ndcg_10": 0.8687,
-    "ndcg_50": 0.9162,
-    "map": 0.9916,
+    "ndcg_10": 0.8834,
+    "ndcg_50": 0.9148,
+    "map": 0.987,
     "p_at_10": 1.0
   },
   "hand_label_eval": {
-    "n_labeled": 150,
+    "n_labeled": 250,
     "n_relevant_threshold_0.5": 88,
-    "n_relevant_threshold_0.25": 102,
+    "n_relevant_threshold_0.25": 108,
     "n_relevant_in_top10_at_0.5": 10,
-    "eval_pool_size": 150,
+    "eval_pool_size": 250,
     "label_method": "hand_curated_jd_tiers_v2",
     "metrics_at_0.5": {
-      "ndcg_10": 0.6888,
-      "ndcg_50": 0.7893,
-      "map": 0.9681,
+      "ndcg_10": 0.7152,
+      "ndcg_50": 0.7924,
+      "map": 0.9649,
       "p_at_10": 1.0
     },
     "metrics_at_0.25": {
-      "ndcg_10": 0.6888,
-      "ndcg_50": 0.7893,
-      "map": 0.9998,
+      "ndcg_10": 0.7152,
+      "ndcg_50": 0.7924,
+      "map": 0.9954,
       "p_at_10": 1.0
     },
     "metrics": {
-      "ndcg_10": 0.6888,
-      "ndcg_50": 0.7893,
-      "map": 0.9681,
+      "ndcg_10": 0.7152,
+      "ndcg_50": 0.7924,
+      "map": 0.9649,
       "p_at_10": 1.0
     },
-    "note": "Human JD tiers on sample + submission top-100. Sparse positives at 0.5 (88/150 labeled) explain p@10=1.0 with MAP=0.9681 when few tier\u22652 labels exist."
+    "note": "Human JD tiers on sample + submission top-100. Sparse positives at 0.5 (88/250 labeled) explain p@10=1.0 with MAP=0.9649 when few tier\u22652 labels exist."
   },
   "metrics_current_weights": {
-    "ndcg_10": 0.8648,
-    "ndcg_50": 0.9267,
-    "map": 0.8195,
+    "ndcg_10": 0.863,
+    "ndcg_50": 0.9224,
+    "map": 0.8216,
     "p_at_10": 0.9
   },
   "weight_ablation_on_behavioral_proxy": {
     "current": {
-      "ndcg_10": 0.8687,
-      "ndcg_50": 0.9162,
-      "map": 0.9916,
+      "ndcg_10": 0.8834,
+      "ndcg_50": 0.9148,
+      "map": 0.987,
       "p_at_10": 1.0
     },
     "semantic_heavy": {
@@ -69,6 +69,12 @@
       "ndcg_10": 0.8834,
       "ndcg_50": 0.9148,
       "map": 0.987,
+      "p_at_10": 1.0
+    },
+    "legacy_balanced": {
+      "ndcg_10": 0.8687,
+      "ndcg_50": 0.9162,
+      "map": 0.9916,
       "p_at_10": 1.0
     },
     "availability_heavy": {
@@ -85,24 +91,24 @@
     }
   },
   "best_preset_by_ndcg10": {
-    "name": "title_heavy",
+    "name": "current",
     "ndcg_10": 0.8834,
     "ndcg_50": 0.9148,
     "map": 0.987,
     "p_at_10": 1.0
   },
   "weights_current": {
-    "title": 0.17,
-    "skills": 0.16,
-    "career_semantic": 0.15,
-    "production": 0.11,
-    "assessment": 0.1,
+    "title": 0.24,
+    "skills": 0.18,
+    "career_semantic": 0.12,
+    "production": 0.1,
+    "assessment": 0.08,
     "availability": 0.1,
     "jd_overlap": 0.06,
     "experience": 0.05,
-    "location": 0.04,
-    "engagement": 0.06
+    "location": 0.03,
+    "engagement": 0.04
   },
   "note": "JD-rubric proxy is self-consistency only. Behavioral proxy uses education tier + github/search/completeness only (excludes saved_by_recruiters, response_rate, applications \u2014 all ranker inputs). Hand-label eval is the most defensible metric. NOT challenge hidden GT; expect real composite ~0.60\u20130.68.",
-  "runtime_seconds": 17.31
+  "runtime_seconds": 19.68
 }

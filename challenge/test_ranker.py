@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 from pathlib import Path
 
@@ -16,6 +17,16 @@ from challenge.data_paths import challenge_file
 
 SAMPLE = challenge_file("sample_candidates.json")
 CANDIDATES = challenge_file("candidates.jsonl")
+
+
+def test_truncate_at_word_boundary():
+    from challenge.text_match import truncate_at_word_boundary
+
+    text = "Designed and shipped multiple ranking models for discovery feed"
+    out = truncate_at_word_boundary(text, 40)
+    assert not out.startswith("…")
+    assert out.endswith("…")
+    assert " " not in out[-5:] or out[-5:].startswith("…")
 
 
 def test_substring_bugs_fixed():
@@ -60,6 +71,21 @@ def test_python_tensorflow_not_core_ir_names():
     row = score_candidate(data[0])
     for name in row.core_skill_names:
         assert name.lower() not in {s.lower() for s in GENERAL_ML_SKILLS}
+
+
+def test_reasoning_no_midword_truncation():
+    """Stage-4 snippets must not start with partial tokens (e.g. '…ed and shipped')."""
+    if not CANDIDATES.exists():
+        return
+    top = rank_candidates(CANDIDATES, top_k=20)
+    bad_prefix = re.compile(r"…[a-z]{1,3}\s", re.I)
+    for row in top:
+        for part in row.reasoning.split("Career note:"):
+            snippet = part.strip()
+            if snippet.startswith("…") and bad_prefix.match(snippet[:8]):
+                raise AssertionError(
+                    f"mid-word truncation in {row.candidate_id}: {snippet[:80]!r}"
+                )
 
 
 def test_reasoning_uses_model_score():

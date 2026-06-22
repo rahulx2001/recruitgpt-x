@@ -17,6 +17,7 @@ import asyncio
 import csv
 import json
 import logging
+import sys
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Set
 
@@ -226,17 +227,14 @@ async def _main() -> None:
     args = p.parse_args()
 
     if not args.jsonl.exists():
-        import os
+        repo_root = Path(__file__).resolve().parents[3]
+        sys.path.insert(0, str(repo_root))
+        from challenge.data_paths import challenge_file
 
-        official = os.environ.get(
-            "CHALLENGE_DATA_ROOT",
-            "/Users/rahulkumarsinghj/Downloads/"
-            "[PUB] India_runs_data_and_ai_challenge/India_runs_data_and_ai_challenge",
-        )
-        alt = Path(official) / "candidates.jsonl"
-        if alt.exists():
+        alt = challenge_file("candidates.jsonl")
+        if alt.is_file():
             args.jsonl = alt
-            log.info("Using official challenge jsonl at %s", alt)
+            log.info("Using challenge jsonl at %s", alt)
         else:
             raise SystemExit(
                 f"jsonl not found: {args.jsonl}. Run ./scripts/sync_challenge_data.sh"

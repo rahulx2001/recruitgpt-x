@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import csv
 import random
+import re
 import sys
 from pathlib import Path
 
@@ -12,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 MIN_LEN = 40
-TEMPLATE_PREFIX = " with "
+_MIDWORD_ELLIPSIS = re.compile(r"…[a-z]{1,3}\s", re.I)
 
 
 def main() -> int:
@@ -52,6 +53,8 @@ def main() -> int:
         rank = int(r["rank"])
         if len(reason) < MIN_LEN:
             errors.append(f"rank {rank}: reasoning too short ({len(reason)} chars)")
+        if _MIDWORD_ELLIPSIS.search(reason):
+            errors.append(f"rank {rank}: mid-word ellipsis truncation detected")
         if rank <= 10 and "concern" in reason.lower() and "top pick" not in reason.lower():
             pass  # minor flags OK
         if rank >= 90 and "top pick" in reason.lower():

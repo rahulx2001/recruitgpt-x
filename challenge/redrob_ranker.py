@@ -54,12 +54,14 @@ from challenge.jd_config import (
     WEAK_TITLES,
 )
 from challenge.text_match import (
+    clean_leading_ellipsis_fragment,
     compile_multi_patterns,
     count_phrases_fast,
     norm_skill,
     norm_text,
     split_phrases,
     tokenize,
+    truncate_at_word_boundary,
 )
 
 _PROF_MAP = {"beginner": 1, "intermediate": 2, "advanced": 3, "expert": 4}
@@ -90,17 +92,18 @@ def _embedding_store() -> EmbeddingStore:
     return _EMBED_STORE
 
 
+# Ablation winner on behavioral proxy (eval_harness): title_heavy beats uniform/current.
 DEFAULT_WEIGHTS: Dict[str, float] = {
-    "title": 0.17,
-    "skills": 0.16,
-    "career_semantic": 0.15,
-    "production": 0.11,
-    "assessment": 0.10,
+    "title": 0.24,
+    "skills": 0.18,
+    "career_semantic": 0.12,
+    "production": 0.10,
+    "assessment": 0.08,
     "availability": 0.10,
     "jd_overlap": 0.06,
     "experience": 0.05,
-    "location": 0.04,
-    "engagement": 0.06,
+    "location": 0.03,
+    "engagement": 0.04,
 }
 
 
@@ -337,9 +340,7 @@ def _engagement_score(signals: Dict[str, Any]) -> float:
 
 
 def _truncate_snippet(text: str, limit: int = 88) -> str:
-    if len(text) <= limit:
-        return text
-    return text[:limit].rsplit(" ", 1)[0] + "…"
+    return truncate_at_word_boundary(text, limit)
 
 
 def _build_reasoning(
@@ -428,9 +429,12 @@ def _build_reasoning(
 
     jd_tie = ""
     if rank <= 10 and ir_snippet:
+        jd_excerpt = clean_leading_ellipsis_fragment(
+            _truncate_snippet(ir_snippet.split(":", 1)[-1].strip(), 72)
+        )
         jd_tie = (
             " JD fit: career evidence supports founding-team retrieval/ranking mandate "
-            f"({ir_snippet.split(':', 1)[-1].strip()[:60]}…)."
+            f"({jd_excerpt})."
         )
 
     extra = ""

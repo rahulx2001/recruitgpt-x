@@ -40,13 +40,14 @@ ai_usage_summary: |
 
 methodology_summary: |
   Ranker v5 (canonical / Stage 3): committed MiniLM bi-encoder (embeddings.fp16.npz) → hybrid
-  JD-aligned scorer (title/skills/production/availability/trap modifiers) → calibrated top-100.
-  Cross-encoder rerank is opt-in only (RANKER_USE_CROSS_ENCODER=1); submission artifact is
+  JD-aligned scorer with ablation-selected title_heavy weights (title 0.24, skills 0.18) → calibrated
+  top-100. Cross-encoder rerank is opt-in only (RANKER_USE_CROSS_ENCODER=1); submission artifact is
   generated with CE OFF for byte-identical offline reproduction. TF-IDF JD proxy when npy absent.
   Resolves JD tensions: shipper over researcher, anti-keyword-stuffing, availability-weighted,
   anti-consulting, FAANG yellow-flag. Structural honeypot detection; CV/junior gate. ~49s on 100K
-  CPU, no network. Eval: 150 hand JD-tier labels + non-circular behavioral proxy (education/github
-  only; excludes recruiter saves/response rate). Embeddings: all-MiniLM-L6-v2@1110a243. NOT hidden GT.
+  CPU, no network. Eval: ≥200 hand JD-tier labels (sample + top-100 + stratified pool) + non-circular
+  behavioral proxy (education/github only; excludes recruiter saves/response rate). Embeddings:
+  all-MiniLM-L6-v2@1110a243. NOT hidden GT.
 
 declarations:
   read_submission_spec: true
