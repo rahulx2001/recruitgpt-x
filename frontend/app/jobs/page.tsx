@@ -1,95 +1,232 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import * as React from "react";
 import Link from "next/link";
-import { Navbar } from "@/components/Navbar";
-import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
+import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus, Users, Clock, MoreHorizontal } from "lucide-react";
+import { AppShell } from "@/components/app/AppShell";
+import { Dropdown, DropdownItem } from "@/components/app/Dropdown";
+import { EmptyState, JobCardsSkeleton } from "@/components/app/LoadingStates";
+import { useWorkspaceJobsOverview } from "@/lib/useWorkspaceBundle";
 import { api } from "@/lib/api";
-import { Briefcase, ArrowRight, Plus, Sparkles } from "lucide-react";
+import { FUNNEL_STAGE_COLORS } from "@/lib/funnelColors";
 
-export default function JobsListPage() {
-  const { data: jobs = [], isLoading } = useQuery({ queryKey: ["jobs"], queryFn: api.listJobs });
+const statusTone: Record<string, string> = {
+  Open: "badge--info",
+  Interviewing: "badge--accent",
+  "Offer stage": "badge--warning",
+};
+
+export default function JobsPage() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { data: jobs = [], isLoading, isError } = useWorkspaceJobsOverview();
+  const totalCandidates = jobs[0]?.candidate_count ?? 0;
+  const [pausedIds, setPausedIds] = React.useState<Set<string>>(() => new Set());
+  const [archivedIds, setArchivedIds] = React.useState<Set<string>>(() => new Set());
+  const [toast, setToast] = React.useState<string | null>(null);
+
+  const duplicate = useMutation({
+    mutationFn: (job: (typeof jobs)[0]) =>
+      api.createJob({
+        title: `${job.title} (Copy)`,
+        description: `Duplicate of ${job.title}. Challenge pool role with ${job.candidate_count} ranked candidates.`,
+      }),
+    onSuccess: (created) => {
+      queryClient.invalidateQueries({ queryKey: ["workspace-jobs-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      setToast(`Duplicated → ${created.title}`);
+      router.push(`/jobs/${created.id}`);
+    },
+    onError: (e) => setToast((e as Error).message || "Duplicate failed"),
+  });
+
+  React.useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 3200);
+    return () => window.clearTimeout(t);
+  }, [toast]);
+
+  const visibleJobs = jobs.filter((j) => !archivedIds.has(j.id));
 
   return (
-    <>
-      <Navbar />
-      <main className="container mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-ink mb-1">Jobs</h1>
-            <p className="text-ink-muted text-sm">
-              All job postings with rankings & insights.
-            </p>
-          </div>
-          <Link href="/jobs/new">
-            <Button>
-              <Plus className="h-4 w-4" /> New Job
-            </Button>
-          </Link>
+    <AppShell
+      title="Jobs"
+      subtitle={
+        isLoading
+          ? "Loading requisitions…"
+          : `${visibleJobs.length} open requisitions · ${totalCandidates} candidates in challenge pool`
+      }
+      actions={
+        <Link href="/jobs/new" className="btn btn--primary btn--sm">
+          <Plus size={15} /> New job
+        </Link>
+      }
+    >
+      {isError && (
+        <div className="card p-8 text-center text-critical text-[14px]">
+          Could not load jobs from API.
         </div>
+      )}
 
-        {isLoading && (
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 skeleton rounded-xl" />
-            ))}
-          </div>
-        )}
+      {isLoading && <JobCardsSkeleton />}
 
-        <div className="space-y-3">
-          {jobs.map((j) => (
-            <Link key={j.id} href={`/jobs/${j.id}`}>
-              <Card className="p-5 hover:border-brand-400/40 transition-all group">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-brand-500/20 to-accent-violet/20 border border-brand-500/30 flex items-center justify-center">
-                    <Briefcase className="h-5 w-5 text-brand-300" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-ink">{j.title}</h3>
-                      {j.blueprint && (
-                        <Badge variant="cyan">
-                          <Sparkles className="h-3 w-3" /> Blueprint ready
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-ink-muted line-clamp-1">
-                      {j.description.slice(0, 150)}...
-                    </p>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {j.blueprint?.hard_skills?.slice(0, 5).map((s, i) => (
-                        <Badge key={i} variant="default" className="text-[10px]">{s}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <div className="text-[10px] text-ink-subtle uppercase tracking-wider mb-1">
-                      Created
-                    </div>
-                    <div className="text-xs text-ink-muted">
-                      {new Date(j.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <ArrowRight className="h-5 w-5 text-ink-subtle group-hover:text-brand-400 group-hover:translate-x-1 transition-all" />
-                </div>
-              </Card>
+      {!isLoading && !isError && visibleJobs.length === 0 && (
+        <EmptyState
+          title="No jobs yet"
+          description="Create your first requisition to start ranking candidates."
+          action={
+            <Link href="/jobs/new" className="btn btn--primary btn--sm">
+              <Plus size={15} /> Create job
             </Link>
-          ))}
-          {jobs.length === 0 && !isLoading && (
-            <Card className="p-12 text-center border-dashed">
-              <Briefcase className="h-10 w-10 text-ink-subtle mx-auto mb-3" />
-              <div className="text-sm text-ink-muted">No jobs yet. Create your first one!</div>
-              <Link href="/jobs/new" className="inline-block mt-4">
-                <Button>
-                  <Plus className="h-4 w-4" /> Create Job
-                </Button>
+          }
+        />
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {visibleJobs.map((j) => {
+          const total =
+            j.stages.applied +
+            j.stages.screened +
+            j.stages.interview +
+            j.stages.offer;
+          const segs = [
+            { v: j.stages.applied, c: FUNNEL_STAGE_COLORS.Applied, label: "Applied" },
+            { v: j.stages.screened, c: FUNNEL_STAGE_COLORS.Screened, label: "Screened" },
+            { v: j.stages.interview, c: FUNNEL_STAGE_COLORS.Interview, label: "Interview" },
+            { v: j.stages.offer, c: FUNNEL_STAGE_COLORS.Offer, label: "Offer" },
+          ];
+          const isPaused = pausedIds.has(j.id);
+
+          return (
+            <div
+              key={j.id}
+              className={`card card--hover p-5 ${isPaused ? "opacity-70" : ""}`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <Link href={`/jobs/${j.id}`} className="flex-1 min-w-0 block">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h3 className="text-[16px] font-semibold text-ink tracking-tight">
+                      {j.title}
+                    </h3>
+                    <span
+                      className={`badge ${statusTone[isPaused ? "Open" : j.status] ?? "badge--info"} badge--dot`}
+                    >
+                      {isPaused ? "Paused" : j.status}
+                    </span>
+                  </div>
+                  <p className="text-[13px] text-ink-muted mt-1">
+                    Challenge pool · {j.candidate_count} ranked candidates
+                  </p>
+                </Link>
+                <Dropdown
+                  trigger={
+                    <button
+                      type="button"
+                      className="h-8 w-8 grid place-items-center rounded-md text-ink-faint hover:bg-subtle hover:text-ink transition-colors shrink-0"
+                      aria-label={`Actions for ${j.title}`}
+                      onClick={(e) => e.preventDefault()}
+                    >
+                      <MoreHorizontal size={17} />
+                    </button>
+                  }
+                >
+                  <DropdownItem onClick={() => router.push(`/jobs/${j.id}`)}>
+                    Edit
+                  </DropdownItem>
+                  <DropdownItem
+                    onClick={() => {
+                      if (!duplicate.isPending) duplicate.mutate(j);
+                    }}
+                  >
+                    {duplicate.isPending ? "Duplicating…" : "Duplicate"}
+                  </DropdownItem>
+                  <DropdownItem
+                    onClick={() => {
+                      setPausedIds((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(j.id)) next.delete(j.id);
+                        else next.add(j.id);
+                        return next;
+                      });
+                      setToast(
+                        isPaused
+                          ? `Resumed ${j.title}`
+                          : `Paused ${j.title}`
+                      );
+                    }}
+                  >
+                    {isPaused ? "Resume" : "Pause"}
+                  </DropdownItem>
+                  <DropdownItem
+                    destructive
+                    onClick={() => {
+                      setArchivedIds((prev) => new Set(prev).add(j.id));
+                      setToast(`Archived ${j.title}`);
+                    }}
+                  >
+                    Archive
+                  </DropdownItem>
+                </Dropdown>
+              </div>
+
+              <Link href={`/jobs/${j.id}`} className="block mt-5">
+                <div className="flex h-2 rounded-full overflow-hidden bg-subtle">
+                  {segs.map((s) => (
+                    <div
+                      key={s.label}
+                      style={{
+                        width: total > 0 ? `${(s.v / total) * 100}%` : "0%",
+                        background: s.c,
+                      }}
+                    />
+                  ))}
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2.5">
+                  {segs.map((s) => (
+                    <span
+                      key={s.label}
+                      className="inline-flex items-center gap-1.5 text-[12px] text-ink-muted"
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full"
+                        style={{ background: s.c }}
+                      />
+                      {s.label}
+                      <span className="font-semibold text-ink-secondary tnum">
+                        {s.v}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between mt-5 pt-4 border-t border-line">
+                  <div className="flex items-center gap-4">
+                    <span className="inline-flex items-center gap-1.5 text-[13px] text-ink-secondary">
+                      <Users size={14} className="text-ink-faint" />
+                      <span className="font-semibold tnum">
+                        {j.candidate_count}
+                      </span>
+                      in pool
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 text-[13px] text-ink-muted">
+                      <Clock size={14} className="text-ink-faint" />
+                      {j.days_open}d open
+                    </span>
+                  </div>
+                </div>
               </Link>
-            </Card>
-          )}
+            </div>
+          );
+        })}
+      </div>
+
+      {toast && (
+        <div role="status" className="toast">
+          {toast}
         </div>
-      </main>
-    </>
+      )}
+    </AppShell>
   );
 }

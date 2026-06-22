@@ -1,5 +1,6 @@
 "use client";
 
+import type { ComponentType } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/Card";
 import { Badge } from "./ui/Badge";
@@ -91,7 +92,7 @@ function DistributionRow({
   label,
   data,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: ComponentType<{ className?: string }>;
   label: string;
   data: Record<string, number>;
 }) {

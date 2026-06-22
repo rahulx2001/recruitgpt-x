@@ -12,8 +12,10 @@ from challenge.redrob_ranker import _skill_bucket, rank_candidates, score_candid
 from challenge.text_match import phrase_in_text
 
 ROOT = Path(__file__).resolve().parents[1]
-SAMPLE = ROOT / "data" / "sample_candidates.json"
-CANDIDATES = ROOT / "data" / "candidates.jsonl"
+from challenge.data_paths import challenge_file
+
+SAMPLE = challenge_file("sample_candidates.json")
+CANDIDATES = challenge_file("candidates.jsonl")
 
 
 def test_substring_bugs_fixed():

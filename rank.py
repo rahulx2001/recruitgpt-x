@@ -18,9 +18,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 
+from challenge.data_paths import challenge_file
 from challenge.redrob_ranker import rank_candidates, run_self_test, write_submission
 
-DEFAULT_DATA = ROOT / "data" / "candidates.jsonl"
+DEFAULT_DATA = challenge_file("candidates.jsonl")
 
 
 def main() -> int:
@@ -42,14 +43,13 @@ def main() -> int:
     args = p.parse_args()
 
     if args.self_test:
-        sample = args.candidates.parent / "sample_candidates.json"
-        if not sample.exists():
-            sample = ROOT / "data" / "sample_candidates.json"
+        sample = challenge_file("sample_candidates.json")
         return run_self_test(sample if sample.exists() else None)
 
     if not args.candidates.exists():
         print(f"ERROR: candidates file not found: {args.candidates}", file=sys.stderr)
-        print("Copy candidates.jsonl to ./data/ or pass --candidates PATH", file=sys.stderr)
+        print("Run: ./scripts/sync_challenge_data.sh", file=sys.stderr)
+        print("Or set CHALLENGE_DATA_ROOT to the official challenge folder.", file=sys.stderr)
         return 1
 
     t0 = time.perf_counter()

@@ -12,8 +12,10 @@ echo "║  RecruitGPT X — Finalize Submission              ║"
 echo "╚══════════════════════════════════════════════════╝"
 echo
 
+bash scripts/sync_challenge_data.sh
+
 if [[ ! -f data/candidates.jsonl ]]; then
-  echo "ERROR: data/candidates.jsonl missing. See data/README.md"
+  echo "ERROR: data/candidates.jsonl missing after sync. See data/README.md"
   exit 1
 fi
 

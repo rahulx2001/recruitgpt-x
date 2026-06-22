@@ -1,274 +1,241 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import * as React from "react";
+import { Suspense } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Search as SearchIcon,
+  Search,
   Sparkles,
-  Loader2,
-  MapPin,
-  Briefcase,
   ArrowRight,
+  Clock,
+  Bookmark,
+  CornerDownLeft,
 } from "lucide-react";
-import { Navbar } from "@/components/Navbar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
+import { useQuery } from "@tanstack/react-query";
+import { AppShell } from "@/components/app/AppShell";
+import { CandidateAvatar, RecommendationBadge } from "@/components/app/Atoms";
 import { api } from "@/lib/api";
-import type { SearchResult } from "@/lib/types";
-import { initials } from "@/lib/utils";
-
-const SUGGESTIONS = [
-  "ML engineer with PyTorch and AWS experience",
-  "Strong SQL but no Power BI",
-  "Startup experience, fast learner",
-  "Senior data scientist with leadership",
-  "Backend engineer with distributed systems",
-  "Recent graduate with strong portfolio",
-];
+import { mapSearchResults, parseRedrobId } from "@/lib/candidateAdapter";
+import { useWorkspaceSearchMeta } from "@/lib/useWorkspaceBundle";
 
 export default function SearchPage() {
-  const [query, setQuery] = useState("");
-  const [submitted, setSubmitted] = useState("");
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-canvas" />}>
+      <SearchView />
+    </Suspense>
+  );
+}
 
-  const { data, isLoading, error } = useQuery<SearchResult[]>({
-    queryKey: ["search", submitted],
-    queryFn: () => (submitted ? api.search(submitted, 12) : Promise.resolve([])),
-    enabled: !!submitted,
+function SearchView() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialQ = searchParams.get("q") ?? "";
+  const [query, setQuery] = React.useState(initialQ);
+  const [submitted, setSubmitted] = React.useState(initialQ);
+
+  React.useEffect(() => {
+    const q = searchParams.get("q") ?? "";
+    setQuery(q);
+    setSubmitted(q);
+  }, [searchParams]);
+
+  const { data: meta } = useWorkspaceSearchMeta();
+  const { data: rankings = [] } = useQuery({
+    queryKey: ["challenge-rankings"],
+    queryFn: () => api.challengeRankings(),
   });
 
-  function submit(q?: string) {
-    const next = (q ?? query).trim();
-    if (!next) return;
-    setSubmitted(next);
-  }
+  const { data: rawResults = [], isFetching } = useQuery({
+    queryKey: ["search", submitted],
+    queryFn: () => api.search(submitted, 10),
+    enabled: Boolean(submitted.trim()),
+  });
+
+  const results = React.useMemo(
+    () => mapSearchResults(rawResults, rankings),
+    [rawResults, rankings]
+  );
+
+  const run = (q: string) => {
+    const trimmed = q.trim();
+    setQuery(trimmed);
+    setSubmitted(trimmed);
+    const params = new URLSearchParams();
+    if (trimmed) params.set("q", trimmed);
+    const path = params.toString() ? `/search?${params}` : "/search";
+    router.replace(path, { scroll: false });
+  };
 
   return (
-    <>
-      <Navbar />
-      <main className="container mx-auto px-6 py-10">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 mb-3">
-              <SearchIcon className="h-3 w-3 text-brand-300" />
-              <span className="text-[10px] font-medium text-brand-200 uppercase tracking-wider">
-                Natural language search · powered by BGE embeddings
-              </span>
-            </div>
-            <h1 className="text-3xl font-bold text-ink">
-              Find candidates by meaning, not keywords
-            </h1>
-            <p className="text-ink-muted mt-2 max-w-2xl">
-              Ask in plain English. Our semantic search indexes skills, projects,
-              experience, and career signals to surface the right people —
-              even when the words don&apos;t match exactly.
-            </p>
-          </div>
+    <AppShell
+      title="Search"
+      subtitle="Search your challenge candidate pool via the backend ranker index"
+    >
+      <div className="max-w-3xl mx-auto">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (query.trim()) run(query);
+          }}
+          className="relative"
+        >
+          <Sparkles
+            size={18}
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-accent"
+          />
+          <input
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="e.g. ML engineers with production deployment experience…"
+            className="w-full h-14 pl-12 pr-28 rounded-xl border border-line-strong bg-surface text-[15px] shadow-sm outline-none focus:border-accent focus:ring-4 focus:ring-accent-soft transition"
+          />
+          <button
+            type="submit"
+            className="btn btn--primary btn--sm absolute right-2.5 top-1/2 -translate-y-1/2"
+          >
+            Search <CornerDownLeft size={14} />
+          </button>
+        </form>
 
-          <Card>
-            <CardContent className="p-4">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  submit();
-                }}
-                className="flex gap-2"
-              >
-                <div className="relative flex-1">
-                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-subtle" />
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="e.g. strong in SQL but lacking Power BI"
-                    className="w-full rounded-lg border border-bg-border bg-bg-elevated pl-10 pr-4 py-3 text-sm text-ink placeholder:text-ink-subtle focus:border-brand-400/60 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-                    autoFocus
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={isLoading || !query.trim()}
-                  className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-brand-500 to-accent-violet px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 disabled:opacity-50 transition-all"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                  Search
-                </button>
-              </form>
-
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                <span className="text-[10px] text-ink-subtle uppercase tracking-wider mr-1 self-center">
-                  Try:
-                </span>
-                {SUGGESTIONS.map((s, i) => (
+        {!submitted ? (
+          <div className="mt-8 space-y-8">
+            <div>
+              <span className="h-eyebrow">Suggested searches</span>
+              <div className="grid sm:grid-cols-2 gap-2.5 mt-3">
+                {(meta?.suggested ?? []).map((s) => (
                   <button
-                    key={i}
-                    onClick={() => {
-                      setQuery(s);
-                      submit(s);
-                    }}
-                    disabled={isLoading}
-                    className="rounded-full bg-bg-elevated border border-bg-border hover:border-brand-400/40 hover:bg-brand-500/5 px-3 py-1 text-[11px] text-ink-muted hover:text-ink transition-all disabled:opacity-50"
+                    key={s}
+                    onClick={() => run(s)}
+                    className="card card--hover text-left p-3.5 flex items-start gap-3 group"
                   >
-                    {s}
+                    <Search
+                      size={16}
+                      className="text-ink-faint mt-0.5 group-hover:text-accent transition-colors"
+                    />
+                    <span className="text-[13.5px] text-ink-secondary leading-snug">
+                      {s}
+                    </span>
                   </button>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Results */}
-          <div className="mt-6">
-            {submitted && isLoading && (
-              <div className="flex items-center justify-center gap-2 py-16 text-ink-muted text-sm">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Searching {data === undefined ? "…" : "candidates"} semantically…
-              </div>
-            )}
-
-            {error && (
-              <Card>
-                <CardContent className="py-12 text-center text-rose-300 text-sm space-y-2">
-                  <p>
-                    {error instanceof Error
-                      ? error.message
-                      : "Search request failed."}
-                  </p>
-                  <p className="text-ink-subtle text-xs">
-                    API expects{" "}
-                    <code className="font-mono text-[11px]">
-                      {`{ "query": "...", "top_k": 12 }`}
-                    </code>
-                    . Ensure the backend is running on http://localhost:8000.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {!isLoading && data && data.length === 0 && (
-              <Card>
-                <CardContent className="py-12 text-center text-ink-subtle text-sm">
-                  No candidates matched. Try a different query.
-                </CardContent>
-              </Card>
-            )}
-
-            {data && data.length > 0 && (
-              <>
-                <div className="text-xs text-ink-muted mb-3 flex items-center justify-between">
-                  <span>
-                    Found{" "}
-                    <span className="text-ink font-semibold">
-                      {data.length}
-                    </span>{" "}
-                    candidates matching{" "}
-                    <span className="text-brand-300">&ldquo;{submitted}&rdquo;</span>
-                  </span>
-                  <span className="font-mono text-[10px] text-ink-subtle">
-                    ranked by cosine similarity
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {data.map((r, i) => (
-                    <motion.div
-                      key={r.candidate.id}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.04 }}
+            <div className="grid sm:grid-cols-2 gap-8">
+              <div>
+                <span className="h-eyebrow">Recent</span>
+                <div className="mt-3 space-y-1">
+                  {(meta?.recent ?? []).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => run(s)}
+                      className="flex items-center gap-2.5 w-full text-left px-2 py-2 rounded-lg hover:bg-subtle text-[13.5px] text-ink-secondary"
                     >
-                      <Card className="hover:border-brand-400/40 transition-colors">
-                        <CardContent className="p-4">
-                          <div className="flex items-start gap-4">
-                            <div className="h-12 w-12 shrink-0 rounded-full bg-gradient-to-br from-brand-500 to-accent-violet flex items-center justify-center font-bold text-white text-sm">
-                              {initials(r.candidate.full_name)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                                <Link
-                                  href={`/candidates/${r.candidate.id}`}
-                                  className="font-semibold text-ink hover:text-brand-300 transition-colors"
-                                >
-                                  {r.candidate.full_name}
-                                </Link>
-                                <Badge variant="brand">
-                                  {r.candidate.years_experience}y
-                                </Badge>
-                                <span className="text-[10px] font-mono text-ink-subtle">
-                                  sim {r.similarity.toFixed(3)}
-                                </span>
-                              </div>
-                              <div className="text-xs text-ink-muted mb-2">
-                                {r.candidate.headline ||
-                                  r.candidate.current_role ||
-                                  "—"}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-3 text-[11px] text-ink-subtle">
-                                {r.candidate.location && (
-                                  <span className="flex items-center gap-1">
-                                    <MapPin className="h-3 w-3" />
-                                    {r.candidate.location}
-                                  </span>
-                                )}
-                                {r.candidate.current_role && (
-                                  <span className="flex items-center gap-1">
-                                    <Briefcase className="h-3 w-3" />
-                                    {r.candidate.current_role}
-                                  </span>
-                                )}
-                              </div>
-                              {r.matched_aspects.length > 0 && (
-                                <div className="mt-2 flex flex-wrap gap-1">
-                                  {r.matched_aspects.slice(0, 6).map((a, j) => (
-                                    <Badge
-                                      key={j}
-                                      variant="default"
-                                      className="text-[9px]"
-                                    >
-                                      {a}
-                                    </Badge>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                            <Link
-                              href={`/candidates/${r.candidate.id}`}
-                              className="shrink-0 text-ink-subtle hover:text-brand-300 transition-colors"
-                            >
-                              <ArrowRight className="h-4 w-4" />
-                            </Link>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
+                      <Clock size={14} className="text-ink-faint flex-shrink-0" />
+                      <span className="truncate">{s}</span>
+                    </button>
                   ))}
                 </div>
-              </>
-            )}
-
-            {!submitted && (
-              <Card className="mt-2">
-                <CardContent className="py-12 text-center">
-                  <Sparkles className="h-8 w-8 text-brand-400 mx-auto mb-3" />
-                  <div className="text-sm text-ink-muted">
-                    Try a natural language query above to find candidates by
-                    meaning.
-                  </div>
-                  <div className="text-[11px] text-ink-subtle mt-2 max-w-md mx-auto">
-                    Examples: <em>&ldquo;data scientist with healthcare
-                    background&rdquo;</em>, <em>&ldquo;strong communicator but
-                    limited leadership&rdquo;</em>,{" "}
-                    <em>&ldquo;recent graduate hungry to learn&rdquo;</em>.
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+              </div>
+              <div>
+                <span className="h-eyebrow">Saved searches</span>
+                <div className="mt-3 space-y-1">
+                  {(meta?.saved ?? []).map((s) => (
+                    <button
+                      key={s.name}
+                      onClick={() => run(s.query)}
+                      className="flex items-center gap-2.5 w-full text-left px-2 py-2 rounded-lg hover:bg-subtle"
+                    >
+                      <Bookmark size={14} className="text-ink-faint flex-shrink-0" />
+                      <span className="text-[13.5px] text-ink-secondary truncate flex-1">
+                        {s.name}
+                      </span>
+                      <span className="text-[12px] text-ink-faint tnum">
+                        {s.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </main>
-    </>
+        ) : (
+          <div className="mt-7">
+            <div className="card p-4 bg-accent-soft/50 border-accent/20 flex items-start gap-3 mb-5">
+              <Sparkles size={16} className="text-accent mt-0.5" />
+              <p className="text-[13.5px] text-ink-secondary leading-relaxed">
+                {isFetching ? (
+                  "Searching challenge pool…"
+                ) : (
+                  <>
+                    Found{" "}
+                    <span className="font-semibold text-ink">
+                      {results.length} matches
+                    </span>{" "}
+                    for &ldquo;{submitted}&rdquo; from your imported candidates.
+                  </>
+                )}
+              </p>
+            </div>
+
+            <div className="space-y-2.5">
+              {results.map((c) => {
+                const highlight =
+                  c.id ||
+                  (rawResults.find((r) => r.candidate.full_name === c.name)
+                    ? parseRedrobId(
+                        rawResults.find((r) => r.candidate.full_name === c.name)!
+                          .candidate
+                      )
+                    : "");
+                return (
+                  <div
+                    key={c.id + c.name}
+                    className="card card--hover p-4 flex items-center gap-4"
+                  >
+                    <span
+                      className="text-[17px] font-semibold tnum w-9 text-center"
+                      style={{
+                        color: c.matchScore >= 90 ? "#0E9F6E" : "#4F46E5",
+                      }}
+                    >
+                      {c.matchScore}
+                    </span>
+                    <CandidateAvatar name={c.name} gender={c.gender} size={40} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[14px] font-semibold text-ink">
+                          {c.name}
+                        </span>
+                        <RecommendationBadge value={c.recommendation} />
+                      </div>
+                      <p className="text-[12.5px] text-ink-muted truncate">
+                        {c.title} · {c.company} · {c.experienceYears}y
+                      </p>
+                      <p className="text-[12.5px] text-ink-secondary mt-1 truncate">
+                        <span className="text-accent font-medium">Match:</span>{" "}
+                        {c.reasons[0]}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/candidates?highlight=${highlight}`}
+                      className="btn btn--secondary btn--sm"
+                    >
+                      View <ArrowRight size={14} />
+                    </Link>
+                  </div>
+                );
+              })}
+              {!isFetching && results.length === 0 && (
+                <p className="text-center text-ink-muted py-8 text-[14px]">
+                  No matches — try a broader query.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </AppShell>
   );
 }

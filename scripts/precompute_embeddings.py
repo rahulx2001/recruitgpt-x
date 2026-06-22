@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from challenge.data_paths import challenge_file
 from challenge.embeddings import EmbeddingStore, candidate_text
 from challenge.redrob_ranker import load_candidates
 
@@ -21,7 +22,7 @@ def main() -> int:
     p.add_argument(
         "--candidates",
         type=Path,
-        default=ROOT / "data" / "candidates.jsonl",
+        default=challenge_file("candidates.jsonl"),
     )
     p.add_argument(
         "--out",

@@ -58,7 +58,9 @@ def _tier_for(raw: dict) -> tuple[int, str]:
 
 
 def main() -> int:
-    sample = ROOT / "data" / "sample_candidates.json"
+    from challenge.data_paths import challenge_file
+
+    sample = challenge_file("sample_candidates.json")
     out = ROOT / "data" / "hand_labels.json"
     rows = json.loads(sample.read_text(encoding="utf-8"))
     labels = {}

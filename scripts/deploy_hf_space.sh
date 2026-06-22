@@ -5,15 +5,15 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-SPACE="${HF_SPACE:-rahulx2001/recruitgpt-ranker}"
-SPACE_NAME="${SPACE##*/}"
-SPACE_USER="${SPACE%%/*}"
-
-# Load deploy secrets if present
+# Load deploy secrets before reading HF_SPACE
 if [[ -f "$ROOT/.env.deploy" ]]; then
   # shellcheck disable=SC1091
   set -a && source "$ROOT/.env.deploy" && set +a
 fi
+
+SPACE="${HF_SPACE:-rahulx2001/recruitgpt-ranker}"
+SPACE_NAME="${SPACE##*/}"
+SPACE_USER="${SPACE%%/*}"
 
 TOKEN="${HF_TOKEN:-${HUGGING_FACE_HUB_TOKEN:-}}"
 

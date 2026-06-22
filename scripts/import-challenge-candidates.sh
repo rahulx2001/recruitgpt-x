@@ -5,10 +5,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT/backend"
 
+# Always use official challenge bundle (synced into data/ or CHALLENGE_DATA_ROOT).
+bash "$ROOT/scripts/sync_challenge_data.sh"
 JSONL="${1:-$ROOT/data/candidates.jsonl}"
-if [[ ! -f "$JSONL" ]]; then
-  JSONL="/Users/rahulkumarsinghj/DeveloperFolder/Code/ai_rca_platform/India_runs_data_and_ai_challenge/candidates.jsonl"
-fi
 
 source .venv/bin/activate
 python -m app.data.import_challenge --jsonl "$JSONL" --top-100 --replace

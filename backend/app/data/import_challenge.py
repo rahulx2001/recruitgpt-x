@@ -226,15 +226,21 @@ async def _main() -> None:
     args = p.parse_args()
 
     if not args.jsonl.exists():
-        alt = Path(
-            "/Users/rahulkumarsinghj/DeveloperFolder/Code/ai_rca_platform/"
-            "India_runs_data_and_ai_challenge/candidates.jsonl"
+        import os
+
+        official = os.environ.get(
+            "CHALLENGE_DATA_ROOT",
+            "/Users/rahulkumarsinghj/Downloads/"
+            "[PUB] India_runs_data_and_ai_challenge/India_runs_data_and_ai_challenge",
         )
+        alt = Path(official) / "candidates.jsonl"
         if alt.exists():
             args.jsonl = alt
-            log.info("Using challenge jsonl at %s", alt)
+            log.info("Using official challenge jsonl at %s", alt)
         else:
-            raise SystemExit(f"jsonl not found: {args.jsonl}")
+            raise SystemExit(
+                f"jsonl not found: {args.jsonl}. Run ./scripts/sync_challenge_data.sh"
+            )
 
     settings = get_settings()
     owner = settings.default_dev_user_id

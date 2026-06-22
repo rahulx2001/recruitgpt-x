@@ -20,6 +20,13 @@ echo "║  RecruitGPT X — Pre-Submit Checklist             ║"
 echo "╚══════════════════════════════════════════════════╝"
 echo
 
+# ── 0. Official challenge data ───────────────────────────────────
+if bash scripts/sync_challenge_data.sh >/dev/null 2>&1; then
+  ok "official challenge data synced (Downloads bundle)"
+else
+  bad "sync_challenge_data.sh failed — check CHALLENGE_DATA_ROOT / Downloads path"
+fi
+
 # ── 1. Repo structure ──────────────────────────────────────────────
 for f in rank.py pyproject.toml requirements.txt submission_metadata.yaml \
          challenge/redrob_ranker.py scripts/validate_submission.py \
@@ -86,7 +93,7 @@ if [[ -f data/candidates.jsonl ]]; then
     bad "reasoning validation failed"
   fi
 else
-  bad "data/candidates.jsonl missing (see data/README.md)"
+  bad "data/candidates.jsonl missing — run ./scripts/sync_challenge_data.sh"
 fi
 
 # ── 5. Eval harness ──────────────────────────────────────────────

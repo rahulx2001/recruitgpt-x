@@ -89,5 +89,5 @@
     "engagement": 0.06
   },
   "note": "JD-rubric proxy is self-consistency only. Behavioral proxy uses education tier + recruiter saves/views/github \u2014 signals NOT used as ranker features. Hand-label eval on sample_candidates.json is the most defensible metric. NOT challenge hidden GT; expect real composite ~0.60\u20130.68.",
-  "runtime_seconds": 15.99
+  "runtime_seconds": 16.45
 }

@@ -142,6 +142,116 @@ export const api = {
       method: "POST",
       json: { query, top_k },
     }),
+
+  // Workspace (dashboard counts + challenge rankings)
+  workspaceStats: () =>
+    http<{
+      candidates: number;
+      jobs: number;
+      interviews: number;
+      scorecards_pending: number;
+      pool_label: string;
+      funnel: Array<{ stage: string; count: number; color: string }>;
+      synced: boolean;
+      ranked_count: number;
+    }>("/api/workspace/stats"),
+  workspaceSync: () =>
+    http<{
+      ok: boolean;
+      db_candidates: number;
+      submission_rows: number;
+      matched_rankings: number;
+      missing_in_db: string[];
+      missing_in_submission: string[];
+      message: string;
+    }>("/api/workspace/sync"),
+  workspaceActivity: () =>
+    http<
+      Array<{
+        id: string;
+        actor: string;
+        actor_color: string;
+        action: string;
+        target: string;
+        context: string;
+        time: string;
+        href: string;
+      }>
+    >("/api/workspace/activity"),
+  workspaceShortlists: () =>
+    http<
+      Array<{
+        id: string;
+        name: string;
+        job: string;
+        owner: string;
+        owner_color: string;
+        members: Array<{
+          candidate_id: string;
+          name: string;
+          avatar_color: string;
+          match_score: number;
+        }>;
+      }>
+    >("/api/workspace/shortlists"),
+  workspaceSearchMeta: () =>
+    http<{
+      suggested: string[];
+      recent: string[];
+      saved: Array<{ name: string; query: string; count: number; owner: string }>;
+    }>("/api/workspace/search-meta"),
+  workspaceJobsOverview: () =>
+    http<
+      Array<{
+        id: string;
+        title: string;
+        candidate_count: number;
+        stages: { applied: number; screened: number; interview: number; offer: number };
+        status: string;
+        created_at: string;
+        days_open: number;
+      }>
+    >("/api/workspace/jobs-overview"),
+  workspaceInsight: () =>
+    http<{
+      screened_count: number;
+      candidate_names: string;
+      job_title: string;
+    }>("/api/workspace/insight"),
+  workspaceInterviews: () =>
+    http<
+      Array<{
+        id: string;
+        candidate_id: string;
+        candidate: string;
+        candidate_color: string;
+        role: string;
+        round: string;
+        interviewer: string;
+        when: string;
+        status: "Scheduled" | "Awaiting feedback" | "Completed";
+        recommendation: string;
+      }>
+    >("/api/workspace/interviews"),
+  workspaceAnalytics: () =>
+    http<{
+      pool_label: string;
+      candidate_count: number;
+      kpis: Array<{ label: string; value: string; delta: string }>;
+      time_to_hire: Array<{ month: string; days: number }>;
+      conversion_funnel: Array<{ stage: string; count: number; color: string }>;
+      source_quality: Array<{ source: string; quality: number; hires: number }>;
+      trends: Array<{ month: string; rate: number; score: number }>;
+    }>("/api/workspace/analytics"),
+  challengeRankings: () =>
+    http<
+      Array<{
+        candidate_id: string;
+        rank: number;
+        score: number;
+        reasoning: string;
+      }>
+    >("/api/workspace/challenge-rankings"),
 };
 
 export { API_BASE };

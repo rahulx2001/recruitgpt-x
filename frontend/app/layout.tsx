@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
+import { Inter, Source_Serif_4, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 
@@ -9,24 +9,24 @@ const inter = Inter({
   display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
+const sourceSerif = Source_Serif_4({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["400"],
   variable: "--font-display",
   display: "swap",
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
-  weight: ["400", "500"],
+  weight: ["400"],
   variable: "--font-mono",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "RecruitGPT X — The AI Recruiter That Thinks Like a Hiring Manager",
+  title: "RecruitGPT X — Hire better candidates in minutes, not weeks",
   description:
-    "Intelligent candidate discovery. Multi-agent reasoning, semantic matching, behavioral intelligence, and explainable rankings.",
+    "The recruiting platform that ranks candidates with transparent reasoning, manages your hiring pipeline, and helps your team make faster, fairer interview decisions.",
   icons: { icon: "/favicon.svg" },
 };
 
@@ -38,13 +38,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}
+      className={`${inter.variable} ${sourceSerif.variable} ${ibmPlexMono.variable}`}
     >
-      <head>
-        {/* Static fallback — survives stale dev-server / missing webpack chunks */}
-        <link rel="stylesheet" href="/critical.css" />
-      </head>
-      <body className="min-h-screen bg-bg text-ink font-sans antialiased">
+      <body className="min-h-screen bg-canvas text-ink font-sans antialiased tracking-body">
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -8,8 +8,10 @@ HDR=(-H "X-User-Id: dev-user" -H "Content-Type: application/json")
 echo "==> Demo acceptance against $API"
 
 python3 << PYEOF
+import csv
 import json
 import sys
+from pathlib import Path
 import httpx
 
 BASE = "$API"
@@ -54,7 +56,21 @@ if r.status_code == 200:
     data = r.json()
     ranked = data.get("ranked_candidates", [])
     names = [c.get("candidate_name", "") for c in ranked]
-    check("Priya Sharma in top-5", any("Priya" in n for n in names[:5]), str(names[:5]))
+    # Expect challenge-pool top ranks (from official submission.csv / rank.py), not seed demo names.
+    sub_path = Path(__file__).resolve().parents[1] / "submission.csv"
+    expected = []
+    if sub_path.exists():
+        with open(sub_path, newline="", encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                expected.append(row.get("candidate_id", ""))
+                if len(expected) >= 5:
+                    break
+    top_ids = [c.get("candidate_id", "") for c in ranked[:5]]
+    check(
+        "top-5 matches submission.csv",
+        expected and top_ids == expected,
+        f"api={top_ids} csv={expected}",
+    )
     weights = (data.get("pipeline_metadata") or {}).get("ranking_weights", {})
     check("PROMPT_WEIGHTS in metadata", weights.get("semantic", -1) == 0.0, str(weights))
     expl = sum(1 for c in ranked[:5] if c.get("explanation"))
