@@ -1,1 +1,9 @@
-gradio>=4.0
+# Offline ranker — stdlib path works without ML deps (graceful fallback).
+pytest>=8.0
+numpy>=1.24.0
+PyYAML>=6.0
+
+# Optional (bi-encoder precompute + cross-encoder rerank):
+# pip install sentence-transformers torch
+sentence-transformers>=2.7.0
+torch>=2.0.0

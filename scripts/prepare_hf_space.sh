@@ -8,11 +8,13 @@ SB="$ROOT/sandbox"
 echo "==> Preparing HF Space bundle in sandbox/"
 
 cp "$ROOT/rank.py" "$SB/rank.py"
+cp "$ROOT/requirements-ranker.txt" "$SB/requirements.txt"
 rm -rf "$SB/challenge" "$SB/data"
 cp -R "$ROOT/challenge" "$SB/challenge"
 mkdir -p "$SB/data"
 cp "$ROOT/data/sample_candidates.json" "$SB/data/sample_candidates.json"
 cp "$ROOT/scripts/validate_submission.py" "$SB/validate_submission.py"
+# Sample Space uses lexical fallback (full embeddings artifact is 150MB+; optional for local reproduce)
 
 # Flat layout for HF (app.py imports from same directory)
 cat > "$SB/app.py" << 'PYEOF'

@@ -8,55 +8,73 @@
   },
   "label_method": "independent_jd_rubric",
   "metrics_self_consistency_proxy": {
-    "ndcg_10": 0.8819,
-    "ndcg_50": 0.929,
-    "map": 0.8252,
+    "ndcg_10": 0.8648,
+    "ndcg_50": 0.9267,
+    "map": 0.8195,
     "p_at_10": 0.9
+  },
+  "metrics_behavioral_independent_proxy": {
+    "ndcg_10": 0.8964,
+    "ndcg_50": 0.9396,
+    "map": 0.9982,
+    "p_at_10": 1.0
+  },
+  "hand_label_eval": {
+    "n_labeled": 50,
+    "top_k": 25,
+    "label_method": "hand_curated_sample_tiers",
+    "metrics": {
+      "ndcg_10": 0.9448,
+      "ndcg_50": 0.9448,
+      "map": 1.0,
+      "p_at_10": 0.1
+    },
+    "note": "Human-tier labels on sample_candidates.json \u2014 strongest defensible offline eval."
   },
   "metrics_current_weights": {
-    "ndcg_10": 0.8819,
-    "ndcg_50": 0.929,
-    "map": 0.8252,
+    "ndcg_10": 0.8648,
+    "ndcg_50": 0.9267,
+    "map": 0.8195,
     "p_at_10": 0.9
   },
-  "weight_ablation": {
+  "weight_ablation_on_behavioral_proxy": {
     "current": {
-      "ndcg_10": 0.8819,
-      "ndcg_50": 0.929,
-      "map": 0.8252,
-      "p_at_10": 0.9
+      "ndcg_10": 0.8964,
+      "ndcg_50": 0.9396,
+      "map": 0.9982,
+      "p_at_10": 1.0
     },
     "semantic_heavy": {
-      "ndcg_10": 0.9139,
-      "ndcg_50": 0.9291,
-      "map": 0.8408,
-      "p_at_10": 0.9
+      "ndcg_10": 0.8945,
+      "ndcg_50": 0.9407,
+      "map": 0.9968,
+      "p_at_10": 1.0
     },
     "title_heavy": {
-      "ndcg_10": 0.8611,
-      "ndcg_50": 0.9182,
-      "map": 0.8143,
-      "p_at_10": 0.9
+      "ndcg_10": 0.9099,
+      "ndcg_50": 0.9392,
+      "map": 0.9968,
+      "p_at_10": 1.0
     },
     "availability_heavy": {
-      "ndcg_10": 0.8617,
-      "ndcg_50": 0.933,
-      "map": 0.8358,
-      "p_at_10": 0.9
+      "ndcg_10": 0.8895,
+      "ndcg_50": 0.9332,
+      "map": 1.0,
+      "p_at_10": 1.0
     },
     "uniform": {
-      "ndcg_10": 0.8885,
-      "ndcg_50": 0.9433,
-      "map": 0.8561,
+      "ndcg_10": 0.8719,
+      "ndcg_50": 0.9353,
+      "map": 1.0,
       "p_at_10": 1.0
     }
   },
   "best_preset_by_ndcg10": {
-    "name": "semantic_heavy",
-    "ndcg_10": 0.9139,
-    "ndcg_50": 0.9291,
-    "map": 0.8408,
-    "p_at_10": 0.9
+    "name": "title_heavy",
+    "ndcg_10": 0.9099,
+    "ndcg_50": 0.9392,
+    "map": 0.9968,
+    "p_at_10": 1.0
   },
   "weights_current": {
     "title": 0.17,
@@ -70,6 +88,6 @@
     "location": 0.04,
     "engagement": 0.06
   },
-  "note": "Self-consistency check only: labels use an independent JD rubric (raw title tiers, phrase counts, profile fields) \u2014 NOT ranker score functions and NOT challenge hidden ground truth. High scores indicate internal alignment, not validated competition performance. Expect real hidden-truth composite ~0.60\u20130.68.",
-  "runtime_seconds": 15.45
+  "note": "JD-rubric proxy is self-consistency only. Behavioral proxy uses education tier + recruiter saves/views/github \u2014 signals NOT used as ranker features. Hand-label eval on sample_candidates.json is the most defensible metric. NOT challenge hidden GT; expect real composite ~0.60\u20130.68.",
+  "runtime_seconds": 15.99
 }

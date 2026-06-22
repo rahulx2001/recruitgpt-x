@@ -34,6 +34,7 @@ logs/
 
 # Hackathon dataset (465MB — download separately, see data/README.md)
 data/candidates.jsonl
+data/embeddings/*.npy
 
 # Generated submission (export with scripts/export_submission.sh)
 submission.csv

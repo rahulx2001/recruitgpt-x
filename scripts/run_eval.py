@@ -53,12 +53,17 @@ def main() -> int:
     write_eval_report(args.out, report)
 
     m = report["metrics_self_consistency_proxy"]
-    best = report["best_preset_by_ndcg10"]
+    b = report.get("metrics_behavioral_independent_proxy", {})
+    h = report.get("hand_label_eval", {})
+    best = report.get("best_preset_by_ndcg10", {})
     print(f"Eval holdout: n={report['holdout']['n_scored']} relevant={report['holdout']['n_relevant_proxy']}")
-    print(f"Label method: {report.get('label_method', 'independent_jd_rubric')} (self-consistency proxy, NOT hidden GT)")
-    print(f"Self-consistency — NDCG@10={m['ndcg_10']} NDCG@50={m['ndcg_50']} MAP={m['map']} P@10={m['p_at_10']}")
-    print(f"Best ablation preset: {best['name']} (NDCG@10={best['ndcg_10']})")
-    print(f"Note: {report.get('note', '')[:120]}…")
+    print(f"JD self-consistency proxy — NDCG@10={m.get('ndcg_10')} (NOT hidden GT)")
+    if b:
+        print(f"Behavioral independent proxy — NDCG@10={b.get('ndcg_10')} MAP={b.get('map')}")
+    if h:
+        print(f"Hand labels (sample) — NDCG@10={h.get('metrics', {}).get('ndcg_10')} n={h.get('n_labeled')}")
+    if best:
+        print(f"Best ablation (behavioral proxy): {best.get('name')} NDCG@10={best.get('ndcg_10')}")
     print(f"Wrote {args.out} in {elapsed:.1f}s")
     return 0
 

@@ -74,8 +74,11 @@ def jd_overlap_score(idx: CandidateIndex) -> float:
     return min(1.0, hits / 7.0)
 
 
-def semantic_score(idx: CandidateIndex) -> float:
-    return career_semantic_from_blobs(idx.career_blob, idx.career_tf, idx.career_tokens)
+def semantic_score(idx: CandidateIndex, bi_encoder: float | None = None) -> float:
+    lex = career_semantic_from_blobs(idx.career_blob, idx.career_tf, idx.career_tokens)
+    if bi_encoder is not None:
+        return min(1.0, 0.30 * lex + 0.70 * bi_encoder)
+    return lex
 
 
 def cv_language_hits(idx: CandidateIndex) -> int:

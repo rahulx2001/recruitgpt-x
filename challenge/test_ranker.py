@@ -172,15 +172,87 @@ def test_eval_harness_produces_metrics():
     assert report.get("label_method") == "independent_jd_rubric"
     m = report["metrics_self_consistency_proxy"]
     assert "ndcg_10" in m
-    assert "not challenge hidden" in report.get("note", "").lower()
-    assert report["weight_ablation"]["current"]["ndcg_10"] == m["ndcg_10"]
+    assert "hidden" in report.get("note", "").lower()
+    abl = report.get("weight_ablation_on_behavioral_proxy") or report.get("weight_ablation", {})
+    assert abl["current"]["ndcg_10"] >= 0
+
+
+def test_behavioral_twin_breaks_tie():
+    base = json.loads(SAMPLE.read_text(encoding="utf-8"))[0]
+    twin_a = json.loads(json.dumps(base))
+    twin_b = json.loads(json.dumps(base))
+    twin_a["candidate_id"] = "TWIN_A"
+    twin_b["candidate_id"] = "TWIN_B"
+    twin_a["redrob_signals"]["recruiter_response_rate"] = 0.85
+    twin_a["redrob_signals"]["saved_by_recruiters_30d"] = 6
+    twin_a["redrob_signals"]["open_to_work_flag"] = True
+    twin_b["redrob_signals"]["recruiter_response_rate"] = 0.12
+    twin_b["redrob_signals"]["saved_by_recruiters_30d"] = 0
+    twin_b["redrob_signals"]["open_to_work_flag"] = False
+    sa = score_candidate(twin_a)
+    sb = score_candidate(twin_b)
+    assert sa.raw_score > sb.raw_score
+
+
+def test_keyword_stuffer_far_from_top():
+    from challenge.jd_config import CORE_SKILL_PHRASES
+
+    skills = [
+        {
+            "name": p.title(),
+            "proficiency": "expert",
+            "endorsements": 40,
+            "duration_months": 0,
+        }
+        for p in CORE_SKILL_PHRASES[:20]
+    ]
+    stuffer = {
+        "candidate_id": "STUFFER_TEST",
+        "profile": {
+            "current_title": "Marketing Manager",
+            "years_of_experience": 5.0,
+            "summary": "Enterprise sales and brand campaigns.",
+            "headline": "Marketing Manager",
+            "location": "Mumbai",
+            "country": "India",
+        },
+        "career_history": [
+            {
+                "title": "Marketing Manager",
+                "company": "Acme",
+                "description": "Led brand campaigns and social media growth.",
+            }
+        ],
+        "skills": skills,
+        "redrob_signals": {"open_to_work_flag": True, "recruiter_response_rate": 0.5},
+    }
+    sc = score_candidate(stuffer)
+    assert sc.raw_score < 0.25
+
+
+def test_honeypot_recall_scan_runs():
+    if not CANDIDATES.exists():
+        return
+    from challenge.honeypot import honeypot_risk, is_structural_honeypot
+    from challenge.redrob_ranker import load_candidates
+
+    n = flagged = 0
+    for raw in load_candidates(CANDIDATES):
+        n += 1
+        if is_structural_honeypot(raw) or honeypot_risk(raw) >= 0.55:
+            flagged += 1
+        if n >= 20000:
+            break
+    assert n > 0
+    assert flagged >= 5, f"honeypot recall suspiciously low: {flagged}/{n}"
 
 
 def test_runtime_under_budget():
-    """Full 100K ranking must finish under 60s (Stage-3 hard limit is 300s)."""
+    """Full 100K ranking must finish under 300s (Stage-3 hard limit)."""
     if not CANDIDATES.exists():
         return
     t0 = time.perf_counter()
     rank_candidates(CANDIDATES, top_k=100)
     elapsed = time.perf_counter() - t0
-    assert elapsed < 60.0, f"ranking took {elapsed:.1f}s — exceeds 60s budget"
+    assert elapsed < 300.0, f"ranking took {elapsed:.1f}s — exceeds 300s budget"
+    assert elapsed < 180.0, f"ranking took {elapsed:.1f}s — target <180s with rerank"

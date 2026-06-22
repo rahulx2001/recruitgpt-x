@@ -17,6 +17,12 @@ if [[ ! -f data/candidates.jsonl ]]; then
   exit 1
 fi
 
+if [[ ! -f data/embeddings/embeddings.npy ]]; then
+  echo "==> Precomputing bi-encoder embeddings (one-time, offline)..."
+  python scripts/precompute_embeddings.py --candidates ./data/candidates.jsonl
+  echo
+fi
+
 echo "==> Ranking 100K candidates (CPU, offline)..."
 t0=$(date +%s%N)
 python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv
@@ -32,8 +38,11 @@ python scripts/validate_reasoning.py submission.csv
 python -m pytest challenge/test_ranker.py -q
 echo
 
-echo "==> Offline eval harness (proxy labels + weight ablation)..."
+echo "==> Hand labels (sample set)..."
+python scripts/build_hand_labels.py
+echo "==> Offline eval harness (behavioral proxy + hand labels)..."
 python scripts/run_eval.py --candidates ./data/candidates.jsonl --out ./data/eval_report.json
+python scripts/scan_honeypot_recall.py
 echo
 
 if [[ -n "$PARTICIPANT_ID" ]]; then

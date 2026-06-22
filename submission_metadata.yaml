@@ -17,12 +17,6 @@ github_repo: "https://github.com/rahulx2001/recruitgpt-x"
 sandbox_link: "https://huggingface.co/spaces/rahulx2001/recruitgpt-ranker"
 
 reproduce_command: "./scripts/finalize_submission.sh"
-# Or: python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv
-# Eval (self-consistency proxy): python scripts/run_eval.py
-# Deploy: cp .env.deploy.example .env.deploy && ./scripts/deploy_all.sh
-# Portal export: RECROB_PARTICIPANT_ID=team_xxx ./scripts/finalize_submission.sh
-# Docker: docker compose -f docker-compose.ranker.yml run --rm ranker
-# Full checklist: ./scripts/pre-submit.sh
 
 compute:
   platform: "MacBook Pro (Apple Silicon)"
@@ -32,8 +26,8 @@ compute:
   os: "macOS 25.5"
   uses_gpu_for_inference: false
   has_network_during_ranking: false
-  pre_computation_required: false
-  pre_computation_time_minutes: 0
+  pre_computation_required: true
+  pre_computation_time_minutes: 15
 
 ai_tools_used:
   - "Grok"
@@ -45,21 +39,17 @@ ai_usage_summary: |
   ranking. The offline ranker (rank.py) runs entirely locally with no network calls.
 
 methodology_summary: |
-  Ranker v4: trap-aware hybrid scorer with single-pass streaming heap (no second file read),
-  per-candidate text index (tokenize once, reuse across scorers), and compute-once modifiers.
-  Career semantic matching (TF-IDF + plain-language regex), IR-only skill_assessment_scores,
-  and availability intelligence (open_to_work, last_active, response rate). Base weights:
-  career semantic 15%, skills 16%, title 17%, production 11%, assessments 10%, availability
-  10%, engagement 6%. Structural honeypot detection (expert@0mo, impossible tenure, skill
-  stuffing). CV/speech disqualifier gate tightened for junior profiles. Core IR skills exclude
-  generic python/tensorflow. Scores calibrated from real model output (~48s on 100K CPU, low
-  RAM, zero network). Offline eval (scripts/run_eval.py) is a self-consistency proxy using
-  an independent JD rubric — not challenge hidden ground truth; see data/eval_report.json.
-  Weight ablation compares presets on that proxy only; we expect real composite ~0.60–0.68.
+  Ranker v5: bi-encoder retrieval (precomputed MiniLM embeddings, graceful lexical fallback)
+  → hybrid JD scorer (title/skills/production/availability/trap modifiers) → cross-encoder
+  rerank on top-500 (ms-marco-MiniLM) → calibrated top-100. Resolves JD tensions: shipper over
+  pure researcher, anti-keyword-stuffing, availability-weighted, anti-consulting, FAANG yellow-flag.
+  Structural honeypot detection; CV/junior gate; IR-only assessments. ~48–120s rank on 100K CPU
+  (embeddings loaded from artifact; no network). Eval: hand labels on sample + behavioral proxy
+  (education tier, recruiter saves/views) — NOT hidden ground truth; expect composite ~0.60–0.68.
 
 declarations:
   read_submission_spec: true
   code_is_original_work: true
   no_collusion: true
-  honeypot_check_done: true  # structural honeypot_risk via scripts/check_honeypots.py
+  honeypot_check_done: true
   reproduction_tested: true

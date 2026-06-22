@@ -277,6 +277,71 @@ def evaluate_ranking(
     )
 
 
+def behavioral_proxy_relevance(raw: Dict[str, Any]) -> float:
+    """
+    Non-circular weak proxy: behavioral + education signals the ranker does NOT
+    use as primary features (no title/skills/semantic/production scoring).
+    """
+    signals = raw.get("redrob_signals", {}) or {}
+    education = raw.get("education") or []
+
+    tier_score = 0.25
+    for e in education:
+        t = (e.get("tier") or "").lower()
+        if t == "tier_1":
+            tier_score = max(tier_score, 0.95)
+        elif t == "tier_2":
+            tier_score = max(tier_score, 0.65)
+        elif t == "tier_3":
+            tier_score = max(tier_score, 0.40)
+
+    saved = int(signals.get("saved_by_recruiters_30d", 0) or 0)
+    views = int(signals.get("profile_views_received_30d", 0) or 0)
+    github = float(signals.get("github_activity_score", 0) or 0)
+    apps = int(signals.get("applications_submitted_30d", 0) or 0)
+    search_app = int(signals.get("search_appearance_30d", 0) or 0)
+
+    beh = 0.15
+    beh += min(0.25, saved / 10.0)
+    beh += min(0.20, views / 50.0)
+    beh += min(0.15, github / 80.0)
+    beh += min(0.10, search_app / 30.0)
+    if apps > 25 and saved == 0:
+        beh *= 0.45
+
+    return round(min(1.0, 0.40 * tier_score + 0.60 * beh), 4)
+
+
+def run_hand_label_eval(
+    sample_path: Path,
+    labels_path: Path,
+    *,
+    top_k: int = 25,
+) -> Dict[str, Any]:
+    rows = json.loads(sample_path.read_text(encoding="utf-8"))
+    labels = json.loads(labels_path.read_text(encoding="utf-8"))
+    relevance = {
+        r["candidate_id"]: float(labels[r["candidate_id"]]["relevance"])
+        for r in rows
+        if r["candidate_id"] in labels
+    }
+    ranked = rank_pool(rows, weights=DEFAULT_WEIGHTS)
+    ranked_ids = [cid for cid, _ in ranked[:top_k]]
+    m = evaluate_ranking(ranked_ids, relevance, relevant_threshold=0.5)
+    return {
+        "n_labeled": len(relevance),
+        "top_k": top_k,
+        "label_method": "hand_curated_sample_tiers",
+        "metrics": {
+            "ndcg_10": m.ndcg_10,
+            "ndcg_50": m.ndcg_50,
+            "map": m.map_score,
+            "p_at_10": m.precision_10,
+        },
+        "note": "Human-tier labels on sample_candidates.json — strongest defensible offline eval.",
+    }
+
+
 def run_holdout_eval(
     candidates_path: Path,
     *,
@@ -287,14 +352,16 @@ def run_holdout_eval(
 ) -> Dict[str, Any]:
     pool = list(iter_holdout(candidates_path, sample_rate=sample_rate, seed=seed, max_n=max_n))
     relevance = {r["candidate_id"]: proxy_relevance(r) for r in pool}
+    beh_relevance = {r["candidate_id"]: behavioral_proxy_relevance(r) for r in pool}
     ranked = rank_pool(pool, weights=DEFAULT_WEIGHTS)
     ranked_ids = [cid for cid, _ in ranked[:top_k]]
     metrics = evaluate_ranking(ranked_ids, relevance)
+    beh_metrics = evaluate_ranking(ranked_ids, beh_relevance)
 
     ablation: Dict[str, Dict[str, float]] = {}
     for name, preset in WEIGHT_PRESETS.items():
         ids = [cid for cid, _ in rank_pool(pool, weights=preset)[:top_k]]
-        m = evaluate_ranking(ids, relevance)
+        m = evaluate_ranking(ids, beh_relevance)
         ablation[name] = {
             "ndcg_10": m.ndcg_10,
             "ndcg_50": m.ndcg_50,
@@ -303,6 +370,12 @@ def run_holdout_eval(
         }
 
     best = max(ablation.items(), key=lambda x: x[1]["ndcg_10"])
+    hand_block: Dict[str, Any] = {}
+    hand_path = candidates_path.parent / "hand_labels.json"
+    sample_path = candidates_path.parent / "sample_candidates.json"
+    if hand_path.exists() and sample_path.exists():
+        hand_block = run_hand_label_eval(sample_path, hand_path, top_k=min(25, top_k))
+
     return {
         "holdout": {
             "seed": seed,
@@ -318,20 +391,27 @@ def run_holdout_eval(
             "map": metrics.map_score,
             "p_at_10": metrics.precision_10,
         },
+        "metrics_behavioral_independent_proxy": {
+            "ndcg_10": beh_metrics.ndcg_10,
+            "ndcg_50": beh_metrics.ndcg_50,
+            "map": beh_metrics.map_score,
+            "p_at_10": beh_metrics.precision_10,
+        },
+        "hand_label_eval": hand_block,
         "metrics_current_weights": {
             "ndcg_10": metrics.ndcg_10,
             "ndcg_50": metrics.ndcg_50,
             "map": metrics.map_score,
             "p_at_10": metrics.precision_10,
         },
-        "weight_ablation": ablation,
+        "weight_ablation_on_behavioral_proxy": ablation,
         "best_preset_by_ndcg10": {"name": best[0], **best[1]},
         "weights_current": DEFAULT_WEIGHTS,
         "note": (
-            "Self-consistency check only: labels use an independent JD rubric (raw title "
-            "tiers, phrase counts, profile fields) — NOT ranker score functions and NOT "
-            "challenge hidden ground truth. High scores indicate internal alignment, not "
-            "validated competition performance. Expect real hidden-truth composite ~0.60–0.68."
+            "JD-rubric proxy is self-consistency only. Behavioral proxy uses education tier + "
+            "recruiter saves/views/github — signals NOT used as ranker features. Hand-label eval "
+            "on sample_candidates.json is the most defensible metric. NOT challenge hidden GT; "
+            "expect real composite ~0.60–0.68."
         ),
     }
 

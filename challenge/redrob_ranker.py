@@ -1,4 +1,4 @@
-"""Offline hybrid ranker v4 — single-pass, compute-once, trap-aware."""
+"""Offline hybrid ranker v5 — bi-encoder + cross-encoder rerank, trap-aware."""
 
 from __future__ import annotations
 
@@ -15,6 +15,8 @@ from challenge.assessment import (
     top_ir_assessments,
 )
 from challenge.availability import availability_modifier, availability_score
+from challenge.embeddings import EmbeddingStore
+from challenge.rerank import blend_stage1_cross_encoder, rerank_scores
 from challenge.features import (
     CandidateIndex,
     build_index,
@@ -69,6 +71,19 @@ _CORE_M_P = compile_multi_patterns(_CORE_M)
 _SEC_M_P = compile_multi_patterns(_SEC_M)
 _NOISE_M_P = compile_multi_patterns(_NOISE_M)
 _GENERAL_S = frozenset(GENERAL_ML_SKILLS)
+
+RERANK_POOL_SIZE = 500
+_STAGE1_BLEND_ALPHA = 0.62
+
+_EMBED_STORE: EmbeddingStore | None = None
+
+
+def _embedding_store() -> EmbeddingStore:
+    global _EMBED_STORE
+    if _EMBED_STORE is None:
+        _EMBED_STORE = EmbeddingStore()
+    return _EMBED_STORE
+
 
 DEFAULT_WEIGHTS: Dict[str, float] = {
     "title": 0.17,
@@ -406,6 +421,13 @@ def _build_reasoning(
     elif rank <= 10:
         concern_txt = " Concerns: founding-role scope may still need validation in technical screen."
 
+    jd_tie = ""
+    if rank <= 10 and ir_snippet:
+        jd_tie = (
+            " JD fit: career evidence supports founding-team retrieval/ranking mandate "
+            f"({ir_snippet.split(':', 1)[-1].strip()[:60]}…)."
+        )
+
     extra = ""
     if ir_snippet:
         extra = f" Career note: {ir_snippet}."
@@ -419,7 +441,7 @@ def _build_reasoning(
                 )
                 break
 
-    return f"{lead} {why}{concern_txt}{extra}"
+    return f"{lead} {why}{concern_txt}{jd_tie}{extra}"
 
 
 def score_candidate(
@@ -440,7 +462,8 @@ def score_candidate(
     prod_s = production_score(idx)
     loc_s = _location_score(profile)
     jd_s = jd_overlap_score(idx)
-    sem_s = semantic_score(idx)
+    bi_enc = _embedding_store().cosine_vs_jd(cid)
+    sem_s = semantic_score(idx, bi_enc)
     avail_s = availability_score(signals)
     ir_vals = _ir_vals_from_signals(signals)
     assess_s = assessment_score(signals, skills, ir_vals)
@@ -486,6 +509,7 @@ def score_candidate(
         "title": title_s,
         "skills": skill_s,
         "career_semantic": sem_s,
+        "bi_encoder": bi_enc if bi_enc is not None else -1.0,
         "production": prod_s,
         "assessment": assess_s,
         "availability": avail_s,
@@ -532,18 +556,35 @@ def _sort_key(x: ScoredCandidate) -> Tuple:
 
 
 def rank_candidates(candidates_path, top_k: int = 100) -> List[ScoredCandidate]:
-    """Single-pass: score all, keep top-K via min-heap, cache raw dicts on heap."""
+    """
+    Two-stage ranking:
+    1) Hybrid score all candidates → keep top RERANK_POOL_SIZE
+    2) Cross-encoder rerank pool → take top_k (graceful fallback if model missing)
+    """
+    pool_size = max(top_k, RERANK_POOL_SIZE)
     heap: list[Tuple[float, str, ScoredCandidate, Dict[str, Any]]] = []
     for raw in load_candidates(candidates_path):
         sc = score_candidate(raw)
         entry = (sc.raw_score, sc.candidate_id, sc, raw)
-        if len(heap) < top_k:
+        if len(heap) < pool_size:
             heapq.heappush(heap, entry)
         elif sc.raw_score > heap[0][0]:
             heapq.heapreplace(heap, entry)
 
-    finalists = sorted((x[2] for x in heap), key=_sort_key)
+    pool = sorted((x[2] for x in heap), key=_sort_key)
     raw_by_id = {x[2].candidate_id: x[3] for x in heap}
+
+    ce_scores = rerank_scores([raw_by_id[s.candidate_id] for s in pool])
+    if ce_scores:
+        for sc, ce in zip(pool, ce_scores):
+            blended = blend_stage1_cross_encoder(
+                sc.raw_score, ce, alpha=_STAGE1_BLEND_ALPHA
+            )
+            sc.raw_score = blended
+            sc.components["cross_encoder"] = ce
+        pool = sorted(pool, key=_sort_key)
+
+    finalists = pool[:top_k]
 
     calibrated = _calibrate_scores([f.raw_score for f in finalists])
     out: List[ScoredCandidate] = []

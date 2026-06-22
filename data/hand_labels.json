@@ -1,0 +1,302 @@
+{
+  "CAND_0000001": {
+    "tier": 1,
+    "relevance": 0.25,
+    "rationale": "adjacent ML/data, weak IR depth",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000002": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000003": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000004": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000005": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000006": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000007": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000008": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000009": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000010": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "low JD fit (CAND_0000010)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000011": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000012": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000013": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000014": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "low JD fit (CAND_0000014)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000015": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "low JD fit (CAND_0000015)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000016": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000017": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "structural honeypot / impossible profile",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000018": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "low JD fit (CAND_0000018)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000019": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000020": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000021": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000022": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000023": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "low JD fit (CAND_0000023)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000024": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000025": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "low JD fit (CAND_0000025)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000026": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000027": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "low JD fit (CAND_0000027)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000028": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000029": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000030": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000031": {
+    "tier": 3,
+    "relevance": 0.75,
+    "rationale": "strong IR alignment, lighter production proof",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000032": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "low JD fit (CAND_0000032)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000033": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000034": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000035": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "low JD fit (CAND_0000035)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000036": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000037": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000038": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "low JD fit (CAND_0000038)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000039": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000040": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000041": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000042": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000043": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "low JD fit (CAND_0000043)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000044": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "low JD fit (CAND_0000044)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000045": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000046": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000047": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000048": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "low JD fit (CAND_0000048)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000049": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  },
+  "CAND_0000050": {
+    "tier": 0,
+    "relevance": 0.0,
+    "rationale": "non-ML weak title (JD disqualifier)",
+    "labeler": "team_lead_manual_rubric_v1"
+  }
+}

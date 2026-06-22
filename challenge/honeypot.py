@@ -106,6 +106,33 @@ def honeypot_risk(raw: Dict[str, Any]) -> float:
         if start and end and end < start:
             risk = max(risk, 0.8)
 
+    # Rule 7 — education end year vs claimed experience inconsistency
+    education = raw.get("education") or []
+    if education and claimed > 0:
+        end_years = [int(e.get("end_year", 0) or 0) for e in education if e.get("end_year")]
+        if end_years:
+            latest_grad = max(end_years)
+            min_possible = _REFERENCE_DATE.year - latest_grad
+            if claimed > min_possible + 8:
+                risk = max(risk, min(0.85, 0.45 + (claimed - min_possible) * 0.04))
+
+    # Rule 8 — tenure at current company exceeds total career span
+    if history:
+        current = next((h for h in history if h.get("is_current")), history[0])
+        cur_months = int(current.get("duration_months", 0) or 0)
+        if span > 0 and cur_months > span * 12 * 1.15:
+            risk = max(risk, 0.7)
+
+    # Rule 9 — implausible junior title + mega-corp + stuffed expert skills
+    title = norm_text(profile.get("current_title", ""))
+    company_size = norm_text(profile.get("current_company_size", ""))
+    if ("junior" in title or "intern" in title) and "10001" in company_size:
+        expert_n = sum(
+            1 for s in skills if (s.get("proficiency") or "").lower() == "expert"
+        )
+        if expert_n >= 8:
+            risk = max(risk, 0.75)
+
     return min(1.0, risk)
 
 
