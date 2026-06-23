@@ -106,6 +106,16 @@ def test_reasoning_no_midword_truncation():
                 )
 
 
+def test_reasoning_phrase_diversity():
+    if not CANDIDATES.exists():
+        return
+    top = rank_candidates(CANDIDATES, top_k=100)
+    texts = [r.reasoning for r in top]
+    banned = "career history describes shipped retrieval/ranking work in plain language"
+    assert sum(1 for t in texts if banned in t) == 0
+    assert len(set(texts)) == len(texts)
+
+
 def test_reasoning_uses_model_score():
     if not SAMPLE.exists():
         return
@@ -116,7 +126,10 @@ def test_reasoning_uses_model_score():
             f.write(json.dumps(row) + "\n")
     top = rank_candidates(tmp, top_k=5)
     tmp.unlink(missing_ok=True)
-    assert "model score" in top[0].reasoning.lower()
+    assert re.search(
+        r"(model|calibrated)\s+\d+\.\d{4}|score\s+\d+\.\d{4}",
+        top[0].reasoning.lower(),
+    )
     assert len({r.reasoning for r in top}) >= 3
 
 

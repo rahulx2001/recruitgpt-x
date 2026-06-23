@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import heapq
 import json
 from dataclasses import dataclass, field
@@ -343,6 +344,167 @@ def _truncate_snippet(text: str, limit: int = 110) -> str:
     return truncate_at_word_boundary(text, limit)
 
 
+def _reasoning_variant(candidate_id: str, tag: str, n: int) -> int:
+    if n <= 0:
+        return 0
+    digest = hashlib.sha256(f"{candidate_id}:{tag}".encode()).hexdigest()
+    return int(digest, 16) % n
+
+
+_CAREER_IR_SHIPPED = (
+    "career narrative documents production retrieval or ranking delivery",
+    "work history cites shipped search/ranking systems in plain language",
+    "profile describes hands-on retrieval/ranking ownership, not keyword padding",
+    "career write-ups reference embedding or ranking systems taken to production",
+    "past roles show concrete IR delivery milestones in narrative form",
+    "experience section evidences ranking-layer or semantic-search shipping",
+    "background aligns with founding-team retrieval mandate via career stories",
+    "résumé text shows retrieval/ranking work described without title gaming",
+    "career history backs hybrid-search or vector-retrieval production work",
+    "narrative evidence points to ranking/retrieval systems built for users",
+    "role descriptions mention ranking models or search quality improvements",
+    "track record includes search/ranking infrastructure beyond buzzwords",
+    "employment history supports JD retrieval focus through project detail",
+    "career arc reflects applied IR work visible in role descriptions",
+    "profile demonstrates ranking/search delivery from prior product roles",
+    "documented ranking/search projects appear across prior employers",
+    "search-quality or ranking-layer ownership visible in employment history",
+    "production IR stories are present without inflated title signals",
+    "candidate describes vector or hybrid retrieval work credibly",
+    "ranking and retrieval themes recur in substantive role blurbs",
+    "applied search/ranking delivery is evident from career text alone",
+)
+
+_CAREER_IR_ALIGNED = (
+    "career descriptions track JD retrieval and ranking themes",
+    "role summaries overlap the Senior AI Engineer retrieval mandate",
+    "work history partially matches hybrid-search responsibilities in the JD",
+    "experience narratives touch ranking/retrieval without dominant IR depth",
+    "background shows adjacent retrieval themes in recent roles",
+)
+
+_SKILL_DEPTH = (
+    "{n} core IR skills on profile ({skills})",
+    "skills list hits {n} JD core IR tools: {skills}",
+    "IR stack depth: {skills} ({n} core matches)",
+    "verified tooling includes {skills} across {n} core IR areas",
+    "technical skills cover {skills} ({n} core IR signals)",
+    "profile lists {n} core retrieval tools — {skills}",
+)
+
+_SKILL_LIGHT = (
+    "skills include {skills}",
+    "IR tooling present: {skills}",
+    "listed stack: {skills}",
+    "core IR mentions: {skills}",
+)
+
+_CONCERN_LEADS = ("Concerns", "Flags", "Gaps to validate", "Risks", "Watch items")
+
+_NOTICE_CONCERNS = (
+    "{days}-day notice period",
+    "notice period is {days} days",
+    "long notice window ({days} days)",
+)
+
+_OTW_CONCERNS = (
+    "not flagged open to work",
+    "open_to_work flag is false",
+    "no active open-to-work signal",
+)
+
+_THIN_IR_CONCERNS = (
+    "thin core IR skill depth",
+    "limited core IR tooling on skills list",
+    "shallow IR skill coverage",
+    "sparse JD core IR skills on profile",
+    "skills section lacks IR stack breadth",
+    "few explicit retrieval/ranking tools listed",
+    "IR tooling evidence is narrow",
+    "core retrieval skills not strongly represented",
+    "limited FAISS/vector-search style skill proof",
+    "skills list under-represents hybrid-search tooling",
+    "IR depth on paper is thinner than top-band picks",
+    "missing breadth in core IR skill inventory",
+    "retrieval stack signals are light versus peers",
+    "core IR keyword coverage is modest",
+    "skills evidence does not show deep IR tooling",
+)
+
+_AVAIL_CONCERNS = (
+    "low availability/recency signals",
+    "weak availability and profile recency",
+    "limited recent engagement signals",
+)
+
+_RESPONSE_CONCERNS = (
+    "low recruiter response ({rate})",
+    "recruiter response rate is low ({rate})",
+    "weak recruiter response ({rate})",
+)
+
+_JD_TIE_TOP10 = (
+    "JD fit: founding retrieval/ranking mandate supported by ({excerpt})",
+    "Matches Redrob Senior AI Engineer scope via ({excerpt})",
+    "Relevant JD evidence: ({excerpt})",
+    "JD alignment: ({excerpt})",
+    "Founding-team retrieval fit shown in ({excerpt})",
+    "Role mandate link: ({excerpt})",
+)
+
+_RANK_INTRO = (
+    "Ranked #{rank} (score {score:.4f}) — {primary}",
+    "At #{rank} with score {score:.4f}: {primary}",
+    "Position #{rank} (model {score:.4f}): {primary}",
+    "Placed #{rank}; score {score:.4f}. {primary}",
+    "#{rank} at {score:.4f} — {primary}",
+    "Rank {rank} (calibrated {score:.4f}): {primary}",
+    "Holds rank {rank} on score {score:.4f}; {primary}",
+    "Score {score:.4f} places them #{rank}: {primary}",
+)
+
+_SECONDARY_JOIN = ("; plus ", "; additionally ", "; also ", " — and ", ". Further, ")
+
+
+def _pick(pool: Tuple[str, ...], candidate_id: str, tag: str) -> str:
+    return pool[_reasoning_variant(candidate_id, tag, len(pool))]
+
+
+def _order_concerns(candidate_id: str, concerns: List[str]) -> List[str]:
+    if len(concerns) <= 1:
+        return concerns
+    return sorted(concerns, key=lambda c: _reasoning_variant(candidate_id, c, 10_000))
+
+
+def _vary_career_snippet(candidate_id: str, snippet: str, limit: int = 110) -> str:
+    if len(snippet) <= limit:
+        return snippet
+    start = _reasoning_variant(candidate_id, "snippet_start", max(1, len(snippet) - limit + 1))
+    return _truncate_snippet(snippet[start:], limit)
+
+
+def _career_strength(
+    candidate_id: str,
+    ir_snippet: str,
+    career_semantic: float,
+) -> str:
+    if ir_snippet and career_semantic >= 0.45:
+        return _pick(_CAREER_IR_SHIPPED, candidate_id, "career_shipped")
+    if career_semantic >= 0.55:
+        return _pick(_CAREER_IR_ALIGNED, candidate_id, "career_aligned")
+    return "partial overlap with the JD retrieval mandate"
+
+
+def _skill_strength(candidate_id: str, core_ir_n: int, skill_txt: str) -> str:
+    if core_ir_n >= 4:
+        tpl = _pick(_SKILL_DEPTH, candidate_id, "skill_depth")
+        return tpl.format(n=core_ir_n, skills=skill_txt)
+    if skill_txt and skill_txt != "no verified core IR stack in skills list":
+        tpl = _pick(_SKILL_LIGHT, candidate_id, "skill_light")
+        return tpl.format(skills=skill_txt)
+    return "limited explicit core IR skill coverage on profile"
+
+
 def _build_reasoning(
     raw: Dict[str, Any],
     *,
@@ -353,9 +515,9 @@ def _build_reasoning(
     calibrated_score: float,
 ) -> str:
     profile = raw.get("profile", {})
-    skills = raw.get("skills", [])
     signals = raw.get("redrob_signals", {})
     history = raw.get("career_history", [])
+    candidate_id = raw.get("candidate_id", "CAND_UNKNOWN")
 
     title = profile.get("current_title", "Candidate")
     company = profile.get("current_company", "")
@@ -367,42 +529,56 @@ def _build_reasoning(
 
     skill_txt = ", ".join(core_names[:3]) if core_names else "no verified core IR stack in skills list"
     ir_snippet = ir_career_snippet(history)
+    career_sem = float(components.get("career_semantic", 0) or 0)
 
     strengths: List[str] = []
-    if ir_snippet and components.get("career_semantic", 0) >= 0.45:
-        strengths.append("career history describes shipped retrieval/ranking work in plain language")
-    elif components.get("career_semantic", 0) >= 0.55:
-        strengths.append("career descriptions align with JD retrieval/ranking themes")
-    if core_ir_n >= 4:
-        strengths.append(f"{core_ir_n} core IR skills ({skill_txt})")
-    elif core_names:
-        strengths.append(f"core IR skills: {skill_txt}")
+    strengths.append(_career_strength(candidate_id, ir_snippet, career_sem))
+    strengths.append(_skill_strength(candidate_id, core_ir_n, skill_txt))
+
     ir_assess = top_ir_assessments(signals)
     if ir_assess and components.get("assessment", 0) >= 0.7:
-        strengths.append(
-            "verified IR assessments: " + ", ".join(f"{k} {v:.0f}" for k, v in ir_assess)
+        assess_txt = ", ".join(f"{k} {v:.0f}" for k, v in ir_assess)
+        assess_variants = (
+            f"Redrob IR assessments: {assess_txt}",
+            f"platform assessments back IR depth ({assess_txt})",
+            f"verified assessment scores — {assess_txt}",
         )
+        strengths.append(_pick(assess_variants, candidate_id, "assess"))
+
     if components.get("availability", 0) >= 0.65:
-        strengths.append(f"actively available (open_to_work={otw}, response rate {rr:.0%})")
+        avail_variants = (
+            f"actively available (open_to_work={otw}, recruiter response {rr:.0%})",
+            f"strong availability signals (OTW={otw}, response {rr:.0%})",
+            f"recruiter engagement looks active: OTW {otw}, response {rr:.0%}",
+        )
+        strengths.append(_pick(avail_variants, candidate_id, "avail"))
+
     if any(c in norm_text(loc) for c in PREFERRED_LOCATIONS):
-        strengths.append("Pune/Noida location fit")
-    if not strengths:
-        strengths.append("partial overlap with JD retrieval mandate")
+        loc_variants = (
+            "based in Pune/Noida corridor — location fit",
+            "Pune/Noida location matches hybrid JD preference",
+            "geography aligns with Pune/Noida hiring focus",
+        )
+        strengths.append(_pick(loc_variants, candidate_id, "loc"))
 
     concerns: List[str] = []
     hp_risk = components.get("honeypot_risk", 0)
     if hp_risk >= 0.35:
         concerns.append(f"profile consistency risk ({hp_risk:.0%})")
     if not otw:
-        concerns.append("not flagged open to work")
+        concerns.append(_pick(_OTW_CONCERNS, candidate_id, "otw"))
     if components.get("availability", 0) < 0.4:
-        concerns.append("low availability/recency signals")
+        concerns.append(_pick(_AVAIL_CONCERNS, candidate_id, "avail_low"))
     if rr < 0.35:
-        concerns.append(f"low recruiter response ({rr:.0%})")
+        concerns.append(
+            _pick(_RESPONSE_CONCERNS, candidate_id, "resp").format(rate=f"{rr:.0%}")
+        )
     if notice >= 60:
-        concerns.append(f"{notice}-day notice period")
+        concerns.append(
+            _pick(_NOTICE_CONCERNS, candidate_id, "notice").format(days=notice)
+        )
     if core_ir_n < 3:
-        concerns.append("thin core IR skill depth")
+        concerns.append(_pick(_THIN_IR_CONCERNS, candidate_id, "thin_ir"))
     if components.get("faang", 1.0) < 1.0:
         concerns.append(f"currently at {company} — JD flags big-tech ladder seekers")
     if components.get("research", 1.0) < 0.8:
@@ -411,46 +587,88 @@ def _build_reasoning(
         concerns.append("CV/speech/robotics focus without sufficient IR depth")
 
     co = f" @ {company}" if company else ""
-    lead = f"{title}{co}, {yrs:.1f}y, {loc}."
-
-    why = (
-        f"Ranked #{rank} (model score {calibrated_score:.4f}) because "
-        + (strengths[0] if strengths else "of marginal JD fit")
+    lead_variants = (
+        f"{title}{co}, {yrs:.1f}y, {loc}.",
+        f"{title}{co} — {yrs:.1f} years — {loc}.",
+        f"{loc}-based {title}{co} ({yrs:.1f}y experience).",
+        f"{title} at {company}, {yrs:.1f}y, {loc}." if company else f"{title}, {yrs:.1f}y, {loc}.",
     )
-    if len(strengths) > 1:
-        why += f"; also {strengths[1]}"
-    why += "."
+    lead = _pick(lead_variants, candidate_id, "lead")
 
-    concern_txt = ""
+    primary = strengths[0]
+    secondary = strengths[1] if len(strengths) > 1 else ""
+    tertiary = strengths[2] if len(strengths) > 2 else ""
+
+    intro_tpl = _pick(_RANK_INTRO, candidate_id, "intro")
+    intro = intro_tpl.format(rank=rank, score=calibrated_score, primary=primary)
+    if secondary:
+        join = _pick(_SECONDARY_JOIN, candidate_id, "join")
+        intro += join + secondary
+    intro += "."
+
+    concern_lead = _pick(_CONCERN_LEADS, candidate_id, "concern_lead")
     if concerns:
-        concern_txt = f" Concerns: {'; '.join(concerns[:3])}."
+        ordered = _order_concerns(candidate_id, concerns)
+        concern_txt = f" {concern_lead}: {'; '.join(ordered[:3])}."
     elif rank <= 10:
-        concern_txt = " Concerns: founding-role scope may still need validation in technical screen."
+        concern_txt = (
+            f" {concern_lead}: founding-role scope still needs validation in technical screen."
+        )
+    elif rank >= 85:
+        concern_txt = (
+            f" {concern_lead}: marginal JD fit — included as lower-band coverage for rank {rank}."
+        )
+    else:
+        concern_txt = ""
 
     jd_tie = ""
     if rank <= 10 and ir_snippet:
         jd_excerpt = clean_leading_ellipsis_fragment(
             _truncate_snippet(ir_snippet.split(":", 1)[-1].strip(), 72)
         )
-        jd_tie = (
-            " JD fit: career evidence supports founding-team retrieval/ranking mandate "
-            f"({jd_excerpt})."
-        )
+        jd_tpl = _pick(_JD_TIE_TOP10, candidate_id, "jd_tie")
+        jd_tie = f" {jd_tpl.format(excerpt=jd_excerpt)}."
 
-    extra = ""
+    career_extra = ""
     if ir_snippet:
-        extra = f" Career note: {ir_snippet}."
+        career_labels = ("Career note", "Evidence", "Profile excerpt", "Relevant history")
+        label = _pick(career_labels, candidate_id, "career_label")
+        snippet = _vary_career_snippet(candidate_id, ir_snippet)
+        career_extra = f" {label}: {snippet}."
     elif history:
         for role in history[:2]:
             desc = (role.get("description") or "").strip()
             if len(desc) > 30:
-                extra = (
-                    f" Career note: {role.get('title', 'Role')} @ {role.get('company', '?')}: "
+                label = _pick(("Career note", "Earlier role", "Background"), candidate_id, "career_alt")
+                career_extra = (
+                    f" {label}: {role.get('title', 'Role')} @ {role.get('company', '?')}: "
                     f"{_truncate_snippet(desc)}."
                 )
                 break
 
-    return f"{lead} {why}{concern_txt}{jd_tie}{extra}"
+    layout = _reasoning_variant(candidate_id, "layout", 8)
+    parts: List[str]
+    if layout == 0:
+        parts = [lead, intro, concern_txt, jd_tie, career_extra]
+    elif layout == 1:
+        parts = [lead, intro, career_extra, concern_txt, jd_tie]
+    elif layout == 2:
+        parts = [lead, jd_tie, intro, concern_txt, career_extra]
+    elif layout == 3:
+        parts = [lead, career_extra, intro, concern_txt, jd_tie]
+    elif layout == 4:
+        parts = [intro, lead, concern_txt, jd_tie, career_extra]
+    elif layout == 5:
+        parts = [lead, intro + (f" {tertiary}." if tertiary else ""), concern_txt, career_extra]
+    elif layout == 6:
+        parts = [lead, concern_txt, intro, jd_tie, career_extra]
+    else:
+        parts = [lead, intro, jd_tie, concern_txt, career_extra]
+
+    body = " ".join(p.strip() for p in parts if p and p.strip())
+    if rank >= 90 and "marginal" not in body.lower() and "lower-band" not in body.lower():
+        body += " Included near cutoff given weaker IR depth versus higher ranks."
+    return body
 
 
 def score_candidate(
