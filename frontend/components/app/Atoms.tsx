@@ -1,12 +1,12 @@
 import * as React from "react";
 import Link from "next/link";
-import { UserRound, type LucideIcon } from "lucide-react";
+import { Check, UserRound, type LucideIcon } from "lucide-react";
 import { initials } from "@/lib/utils";
 import {
   resolveCandidateGender,
   type CandidateGender,
 } from "@/lib/gender";
-import type { Recommendation, PipelineStage } from "@/lib/mock";
+import type { Candidate, Recommendation, PipelineStage } from "@/lib/mock";
 
 function FemaleSilhouette({ size }: { size: number }) {
   return (
@@ -134,7 +134,7 @@ export function StageBadge({ value }: { value: PipelineStage }) {
 export function ScoreMeter({
   value,
   label,
-  accent = "#5d2a1a",
+  accent = "#17191c",
 }: {
   value: number;
   label?: string;
@@ -144,10 +144,10 @@ export function ScoreMeter({
     <div>
       {label && (
         <div className="flex items-center justify-between mb-1.5">
-          <span className="text-[12.5px] text-ink-muted">{label}</span>
-          <span className="text-[12.5px] font-semibold text-ink tnum">
-            {value}%
+          <span className="text-[11px] font-medium text-ink-muted uppercase tracking-wide">
+            {label}
           </span>
+          <span className="text-[11px] font-semibold text-ink tnum">{value}%</span>
         </div>
       )}
       <div className="meter">
@@ -162,54 +162,31 @@ export function ScoreMeter({
 
 export function MatchScore({ value, size = 44 }: { value: number; size?: number }) {
   const tone =
-    value >= 90 ? "#5d2a1a" : value >= 80 ? "#5b8def" : value >= 70 ? "#b45309" : "#777b86";
+    value >= 90 ? "#17191c" : value >= 80 ? "#5b8def" : value >= 70 ? "#b45309" : "#777b86";
   return (
     <div
       className="relative grid place-items-center flex-shrink-0"
       style={{ width: size, height: size }}
     >
       <svg width={size} height={size} viewBox="0 0 44 44" className="-rotate-90">
-        <circle cx="22" cy="22" r="19" fill="none" stroke="#e8e8ea" strokeWidth="4" />
+        <circle cx="22" cy="22" r="19" fill="none" stroke="#ebebed" strokeWidth="3.5" />
         <circle
           cx="22"
           cy="22"
           r="19"
           fill="none"
           stroke={tone}
-          strokeWidth="4"
+          strokeWidth="3.5"
           strokeLinecap="round"
           strokeDasharray={`${(value / 100) * 119.4} 119.4`}
         />
       </svg>
       <span
         className="absolute font-semibold tnum"
-        style={{ fontSize: size * 0.3, color: tone }}
+        style={{ fontSize: size * 0.28, color: tone }}
       >
         {value}
       </span>
-    </div>
-  );
-}
-
-function MiniSparkline({ seed = 1 }: { seed?: number }) {
-  const heights = React.useMemo(() => {
-    const out: number[] = [];
-    let v = 40 + (seed % 5) * 8;
-    for (let i = 0; i < 8; i++) {
-      v = Math.max(22, Math.min(100, v + ((seed + i) % 3) * 9 - 10));
-      out.push(v);
-    }
-    return out;
-  }, [seed]);
-  return (
-    <div className="kpi__spark" aria-hidden>
-      {heights.map((h, i) => (
-        <div
-          key={i}
-          className="kpi__spark-bar"
-          style={{ height: `${h}%`, animationDelay: `${i * 0.04}s` }}
-        />
-      ))}
     </div>
   );
 }
@@ -218,16 +195,16 @@ function KpiBody({
   label,
   value,
   delta,
+  hint,
   positive = true,
   icon: Icon,
-  sparkSeed,
 }: {
   label: string;
   value: string;
   delta?: string;
+  hint?: string;
   positive?: boolean;
   icon?: LucideIcon;
-  sparkSeed?: number;
 }) {
   return (
     <>
@@ -235,22 +212,18 @@ function KpiBody({
         <div className="kpi__label">{label}</div>
         {Icon ? (
           <span className="kpi__icon" aria-hidden>
-            <Icon size={17} strokeWidth={2} />
+            <Icon size={15} strokeWidth={2} />
           </span>
         ) : null}
       </div>
-      <div className="kpi__value transition-transform duration-200 group-hover:scale-[1.02] origin-left">
-        {value}
-      </div>
+      <div className="kpi__value">{value}</div>
       {delta ? (
-        <div
-          className={`kpi__delta ${positive ? "" : "is-negative"}`}
-          style={{ color: positive ? "var(--positive)" : "var(--critical)" }}
-        >
-          {positive ? "▲" : "▼"} {delta}
+        <div className={`kpi__delta ${positive ? "" : "is-negative"}`}>
+          {positive ? "↑" : "↓"} {delta}
         </div>
+      ) : hint ? (
+        <div className="kpi__hint">{hint}</div>
       ) : null}
-      {sparkSeed != null ? <MiniSparkline seed={sparkSeed} /> : null}
     </>
   );
 }
@@ -259,26 +232,26 @@ export function Kpi({
   label,
   value,
   delta,
+  hint,
   positive = true,
   icon,
-  sparkSeed,
 }: {
   label: string;
   value: string;
   delta?: string;
+  hint?: string;
   positive?: boolean;
   icon?: LucideIcon;
-  sparkSeed?: number;
 }) {
   return (
-    <div className="kpi group">
+    <div className="kpi">
       <KpiBody
         label={label}
         value={value}
         delta={delta}
+        hint={hint}
         positive={positive}
         icon={icon}
-        sparkSeed={sparkSeed}
       />
     </div>
   );
@@ -289,27 +262,27 @@ export function KpiLink({
   label,
   value,
   delta,
+  hint,
   positive = true,
   icon,
-  sparkSeed,
 }: {
   href: string;
   label: string;
   value: string;
   delta?: string;
+  hint?: string;
   positive?: boolean;
   icon?: LucideIcon;
-  sparkSeed?: number;
 }) {
   return (
-    <Link href={href} className="kpi kpi--link group">
+    <Link href={href} className="kpi kpi--link">
       <KpiBody
         label={label}
         value={value}
         delta={delta}
+        hint={hint}
         positive={positive}
         icon={icon}
-        sparkSeed={sparkSeed}
       />
     </Link>
   );
@@ -319,29 +292,111 @@ export function SectionHeader({
   title,
   subtitle,
   action,
-  icon: Icon,
 }: {
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
-  icon?: LucideIcon;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3 mb-1">
+    <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          {Icon ? (
-            <span className="card-header-accent__icon" aria-hidden>
-              <Icon size={16} strokeWidth={2} />
-            </span>
-          ) : null}
-          <h2 className="text-[15px] font-semibold text-ink tracking-tight">{title}</h2>
-        </div>
-        {subtitle ? (
-          <p className="text-[12.5px] text-ink-muted mt-0.5 leading-snug">{subtitle}</p>
-        ) : null}
+        <h2 className="panel__title">{title}</h2>
+        {subtitle ? <p className="panel__subtitle">{subtitle}</p> : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
     </div>
+  );
+}
+
+export function FeaturedCandidate({
+  candidate,
+  href,
+}: {
+  candidate: Candidate;
+  href: string;
+}) {
+  return (
+    <Link href={href} className="block transition-colors hover:bg-subtle/40">
+      <div className="spotlight__hero border-b border-line/20">
+        <div className="flex items-start gap-4">
+          <MatchScore value={candidate.matchScore} size={52} />
+          <CandidateAvatar name={candidate.name} gender={candidate.gender} size={44} />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[15px] font-semibold text-ink tracking-tight">
+                {candidate.name}
+              </span>
+              <RecommendationBadge value={candidate.recommendation} />
+              <StageBadge value={candidate.stage} />
+            </div>
+            <p className="text-[12.5px] text-ink-muted mt-0.5 truncate">
+              {candidate.title} · {candidate.company}
+            </p>
+          </div>
+        </div>
+        <div className="spotlight__metrics">
+          <ScoreMeter
+            label="Skills"
+            value={candidate.skillsMatch}
+            accent="#17191c"
+          />
+          <ScoreMeter
+            label="Experience"
+            value={candidate.experienceMatch}
+            accent="#5b8def"
+          />
+          <ScoreMeter
+            label="GitHub"
+            value={candidate.githubMatch}
+            accent="#2d7a4f"
+          />
+        </div>
+      </div>
+      {candidate.reasons.length > 0 && (
+        <div className="spotlight__reasons">
+          {candidate.reasons.slice(0, 3).map((r) => (
+            <div key={r} className="spotlight__reason">
+              <Check size={13} className="text-positive shrink-0 mt-0.5" />
+              <span>{r}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </Link>
+  );
+}
+
+export function RankedCandidateRow({
+  rank,
+  candidate,
+  href,
+}: {
+  rank: number;
+  candidate: Candidate;
+  href: string;
+}) {
+  return (
+    <Link href={href} className="rank-row">
+      <span className="rank-row__num">{rank}</span>
+      <CandidateAvatar name={candidate.name} gender={candidate.gender} size={32} />
+      <div className="min-w-0 flex-1">
+        <div className="text-[13px] font-semibold text-ink truncate">
+          {candidate.name}
+        </div>
+        <div className="text-[12px] text-ink-muted truncate">
+          {candidate.title} · {candidate.company}
+        </div>
+      </div>
+      <div className="w-14 meter hidden sm:block">
+        <div
+          className="meter__fill"
+          style={{
+            width: `${candidate.matchScore}%`,
+            background: candidate.avatarColor,
+          }}
+        />
+      </div>
+      <span className="rank-row__score">{candidate.matchScore}</span>
+    </Link>
   );
 }

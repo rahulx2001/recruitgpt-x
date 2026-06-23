@@ -4,7 +4,6 @@ import * as React from "react";
 import dynamic from "next/dynamic";
 import { Download, RefreshCw } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
-import { Kpi } from "@/components/app/Atoms";
 import { useWorkspaceAnalytics } from "@/lib/useWorkspaceAnalytics";
 import { analyticsFallback } from "@/lib/analyticsFallback";
 
@@ -14,9 +13,9 @@ const AnalyticsCharts = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="chart-card h-[320px] animate-pulse bg-subtle/40" />
+          <div key={i} className="chart-card h-[300px] animate-pulse bg-subtle/30" />
         ))}
       </div>
     ),
@@ -44,14 +43,14 @@ export default function AnalyticsPage() {
   const analytics = data ?? (usingFallback ? analyticsFallback : null);
 
   const subtitle = data
-    ? `Challenge pool · ${data.candidate_count.toLocaleString()} candidates · derived from ranker scores`
+    ? `${data.candidate_count.toLocaleString()} candidates · ranker-derived metrics`
     : usingFallback
-    ? "Showing cached demo analytics — backend unreachable"
+    ? "Cached demo data — backend unreachable"
     : isLoading
-    ? "Loading analytics from backend…"
+    ? "Loading analytics…"
     : "Analytics unavailable";
 
-  const insightTiles = analytics
+  const heroMetrics = analytics
     ? [
         {
           label: "Pool size",
@@ -61,10 +60,10 @@ export default function AnalyticsPage() {
         {
           label: "Time to hire",
           value: `${analytics.time_to_hire.at(-1)?.days ?? "—"}d`,
-          hint: "current estimate",
+          hint: "current month",
         },
         {
-          label: "Top tier score",
+          label: "Top tier",
           value: `${Math.max(...analytics.source_quality.map((s) => s.quality), 0)}%`,
           hint: "best rank bucket",
         },
@@ -102,12 +101,12 @@ export default function AnalyticsPage() {
       }
     >
       {usingFallback && !data && (
-        <div className="card p-4 mb-5 border-warning/30 bg-warning/5 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-[14px] font-medium text-ink">
+        <div className="panel mb-3.5 flex flex-wrap items-center justify-between gap-3">
+          <div className="panel__body py-3">
+            <p className="text-[13px] font-medium text-ink">
               Could not load live analytics
             </p>
-            <p className="text-[13px] text-ink-muted mt-0.5">
+            <p className="text-[12.5px] text-ink-muted mt-0.5">
               {(error as Error)?.message ??
                 (timedOut
                   ? "Request timed out — showing demo data below."
@@ -116,7 +115,7 @@ export default function AnalyticsPage() {
           </div>
           <button
             type="button"
-            className="btn btn--primary btn--sm"
+            className="btn btn--primary btn--sm mr-4"
             onClick={() => refetch()}
             disabled={isFetching}
           >
@@ -140,44 +139,22 @@ export default function AnalyticsPage() {
             </button>
           ))}
         </div>
-        <p className="text-[12.5px] text-ink-muted">
-          Viewing <span className="font-medium text-ink-secondary">{period}</span>{" "}
-          · scores from offline ranker
+        <p className="text-[12px] text-ink-faint">
+          Period: <span className="text-ink-secondary font-medium">{period}</span>
         </p>
       </div>
 
-      {insightTiles.length > 0 && (
-        <div className="analytics-insight-row">
-          {insightTiles.map((tile) => (
-            <div key={tile.label} className="insight-tile">
-              <div className="insight-tile__label">{tile.label}</div>
-              <div className="insight-tile__value">{tile.value}</div>
-              <div className="insight-tile__hint">{tile.hint}</div>
+      {heroMetrics.length > 0 && (
+        <div className="analytics-hero">
+          {heroMetrics.map((m) => (
+            <div key={m.label} className="analytics-hero__item">
+              <div className="analytics-hero__label">{m.label}</div>
+              <div className="analytics-hero__value">{m.value}</div>
+              <div className="analytics-hero__hint">{m.hint}</div>
             </div>
           ))}
         </div>
       )}
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
-        {(analytics?.kpis ?? Array.from({ length: 4 }, () => null)).map(
-          (kpi, i) =>
-            kpi ? (
-              <Kpi
-                key={kpi.label}
-                label={kpi.label}
-                value={kpi.value}
-                delta={kpi.delta}
-                sparkSeed={i + 2}
-              />
-            ) : (
-              <div key={i} className="kpi animate-pulse">
-                <div className="h-3 w-24 bg-subtle rounded mb-3" />
-                <div className="h-7 w-16 bg-subtle rounded mb-2" />
-                <div className="h-3 w-20 bg-subtle rounded" />
-              </div>
-            )
-        )}
-      </div>
 
       {analytics && (
         <AnalyticsCharts
@@ -186,6 +163,7 @@ export default function AnalyticsPage() {
             conversion_funnel: analytics.conversion_funnel,
             source_quality: analytics.source_quality,
             trends: analytics.trends,
+            kpis: analytics.kpis,
           }}
         />
       )}
