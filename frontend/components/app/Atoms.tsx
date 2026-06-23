@@ -1,51 +1,22 @@
 import * as React from "react";
 import Link from "next/link";
-import { Check, UserRound, type LucideIcon } from "lucide-react";
+import { Check, type LucideIcon } from "lucide-react";
 import { initials } from "@/lib/utils";
-import {
-  resolveCandidateGender,
-  type CandidateGender,
-} from "@/lib/gender";
 import type { Candidate, Recommendation, PipelineStage } from "@/lib/mock";
 
-function FemaleSilhouette({ size }: { size: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-    >
-      <circle cx="12" cy="7.5" r="3.25" />
-      <path d="M12 11.2c-2.8 0-5 1.9-5.4 4.5L6 20h2.2l.6-3.2h5.4l.6 3.2H17l-.6-4.3c-.4-2.6-2.6-4.5-5.4-4.5z" />
-    </svg>
-  );
-}
+const CANDIDATE_AVATAR_PALETTE = [
+  { bg: "#EEF2FF", ink: "#4F46E5" },
+  { bg: "#FEF3E2", ink: "#B45309" },
+  { bg: "#E8F5EC", ink: "#2D7A4F" },
+  { bg: "#FDECEA", ink: "#C0392B" },
+  { bg: "#F2F0FF", ink: "#6D28D9" },
+  { bg: "#E6F4FF", ink: "#0369A1" },
+] as const;
 
-function MaleSilhouette({ size }: { size: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden
-    >
-      <circle cx="12" cy="7.5" r="3.25" />
-      <path d="M7.5 20c0-2.9 2-5 4.5-5s4.5 2.1 4.5 5h-2c0-1.7-1.1-3-2.5-3s-2.5 1.3-2.5 3h-2z" />
-      <path d="M9.5 12.5h5v1.8c-.8-.4-1.7-.6-2.5-.6s-1.7.2-2.5.6v-1.8z" />
-    </svg>
-  );
+function candidateAvatarTone(name: string) {
+  const i = [...name].reduce((a, c) => a + c.charCodeAt(0), 0) % CANDIDATE_AVATAR_PALETTE.length;
+  return CANDIDATE_AVATAR_PALETTE[i]!;
 }
-
-const genderStyles: Record<
-  CandidateGender,
-  { bg: string; color: string }
-> = {
-  female: { bg: "var(--accent-soft)", color: "var(--accent)" },
-  male: { bg: "var(--sky-wash)", color: "var(--cool)" },
-};
 
 export function Avatar({
   name,
@@ -74,36 +45,26 @@ export function Avatar({
 
 export function CandidateAvatar({
   name,
-  gender,
   size = 38,
 }: {
   name: string;
-  gender?: string | null;
   size?: number;
 }) {
-  const resolved = resolveCandidateGender(name, gender);
-  const iconSize = Math.round(size * 0.48);
-  const tone = resolved ? genderStyles[resolved] : null;
-
+  const tone = candidateAvatarTone(name);
   return (
     <span
-      className="avatar ring-2 ring-white/80 grid place-items-center shrink-0"
+      className="avatar shrink-0 font-medium"
       style={{
         width: size,
         height: size,
-        background: tone?.bg ?? "var(--subtle)",
-        color: tone?.color ?? "var(--ink-muted)",
+        background: tone.bg,
+        color: tone.ink,
+        fontSize: size * 0.36,
       }}
       title={name}
-      aria-label={`${name}${resolved ? ` (${resolved})` : ""}`}
+      aria-label={name}
     >
-      {resolved === "female" ? (
-        <FemaleSilhouette size={iconSize} />
-      ) : resolved === "male" ? (
-        <MaleSilhouette size={iconSize} />
-      ) : (
-        <UserRound size={iconSize} strokeWidth={2} />
-      )}
+      {initials(name)}
     </span>
   );
 }
@@ -134,7 +95,7 @@ export function StageBadge({ value }: { value: PipelineStage }) {
 export function ScoreMeter({
   value,
   label,
-  accent = "#17191c",
+  accent = "var(--ink)",
 }: {
   value: number;
   label?: string;
@@ -160,16 +121,22 @@ export function ScoreMeter({
   );
 }
 
+function matchScoreTone(value: number): string {
+  if (value >= 90) return "var(--ink)";
+  if (value >= 80) return "var(--cool)";
+  if (value >= 70) return "var(--warning)";
+  return "var(--ink-muted)";
+}
+
 export function MatchScore({ value, size = 44 }: { value: number; size?: number }) {
-  const tone =
-    value >= 90 ? "#17191c" : value >= 80 ? "#5b8def" : value >= 70 ? "#b45309" : "#777b86";
+  const tone = matchScoreTone(value);
   return (
     <div
       className="relative grid place-items-center flex-shrink-0"
       style={{ width: size, height: size }}
     >
       <svg width={size} height={size} viewBox="0 0 44 44" className="-rotate-90">
-        <circle cx="22" cy="22" r="19" fill="none" stroke="#ebebed" strokeWidth="3.5" />
+        <circle cx="22" cy="22" r="19" fill="none" stroke="var(--line)" strokeWidth="3.5" />
         <circle
           cx="22"
           cy="22"
@@ -317,10 +284,10 @@ export function FeaturedCandidate({
 }) {
   return (
     <Link href={href} className="block transition-colors hover:bg-subtle/40">
-      <div className="spotlight__hero border-b border-line/20">
+      <div className="spotlight__hero border-b border-line">
         <div className="flex items-start gap-4">
           <MatchScore value={candidate.matchScore} size={52} />
-          <CandidateAvatar name={candidate.name} gender={candidate.gender} size={44} />
+          <CandidateAvatar name={candidate.name} size={44} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[15px] font-semibold text-ink tracking-tight">
@@ -335,21 +302,9 @@ export function FeaturedCandidate({
           </div>
         </div>
         <div className="spotlight__metrics">
-          <ScoreMeter
-            label="Skills"
-            value={candidate.skillsMatch}
-            accent="#17191c"
-          />
-          <ScoreMeter
-            label="Experience"
-            value={candidate.experienceMatch}
-            accent="#5b8def"
-          />
-          <ScoreMeter
-            label="GitHub"
-            value={candidate.githubMatch}
-            accent="#2d7a4f"
-          />
+          <ScoreMeter label="Skills" value={candidate.skillsMatch} />
+          <ScoreMeter label="Experience" value={candidate.experienceMatch} />
+          <ScoreMeter label="GitHub" value={candidate.githubMatch} />
         </div>
       </div>
       {candidate.reasons.length > 0 && (
@@ -377,8 +332,8 @@ export function RankedCandidateRow({
 }) {
   return (
     <Link href={href} className="rank-row">
-      <span className="rank-row__num">{rank}</span>
-      <CandidateAvatar name={candidate.name} gender={candidate.gender} size={32} />
+      <span className="rank-row__num tnum">{rank}</span>
+      <CandidateAvatar name={candidate.name} size={32} />
       <div className="min-w-0 flex-1">
         <div className="text-[13px] font-semibold text-ink truncate">
           {candidate.name}
@@ -392,11 +347,12 @@ export function RankedCandidateRow({
           className="meter__fill"
           style={{
             width: `${candidate.matchScore}%`,
-            background: candidate.avatarColor,
+            background: "var(--ink)",
+            opacity: 0.65,
           }}
         />
       </div>
-      <span className="rank-row__score">{candidate.matchScore}</span>
+      <span className="rank-row__score tnum">{candidate.matchScore}</span>
     </Link>
   );
 }

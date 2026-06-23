@@ -611,7 +611,7 @@ function CandidatesView() {
                 >
                   <td>
                     <div className="flex items-center gap-3">
-                      <CandidateAvatar name={c.name} gender={c.gender} size={36} />
+                      <CandidateAvatar name={c.name} size={36} />
                       <div className="min-w-0">
                         <div className="text-[14px] font-semibold text-ink">
                           {c.name}
@@ -871,7 +871,7 @@ function CandidateDrawer({
 
         <div className="p-6">
           <div className="flex items-center gap-4">
-            <CandidateAvatar name={c.name} gender={c.gender} size={56} />
+            <CandidateAvatar name={c.name} size={56} />
             <div className="min-w-0">
               <h3 className="text-[19px] font-semibold text-ink tracking-tight">
                 {c.name}

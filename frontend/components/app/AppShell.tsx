@@ -152,7 +152,7 @@ export function AppShell({
                     href={item.href}
                     className={`nav-item ${active ? "is-active" : ""}`}
                   >
-                    <Icon size={17} strokeWidth={2} className="text-ink-faint" />
+                    <Icon size={17} strokeWidth={2} className="text-ink-muted" />
                     {item.label}
                     {"count" in item && item.count ? (
                       <span className="nav-item__count">{item.count}</span>
@@ -166,7 +166,7 @@ export function AppShell({
 
         <div className="mt-auto pt-3 border-t border-line">
           <Link href="/settings" className="nav-item">
-            <Settings size={17} className="text-ink-faint" />
+            <Settings size={17} className="text-ink-muted" />
             Settings
           </Link>
           <Dropdown
@@ -225,7 +225,7 @@ export function AppShell({
             {actions}
             <button
               type="button"
-              className="btn btn--ghost btn--sm px-2.5 relative"
+              className="btn btn--icon relative"
               aria-label="Notifications"
               aria-expanded={notifOpen}
               onClick={() => {

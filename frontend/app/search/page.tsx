@@ -202,7 +202,7 @@ function SearchView() {
                     >
                       {c.matchScore}
                     </span>
-                    <CandidateAvatar name={c.name} gender={c.gender} size={40} />
+                    <CandidateAvatar name={c.name} size={40} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-[14px] font-semibold text-ink">

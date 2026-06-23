@@ -143,10 +143,7 @@ export default function DashboardPage() {
                   title="Top ranked candidates"
                   subtitle="Challenge ranker · highest match scores"
                   action={
-                    <Link
-                      href="/candidates"
-                      className="text-[12px] font-medium text-ink-muted hover:text-ink inline-flex items-center gap-0.5 transition-colors"
-                    >
+                    <Link href="/candidates" className="text-action">
                       View all <ChevronRight size={13} />
                     </Link>
                   }
@@ -175,23 +172,20 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="bento__span-5 space-y-3.5">
+          <div className="bento__span-5 flex flex-col gap-4">
             <div className="panel">
-              <div className="panel__head border-b-0 pb-0">
+              <div className="panel__head panel__head--inline">
                 <SectionHeader
                   title="Hiring funnel"
                   subtitle="Stage distribution"
                   action={
-                    <Link
-                      href="/analytics"
-                      className="text-[12px] font-semibold text-ink tnum"
-                    >
+                    <Link href="/analytics" className="text-action font-semibold text-ink tnum">
                       {funnelRate}
                     </Link>
                   }
                 />
               </div>
-              <div className="panel__body pt-2">
+              <div className="panel__body panel__body--tight">
                 <div className="funnel-compact">
                   {funnel.map((s, i) => {
                     const pct = (s.count / maxFunnel) * 100;
@@ -225,7 +219,7 @@ export default function DashboardPage() {
             </div>
 
             <Link href="/analytics" className="panel block card--hover">
-              <div className="panel__head border-b-0 pb-0">
+              <div className="panel__head panel__head--inline">
                 <SectionHeader
                   title="Time to hire"
                   subtitle="Monthly trend"
@@ -237,7 +231,7 @@ export default function DashboardPage() {
                   }
                 />
               </div>
-              <div className="panel__body pt-1">
+              <div className="panel__body panel__body--tight">
                 <div className="mini-bars">
                   {timeToHire.map((t, idx) => (
                     <div
@@ -265,16 +259,14 @@ export default function DashboardPage() {
                 <SectionHeader
                   title="Open requisitions"
                   action={
-                    <Link
-                      href="/jobs"
-                      className="text-[12px] font-medium text-ink-muted hover:text-ink inline-flex items-center gap-0.5 transition-colors"
-                    >
+                    <Link href="/jobs" className="text-action">
                       All jobs <ChevronRight size={13} />
                     </Link>
                   }
                 />
               </div>
-              <div className="panel__body pt-0">
+              <div className="panel__body panel__body--list">
+                <div className="panel__list">
                 {jobs.slice(0, 5).map((j) => (
                   <Link key={j.id} href={`/jobs/${j.id}`} className="job-row">
                     <div className="min-w-0 flex-1">
@@ -295,11 +287,12 @@ export default function DashboardPage() {
                     <ArrowUpRight size={14} className="text-ink-faint shrink-0" />
                   </Link>
                 ))}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bento__span-4 space-y-3.5">
+          <div className="bento__span-4 flex flex-col gap-4">
             <div className="panel">
               <div className="panel__head">
                 <SectionHeader
@@ -307,7 +300,7 @@ export default function DashboardPage() {
                   action={
                     <button
                       type="button"
-                      className="text-[12px] font-medium text-ink-muted hover:text-ink transition-colors"
+                      className="text-action"
                       onClick={() => router.push("/candidates")}
                     >
                       Pipeline
@@ -315,12 +308,13 @@ export default function DashboardPage() {
                   }
                 />
               </div>
-              <div className="panel__body pt-0">
+              <div className="panel__body panel__body--list">
+                <div className="panel__list">
                 {activity.slice(0, 5).map((a) => (
                   <button
                     key={a.id}
                     type="button"
-                    className="feed-item px-1 -mx-1"
+                    className="feed-item"
                     onClick={() => router.push(a.href)}
                   >
                     <Avatar name={a.actor} color={a.actor_color} size={28} />
@@ -336,6 +330,7 @@ export default function DashboardPage() {
                     </div>
                   </button>
                 ))}
+                </div>
               </div>
             </div>
 
@@ -344,22 +339,20 @@ export default function DashboardPage() {
                 <SectionHeader
                   title="Today's interviews"
                   action={
-                    <Link
-                      href="/interviews"
-                      className="text-[12px] font-medium text-ink-muted hover:text-ink transition-colors"
-                    >
+                    <Link href="/interviews" className="text-action">
                       Calendar
                     </Link>
                   }
                 />
               </div>
-              <div className="panel__body pt-0">
+              <div className="panel__body panel__body--list">
+                <div className="panel__list">
                 {todayInterviews.length > 0 ? (
                   todayInterviews.slice(0, 4).map((i) => (
                     <button
                       key={i.id}
                       type="button"
-                      className="feed-item px-1 -mx-1"
+                      className="feed-item"
                       onClick={() => router.push("/interviews")}
                     >
                       <Avatar
@@ -381,10 +374,11 @@ export default function DashboardPage() {
                     </button>
                   ))
                 ) : (
-                  <p className="text-[12.5px] text-ink-muted py-2">
+                  <p className="text-[12.5px] text-ink-muted py-2 px-2">
                     No interviews today.
                   </p>
                 )}
+                </div>
               </div>
             </div>
 
