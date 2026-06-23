@@ -12,7 +12,6 @@ import {
   X,
   Github,
   MapPin,
-  Sparkles,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -23,6 +22,7 @@ import {
   RecommendationBadge,
   StageBadge,
   ScoreMeter,
+  Kpi,
 } from "@/components/app/Atoms";
 import { CandidatesLoadingShell } from "@/components/app/LoadingStates";
 import { useQuery } from "@tanstack/react-query";
@@ -311,6 +311,11 @@ function CandidatesView() {
     safePage * pageSize
   );
 
+  const strongHireCount = basePool.filter(
+    (c) => c.recommendation === "Strong Hire"
+  ).length;
+  const interviewCount = basePool.filter((c) => c.stage === "Interview").length;
+
   if (isLoading) {
     return (
       <AppShell title="Candidates" subtitle="Loading challenge candidates…">
@@ -356,25 +361,37 @@ function CandidatesView() {
       }
     >
       {activeShortlist && (
-        <div className="card p-3 mb-3 flex items-center justify-between gap-3 bg-accent-soft/40 border-accent/20">
+        <div className="insight-callout mb-4 flex items-center justify-between gap-3">
           <p className="text-[13px] text-ink-secondary">
-            Viewing shortlist{" "}
-            <span className="font-semibold text-ink">
-              {activeShortlist.name}
-            </span>{" "}
-            for {activeShortlist.job}
+            Shortlist{" "}
+            <span className="font-semibold text-ink">{activeShortlist.name}</span>{" "}
+            · {activeShortlist.job}
           </p>
-          <Link
-            href="/candidates"
-            className="text-[13px] font-medium text-accent hover:text-accent-hover"
-          >
-            Clear filter
+          <Link href="/candidates" className="text-action shrink-0">
+            Clear
           </Link>
         </div>
       )}
 
-      {/* Controls */}
-      <div className="flex flex-wrap items-center gap-3 mb-3">
+      <div className="metrics-row metrics-row--3 mb-4">
+        <Kpi
+          label="Active in pool"
+          value={String(activeCount)}
+          hint="challenge candidates"
+        />
+        <Kpi
+          label="Strong hire"
+          value={String(strongHireCount)}
+          hint="top recommendation"
+        />
+        <Kpi
+          label="In interview"
+          value={String(interviewCount)}
+          hint="pipeline stage"
+        />
+      </div>
+
+      <div className="candidates-toolbar">
         <div className="seg">
           {filters.map((f) => (
             <button
@@ -387,34 +404,34 @@ function CandidatesView() {
             </button>
           ))}
         </div>
-        <div className="relative flex-1 min-w-[220px] max-w-sm">
+        <div className="candidates-toolbar__search">
           <Search
-            size={16}
+            size={15}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none"
           />
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, skill, or title…"
-            className="w-full h-9 pl-9 pr-3 rounded-lg border border-line bg-surface text-[14px] outline-none focus:border-accent focus:ring-4 focus:ring-accent-soft transition"
+            placeholder="Search name, skill, title…"
+            aria-label="Search candidates"
           />
         </div>
         <button
           type="button"
           className={`btn btn--secondary btn--sm ${
-            panelOpen || activePanelCount > 0 ? "border-accent/40 text-accent" : ""
+            panelOpen || activePanelCount > 0 ? "border-line-strong" : ""
           }`}
           onClick={() => setPanelOpen((v) => !v)}
         >
           <SlidersHorizontal size={15} /> Filters
           {activePanelCount > 0 && (
-            <span className="badge badge--accent ml-1">{activePanelCount}</span>
+            <span className="badge badge--neutral ml-1">{activePanelCount}</span>
           )}
         </button>
       </div>
 
-      <p className="text-[12.5px] text-ink-muted mb-3">
+      <p className="candidates-meta">
         {rows.length === 0 ? (
           <>No candidates match this view</>
         ) : (
@@ -439,7 +456,7 @@ function CandidatesView() {
       </p>
 
       {panelOpen && (
-        <div className="card p-4 mb-4">
+        <div className="panel panel__body mb-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <label className="block">
               <span className="text-[12px] font-semibold text-ink-muted uppercase tracking-wide">
@@ -568,17 +585,14 @@ function CandidatesView() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="card overflow-hidden">
+      <div className="panel panel--flush">
         <div className="overflow-x-auto">
-          <table className="tbl">
+          <table className="tbl tbl--candidates">
             <thead>
               <tr>
                 <th>Candidate</th>
                 <th>Match</th>
-                <th>Skills</th>
-                <th>Exp.</th>
-                <th>GitHub</th>
+                <th className="hidden md:table-cell">Experience</th>
                 <th>Stage</th>
                 <th>Recommendation</th>
                 <th className="text-right">Actions</th>
@@ -587,7 +601,7 @@ function CandidatesView() {
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-ink-muted">
+                  <td colSpan={6} className="text-center py-12 text-ink-muted">
                     No candidates match this view.
                     {rejectedIds.size > 0 && (
                       <button
@@ -623,56 +637,15 @@ function CandidatesView() {
                     </div>
                   </td>
                   <td>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="text-[15px] font-semibold tnum"
-                        style={{
-                          color:
-                            c.matchScore >= 90
-                              ? "#0E9F6E"
-                              : c.matchScore >= 80
-                              ? "#4F46E5"
-                              : "#C2780C",
-                        }}
-                      >
+                    <div className="match-cell">
+                      <MatchScore value={c.matchScore} size={36} />
+                      <span className="match-cell__value hidden sm:inline">
                         {c.matchScore}
                       </span>
-                      <div className="w-12 meter">
-                        <div
-                          className="meter__fill"
-                          style={{
-                            width: `${c.matchScore}%`,
-                            background:
-                              c.matchScore >= 90
-                                ? "#0E9F6E"
-                                : c.matchScore >= 80
-                                ? "#4F46E5"
-                                : "#C2780C",
-                          }}
-                        />
-                      </div>
                     </div>
                   </td>
-                  <td>
-                    <div className="flex flex-wrap gap-1 max-w-[200px]">
-                      {c.skills.slice(0, 3).map((s) => (
-                        <span key={s} className="badge badge--neutral">
-                          {s}
-                        </span>
-                      ))}
-                      {c.skills.length > 3 && (
-                        <span className="badge badge--neutral">
-                          +{c.skills.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="tnum text-ink-secondary">{c.experienceYears}y</td>
-                  <td>
-                    <span className="inline-flex items-center gap-1.5 tnum text-ink-secondary">
-                      <Github size={14} className="text-ink-faint" />
-                      {c.githubScore}
-                    </span>
+                  <td className="hidden md:table-cell tnum text-ink-secondary">
+                    {c.experienceYears}y
                   </td>
                   <td>
                     <StageBadge value={c.stage} />
@@ -681,10 +654,11 @@ function CandidatesView() {
                     <RecommendationBadge value={c.recommendation} />
                   </td>
                   <td>
-                    <div className="flex items-center justify-end gap-1.5">
+                    <div className="candidate-actions">
                       <button
                         type="button"
-                        className="h-8 w-8 grid place-items-center rounded-md border border-line text-positive hover:bg-positive/5 disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="btn btn--icon text-positive disabled:opacity-40 disabled:cursor-not-allowed"
+                        style={{ width: 32, height: 32, minHeight: 32 }}
                         onClick={(e) => {
                           e.stopPropagation();
                           advanceCandidate(c);
@@ -705,7 +679,8 @@ function CandidatesView() {
                       </button>
                       <button
                         type="button"
-                        className="h-8 w-8 grid place-items-center rounded-md border border-line text-ink-faint hover:bg-critical/5 hover:text-critical hover:border-critical/30 disabled:opacity-40"
+                        className="btn btn--icon text-ink-faint hover:text-critical disabled:opacity-40"
+                        style={{ width: 32, height: 32, minHeight: 32 }}
                         onClick={(e) => {
                           e.stopPropagation();
                           rejectCandidate(c);
@@ -850,6 +825,7 @@ function CandidateDrawer({
       : c.stage === "Screened"
       ? "Advance to interview"
       : "Advance to screened";
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <button
@@ -858,54 +834,62 @@ function CandidateDrawer({
         aria-label="Close scorecard"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-md bg-surface border-l border-line h-full overflow-y-auto animate-fade-up shadow-float">
-        <div className="sticky top-0 bg-surface/90 backdrop-blur border-b border-line px-6 py-4 flex items-center justify-between">
-          <span className="h-eyebrow">Candidate scorecard</span>
+      <aside className="scorecard-drawer" aria-label="Candidate scorecard">
+        <div className="scorecard-drawer__head">
+          <div>
+            <h2 className="panel__title">Candidate scorecard</h2>
+            <p className="panel__subtitle">Ranker reasoning & fit signals</p>
+          </div>
           <button
+            type="button"
             onClick={onClose}
-            className="h-8 w-8 grid place-items-center rounded-md hover:bg-subtle text-ink-muted"
+            className="btn btn--icon"
+            aria-label="Close"
           >
             <X size={17} />
           </button>
         </div>
 
-        <div className="p-6">
-          <div className="flex items-center gap-4">
-            <CandidateAvatar name={c.name} size={56} />
+        <div className="scorecard-drawer__body">
+          <div className="scorecard-hero">
+            <CandidateAvatar name={c.name} size={52} />
             <div className="min-w-0">
-              <h3 className="text-[19px] font-semibold text-ink tracking-tight">
-                {c.name}
-              </h3>
-              <p className="text-[13px] text-ink-muted">{c.title}</p>
-              <p className="text-[12.5px] text-ink-faint inline-flex items-center gap-1 mt-0.5">
+              <h3 className="scorecard-hero__title">{c.name}</h3>
+              <p className="scorecard-hero__sub">
+                {c.title}
+                {c.company && c.company !== "—" ? ` @ ${c.company}` : ""}
+              </p>
+              <p className="scorecard-hero__loc">
                 <MapPin size={12} /> {c.location}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 mt-5">
-            <MatchScore value={c.matchScore} size={56} />
-            <div>
-              <RecommendationBadge value={c.recommendation} />
-              <p className="text-[12.5px] text-ink-muted mt-1.5">
+          <div className="scorecard-score-row">
+            <MatchScore value={c.matchScore} size={52} />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <RecommendationBadge value={c.recommendation} />
+                <StageBadge value={c.stage} />
+              </div>
+              <p className="text-[12px] text-ink-muted mt-2">
                 {c.experienceYears}y experience · Growth {c.trajectory.toLowerCase()}
+              </p>
+              <p className="text-[11.5px] text-ink-faint mt-1 inline-flex items-center gap-1">
+                <Github size={12} /> GitHub signal {c.githubScore}
               </p>
             </div>
           </div>
 
-          <div className="mt-6 space-y-3.5">
-            <ScoreMeter label="Skills match" value={c.skillsMatch} accent="#4F46E5" />
-            <ScoreMeter
-              label="Experience match"
-              value={c.experienceMatch}
-              accent="#4F46E5"
-            />
-            <ScoreMeter label="GitHub signal" value={c.githubMatch} accent="#4F46E5" />
+          <div className="scorecard-metrics">
+            <ScoreMeter label="Skills" value={c.skillsMatch} />
+            <ScoreMeter label="Experience" value={c.experienceMatch} />
+            <ScoreMeter label="GitHub" value={c.githubMatch} />
           </div>
 
-          <div className="mt-6">
-            <span className="h-eyebrow">Skills</span>
-            <div className="flex flex-wrap gap-1.5 mt-2">
+          <div className="scorecard-section">
+            <div className="scorecard-section__label">Skills</div>
+            <div className="scorecard-skills">
               {c.skills.map((s) => (
                 <span key={s} className="badge badge--neutral">
                   {s}
@@ -914,50 +898,43 @@ function CandidateDrawer({
             </div>
           </div>
 
-          <div className="mt-6 card p-4 bg-accent-soft/50 border-accent/20">
-            <div className="flex items-center gap-2 mb-2.5">
-              <Sparkles size={15} className="text-accent" />
-              <span className="text-[13px] font-semibold text-ink">
-                Why this ranking
-              </span>
-            </div>
-            <ul className="space-y-2">
+          <div className="scorecard-section">
+            <div className="scorecard-section__label">Why this ranking</div>
+            <div className="scorecard-reasoning">
               {c.reasons.map((r) => (
-                <li key={r} className="flex gap-2 text-[13px] text-ink-secondary">
-                  <Check size={15} className="text-positive mt-0.5 flex-shrink-0" />
-                  {r}
-                </li>
+                <div key={r} className="scorecard-reasoning__item">
+                  <Check size={13} className="text-positive shrink-0 mt-0.5" />
+                  <span>{r}</span>
+                </div>
               ))}
-            </ul>
-            {c.concern && (
-              <div className="flex gap-2 text-[13px] text-ink-secondary mt-2.5 pt-2.5 border-t border-accent/15">
-                <span className="text-warning font-semibold flex-shrink-0">
-                  Watch:
-                </span>
-                {c.concern}
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-2 mt-6">
-            <button
-              type="button"
-              className="btn btn--primary flex-1"
-              disabled={c.stage === "Hired"}
-              onClick={onAdvance}
-            >
-              {advanceLabel}
-            </button>
-            <button
-              type="button"
-              className="btn btn--secondary text-critical border-critical/20 hover:bg-critical/5"
-              onClick={onReject}
-            >
-              Remove
-            </button>
+              {c.concern && (
+                <div className="scorecard-reasoning__concern">
+                  <span className="text-warning font-semibold">Watch: </span>
+                  {c.concern}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+
+        <div className="scorecard-drawer__foot">
+          <button
+            type="button"
+            className="btn btn--primary flex-1"
+            disabled={c.stage === "Hired"}
+            onClick={onAdvance}
+          >
+            {advanceLabel}
+          </button>
+          <button
+            type="button"
+            className="btn btn--secondary text-critical"
+            onClick={onReject}
+          >
+            Remove
+          </button>
+        </div>
+      </aside>
     </div>
   );
 }

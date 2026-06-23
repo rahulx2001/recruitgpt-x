@@ -243,7 +243,8 @@ export function AppShell({
             pathname === "/dashboard" ||
             pathname === "/analytics" ||
             pathname === "/shortlists" ||
-            pathname === "/interviews"
+            pathname === "/interviews" ||
+            pathname === "/candidates"
               ? " content--wide"
               : ""
           }`}
