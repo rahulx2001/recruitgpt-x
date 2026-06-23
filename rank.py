@@ -51,9 +51,9 @@ def main() -> int:
         return run_self_test(sample if sample.exists() else None)
 
     if not args.candidates.exists():
-        print(f"ERROR: candidates file not found: {args.candidates}", file=sys.stderr)
-        print("Run: ./scripts/sync_challenge_data.sh", file=sys.stderr)
-        print("Or set CHALLENGE_DATA_ROOT to the official challenge folder.", file=sys.stderr)
+        from challenge.data_paths import candidates_not_found_help
+
+        print(candidates_not_found_help(args.candidates), file=sys.stderr)
         return 1
 
     t0 = time.perf_counter()

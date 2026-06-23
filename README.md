@@ -140,6 +140,9 @@ All orchestrated via **LangGraph** with shared state and conditional routing.
 - [Pitch Deck Outline](docs/PITCH_DECK.md)
 - [API Reference](docs/API.md)
 - [Evaluation Metrics](docs/EVALUATION.md)
+- [Evaluation Limitations](docs/evaluation_limitations.md) — proxy vs synthetic vs hidden GT
+- [Evaluation Honesty Statement](docs/evaluation_honesty_statement.md)
+- [Judge FAQ](docs/judge_faq.md)
 
 ---
 
@@ -222,11 +225,28 @@ See `sandbox/README.md` for Space deploy steps.
 
 ### Ranking approach (summary)
 
+**Submission pipeline** (`RANKER_USE_CROSS_ENCODER=0`, byte-reproducible):
+
 1. **Title + career** — Senior AI / Recommendation Systems / Search / ML roles boosted; honeypot titles heavily penalized.
 2. **Skills** — Core AI/IR skills (embeddings, retrieval, vector DBs, ranking) with endorsement + duration trust.
-3. **JD overlap** — Lexical match to retrieval/ranking mandate (no embeddings, CPU-safe).
+3. **Bi-encoder** — Committed `embeddings.fp16.npz` (MiniLM-L6-v2@1110a243); TF-IDF fallback if absent.
 4. **Production + product pedigree** — Deployment signals; product-company history over pure consulting.
 5. **Behavioral + logistics** — Response rate, GitHub, notice period, title-chaser penalty.
-6. **Honeypot traps** — Unrelated title + inflated AI skill count → multiplicative penalty.
+6. **Honeypot traps** — Structural traps → multiplicative penalty.
 
-Top result: **CAND_0002025** (Senior AI Engineer @ Apple). Recommendation Systems @ Amazon #6. Zero honeypots in top 100.
+**Not used in submission artifact:** cross-encoder rerank (`RANKER_USE_CROSS_ENCODER=1` is experimental only; requires offline HF cache).
+
+### Evaluation disclaimer
+
+Offline metrics in `data/eval_report.json` are **proxies**, not hidden ground truth.  
+`synthetic_proxy_labels.json` is **automatically generated** by `scripts/build_hand_labels.py` — **not human-labeled ground truth**.  
+See [evaluation_honesty_statement.md](docs/evaluation_honesty_statement.md).
+
+### Reproduce & verify
+
+```bash
+./scripts/reproduce_ranking.sh          # rank + byte-verify
+python scripts/verify_submission_artifact.py
+```
+
+Dataset: mount `candidates.jsonl` via `--candidates`, `CHALLENGE_DATA_ROOT`, or `./scripts/sync_challenge_data.sh`.

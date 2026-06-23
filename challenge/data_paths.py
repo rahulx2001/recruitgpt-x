@@ -50,10 +50,21 @@ def repo_data_dir() -> Path:
 
 def ensure_challenge_data_synced() -> list[str]:
     """Return list of missing official files (empty = all present)."""
-    root = official_challenge_root()
     missing = []
     for name in OFFICIAL_FILES:
         path = challenge_file(name)
         if not path.is_file():
             missing.append(name)
     return missing
+
+
+def candidates_not_found_help(requested: Path) -> str:
+    """Portable guidance when candidates.jsonl is missing (no personal paths)."""
+    return (
+        f"ERROR: candidates file not found: {requested}\n"
+        "Resolution order:\n"
+        "  1. python rank.py --candidates /path/to/candidates.jsonl\n"
+        "  2. export CHALLENGE_DATA_ROOT=/path/to/official/challenge/folder\n"
+        "  3. ./scripts/sync_challenge_data.sh  (symlink bundle into ./data/)\n"
+        "Default path: ./data/candidates.jsonl (judge-supplied; not committed)."
+    )

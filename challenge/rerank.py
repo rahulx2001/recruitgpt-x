@@ -1,7 +1,18 @@
-"""Cross-encoder re-rank for top pool — OFF by default (network + env-dependent).
+"""Cross-encoder re-rank for top pool — DISABLED BY DEFAULT.
 
-Canonical Stage-3 reproduction uses bi-encoder + hybrid scorer only.
-Set RANKER_USE_CROSS_ENCODER=1 to enable (requires offline HF model cache).
+SUBMISSION ARTIFACT: produced with RANKER_USE_CROSS_ENCODER=0 (see rank.py).
+This module is NOT required for reproduction, NOT used in submission.csv,
+and is NOT installed in requirements-ranker.txt (torch/sentence-transformers
+are commented out).
+
+Why disabled:
+  - Network-dependent: CrossEncoder() downloads from HuggingFace unless a full
+    offline cache is mounted.
+  - Environment-dependent: different machines → different rankings (prior audit risk).
+  - Spec requires network OFF during ranking.
+
+Opt-in only: export RANKER_USE_CROSS_ENCODER=1 AND provide offline HF cache.
+Canonical Stage-3 path: bi-encoder (committed fp16.npz) + hybrid scorer only.
 """
 
 from __future__ import annotations

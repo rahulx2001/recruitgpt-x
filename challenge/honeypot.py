@@ -5,9 +5,10 @@ from __future__ import annotations
 from datetime import date
 from typing import Any, Dict, List
 
+from config.defaults import HONEYPOT_REFERENCE_DATE
 from challenge.text_match import norm_text
 
-_REFERENCE_DATE = date(2026, 6, 22)
+_REFERENCE_DATE = HONEYPOT_REFERENCE_DATE
 
 
 def _parse_date(value: str | None) -> date | None:

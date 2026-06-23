@@ -1,51 +1,17 @@
-# Challenge dataset
+# Challenge data (judge-supplied)
 
-**Single source of truth:** the official India Runs bundle on your machine:
+The official `candidates.jsonl` (~465 MB) is **not committed** to this repo.
+Judges and reproducers must supply it locally.
 
-```
-/Users/rahulkumarsinghj/Downloads/[PUB] India_runs_data_and_ai_challenge/India_runs_data_and_ai_challenge
-```
+## Resolution order
 
-Everything in `data/` is a **symlink** to that folder — not a separate copy.
+1. **CLI:** `python rank.py --candidates /path/to/candidates.jsonl`
+2. **Environment:** `export CHALLENGE_DATA_ROOT=/path/to/official/challenge/folder`
+3. **Sync script:** `./scripts/sync_challenge_data.sh` (symlinks into `./data/`)
 
-## Sync (run after cloning or if paths change)
+Default path: `./data/candidates.jsonl`
 
-```bash
-./scripts/sync_challenge_data.sh
-```
+## Synthetic proxy labels
 
-Override the bundle location:
-
-```bash
-export CHALLENGE_DATA_ROOT="/path/to/India_runs_data_and_ai_challenge"
-./scripts/sync_challenge_data.sh
-```
-
-## Official files used
-
-| File | Purpose |
-|------|---------|
-| `candidates.jsonl` | Full 100K pool — `rank.py`, embeddings, eval |
-| `sample_candidates.json` | Self-test + hand-label eval |
-| `job_description.docx` | JD source (parsed in `challenge/jd_config.py`) |
-| `candidate_schema.json` | Schema reference |
-| `sample_submission.csv` | Format reference |
-| `validate_submission.py` | Official CSV validator |
-| `submission_metadata_template.yaml` | Portal metadata template |
-
-## Rank + submit
-
-```bash
-./scripts/sync_challenge_data.sh
-python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv
-```
-
-Reproduction artifacts committed for judges:
-
-| File | Purpose |
-|------|---------|
-| `submission.csv` | Canonical top-100 (regenerate with `./scripts/reproduce_ranking.sh`) |
-| `data/embeddings/embeddings.fp16.npz` | ~71MB bi-encoder bundle (GitHub-safe; Docker + offline rank) |
-| `data/embeddings/candidate_ids.json` | ID index aligned with npz |
-
-Full-precision `embeddings.npy` stays local/gitignored. **Inputs** always come from the official bundle.
+`data/synthetic_proxy_labels.json` is **auto-generated** by `scripts/build_hand_labels.py`.
+**This dataset is automatically generated and is not human-labeled ground truth.**

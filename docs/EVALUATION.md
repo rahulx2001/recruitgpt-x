@@ -1,5 +1,7 @@
 # RecruitGPT X — Evaluation Metrics
 
+> **Hackathon offline ranker:** See [evaluation_limitations.md](evaluation_limitations.md) and [evaluation_honesty_statement.md](evaluation_honesty_statement.md). Synthetic proxy labels are **automatically generated — not human-labeled ground truth**.
+
 How we measure whether the system ranks better than keyword ATS tools.
 
 ---
