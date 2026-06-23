@@ -44,7 +44,7 @@ app/
 
 ## Environment Variables
 
-See `.env.example` at repo root.
+See `backend/.env.example` (copy to `backend/.env`).
 
 ## Key Endpoints
 

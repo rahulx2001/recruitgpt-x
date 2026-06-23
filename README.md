@@ -1,265 +1,360 @@
 # RecruitGPT X
 
-> **The AI Recruiter That Thinks Like a Hiring Manager**
+**Intelligent candidate discovery and ranking for the Redrob India Runs Data & AI Challenge — with an optional recruiter-facing product demo.**
 
-## What we submit (judges: read this first)
+RecruitGPT X answers a single hiring question with evidence, not keywords: *who fits this role, in what order, and why?* The repository contains two related systems that share a domain but serve different purposes. Judges and reproducibility reviewers should use the offline ranker path only.
 
-| Component | Role in hackathon |
+| | |
 |---|---|
-| **`rank.py` + `challenge/`** | **Graded ranker** — produces `submission.csv` (CPU, no network, CE off) |
-| **`submission.csv`** | Top-100 ranked candidates |
-| **`data/embeddings/embeddings.fp16.npz`** | Committed MiniLM bi-encoder artifact (required for canonical path) |
-| **Web app** (`backend/`, `frontend/`) | Optional demo UI — **not** the graded ranking path |
-
-Submit the repo via **`git clone` or `git archive`** — not a raw folder zip with local `data/` symlinks.
+| **Repository** | [github.com/rahulx2001/recruitgpt-x](https://github.com/rahulx2001/recruitgpt-x) |
+| **Sandbox** | [HuggingFace Space — sample ranker](https://huggingface.co/spaces/rahulsinghx2001/recruitgpt-ranker) |
+| **Judges** | Start with [JUDGES.md](JUDGES.md) (60-second orientation) |
 
 ---
 
-An intelligent candidate discovery platform with an optional multi-agent **demo UI**. The **hackathon submission** is the offline ranker above — semantic understanding, career signals, and behavioral features via `challenge/redrob_ranker.py`, not the LangGraph web stack.
+## Table of contents
 
-[![Demo](https://img.shields.io/badge/demo-ready-brightgreen)](#)
-[![License](https://img.shields.io/badge/license-MIT-blue)](#)
-[![Stack](https://img.shields.io/badge/stack-Next.js%20%7C%20FastAPI%20%7C%20LangGraph-purple)](#)
-
----
-
-## 🎯 Why RecruitGPT X?
-
-Traditional ATS systems are dumb. They match keywords, count years, and miss the best candidates.
-
-RecruitGPT X answers the real question hiring managers care about:
-
-> **"Who should we hire, and why?"**
-
-We go beyond resumes. We analyze:
-
-| Signal | Source | Why It Matters |
-|---|---|---|
-| **Semantic fit** | Resume + JD embeddings | Catches meaning, not words |
-| **Career trajectory** | LinkedIn-style data | Shows growth velocity |
-| **Behavioral patterns** | GitHub commits, learning | Reveals real engagement |
-| **Skill evolution** | Projects over time | Shows adaptability |
-| **Future potential** | Pattern reasoning | Predicts who's a future leader |
-| **Bias detection** | Demographic signals | Fair & explainable hiring |
+1. [Two systems, one repository](#two-systems-one-repository)
+2. [Hackathon submission (graded)](#hackathon-submission-graded)
+3. [Ranking methodology (v6)](#ranking-methodology-v6)
+4. [Demo platform (optional)](#demo-platform-optional)
+5. [Architecture](#architecture)
+6. [Quick start](#quick-start)
+7. [Repository layout](#repository-layout)
+8. [Validation and reproduction](#validation-and-reproduction)
+9. [Documentation](#documentation)
+10. [AI disclosure](#ai-disclosure)
 
 ---
 
-## 🏗️ Architecture
+## Two systems, one repository
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Next.js Frontend (Vercel)                    │
-│  Dashboard │ Ranking │ Candidate Radar │ AI Chat │ What-If     │
-└──────────────────────────┬──────────────────────────────────────┘
-                           │ REST + SSE
-┌──────────────────────────▼──────────────────────────────────────┐
-│                  FastAPI Backend (Railway)                      │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │            LangGraph Multi-Agent Orchestrator            │   │
-│  │                                                           │   │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │   │
-│  │  │ Job Under-   │  │ Candidate    │  │ Behavioral   │   │   │
-│  │  │ standing     │  │ Intelligence │  │ Intelligence │   │   │
-│  │  └──────────────┘  └──────────────┘  └──────────────┘   │   │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │   │
-│  │  │ Career       │  │ Semantic     │  │ Ranking      │   │   │
-│  │  │ Trajectory   │  │ Matching     │  │ Agent        │   │   │
-│  │  └──────────────┘  └──────────────┘  └──────────────┘   │   │
-│  │                       ┌──────────────┐                    │   │
-│  │                       │ Explainability│                   │   │
-│  │                       └──────────────┘                    │   │
-│  └─────────────────────────────────────────────────────────┘   │
-└────┬────────────────────────┬─────────────────────┬────────────┘
-     │                        │                     │
-┌────▼──────┐         ┌──────▼──────┐       ┌──────▼──────┐
-│PostgreSQL │         │   Qdrant    │       │   BGE-Large │
-│(Profiles) │         │(Vector DB)  │       │(Embeddings) │
-└───────────┘         └─────────────┘       └─────────────┘
+This project deliberately separates **what gets scored** from **what gets demonstrated**.
+
+| System | Entry point | Purpose | Uses LLM at rank time? |
+|--------|-------------|---------|------------------------|
+| **Graded ranker** | `rank.py` → `submission.csv` | Challenge submission over 100K candidates | No |
+| **Demo platform** | `backend/` + `frontend/` | Recruiter UI, chat, analytics, what-if | Yes (chat and agents only) |
+
+The web application does **not** produce `submission.csv`. Running the dashboard and running the ranker are independent workflows. If you evaluate this project for the hackathon, use `rank.py` and the files listed in [JUDGES.md](JUDGES.md).
+
+Submit the repository via `git clone` or `git archive`. Do not submit a raw folder zip with broken `data/` symlinks.
+
+---
+
+## Hackathon submission (graded)
+
+### Deliverables
+
+| Artifact | Description |
+|----------|-------------|
+| `submission.csv` | Top-100 candidates: `candidate_id`, `rank`, `score`, `reasoning` |
+| `challenge/redrob_ranker.py` | Hybrid offline scoring engine (v6) |
+| `data/embeddings/embeddings.fp16.npz` | Committed MiniLM-L6-v2 bi-encoder matrix (required) |
+| `submission_metadata.yaml` | Team, compute, methodology, and sandbox metadata |
+| `scripts/reproduce_ranking.sh` | Canonical Stage-3 reproduction script |
+
+### One-command reproduction
+
+```bash
+./scripts/reproduce_ranking.sh
 ```
 
+**Requirements:** official `data/candidates.jsonl` (not committed — mount or sync via `./scripts/sync_challenge_data.sh`).
+
+**Constraints satisfied at rank time:**
+
+- CPU only, no GPU
+- No network calls (cross-encoder off, no hosted LLM)
+- ~50–60 seconds on 100K candidates (includes template-blurb index pass)
+- Byte-reproducible output verified by `scripts/verify_submission_artifact.py`
+
+### Pre-submit checklist
+
+```bash
+python validate_submission.py submission.csv
+python scripts/check_honeypots.py submission.csv
+python scripts/mock_stage4_review.py submission.csv
+python scripts/verify_submission_artifact.py --artifact ./submission.csv
+python -m pytest challenge/test_ranker.py -q
+```
+
+### Portal export
+
+```bash
+RECROB_PARTICIPANT_ID=team_xxx ./scripts/finalize_submission.sh
+```
+
+### Docker (Stage 3)
+
+```bash
+docker compose -f docker-compose.ranker.yml build
+docker compose -f docker-compose.ranker.yml run --rm ranker
+```
+
 ---
 
-## 🚀 Quick Start
+## Ranking methodology (v6)
+
+The ranker is a **hybrid, trap-aware scorer** built for the Senior AI Engineer JD at Redrob. It combines lexical signals, career semantics, a committed bi-encoder, behavioral modifiers, and explicit honeypot detection — without any LLM inference during the ranking step.
+
+### Signal stack
+
+| Signal | Weight | Role |
+|--------|--------|------|
+| Title alignment | 0.20 | Role evidence (Rec Sys, Search, ML Engineer) |
+| Core IR skills | 0.18 | Embeddings, retrieval, vector DBs, ranking systems |
+| Career semantic | 0.14 | Plain-language production stories in role descriptions |
+| Production pedigree | 0.12 | Shipped systems vs. research-only or framework demos |
+| Availability | 0.12 | Open-to-work, recency, response rate |
+| Redrob assessments | 0.08 | Platform skill assessment scores |
+| JD overlap | 0.06 | TF-IDF alignment with parsed JD |
+| Experience band | 0.05 | 5–9 year ideal range |
+| Location | 0.03 | Pune/Noida preference |
+| Engagement | 0.05 | Saved-by-recruiters, interview completion |
+
+### Trap and quality gates (v6)
+
+1. **Template-blurb penalty** — demotes candidates sharing recycled career descriptions across the pool (`challenge/career_blurb.py`)
+2. **Structural honeypots** — impossible tenure, expert skills at zero months, overlapping roles
+3. **Availability hard gate** — `open_to_work=false` cannot reach top-10
+4. **Notice-period modifier** — 90–120 day notice penalized; sub-30 day boosted
+5. **Consulting and research penalties** — pure services career or research without production signals
+6. **Cross-encoder off** — reproducibility and spec compliance (`RANKER_USE_CROSS_ENCODER=0`)
+
+### Reasoning
+
+Each row in `submission.csv` carries a **two-sentence justification**: specific profile facts, JD connection, and honest concerns (notice period, thin IR depth, availability). Reasoning is generated from grounded components, not from an LLM.
+
+### Evaluation honesty
+
+Offline metrics in `data/eval_report.json` are **diagnostics only** — not hidden ground truth. Synthetic proxy labels are rule-generated, not human-annotated. See [docs/evaluation_honesty_statement.md](docs/evaluation_honesty_statement.md).
+
+---
+
+## Demo platform (optional)
+
+The web stack is a **recruiter command center** for exploring rankings, shortlists, interviews, and AI-assisted explanations. It is designed for demos, interviews, and product narrative — not for producing the graded CSV.
+
+### Capabilities
+
+| Feature | Description |
+|---------|-------------|
+| Dashboard | Live workspace stats, pipeline, attention queue — all from backend APIs |
+| Candidate profiles | Ranked shortlists with score breakdowns and reasoning |
+| AI recruiter chat | Natural-language Q&A over cached rankings, with input guardrails |
+| Analytics | Funnel, insights, and hiring metrics |
+| What-if analysis | Adjust requirements and observe ranking shifts |
+| Bias reporting | Surface demographic skew in shortlists |
+| Interviews and calendar | Scheduling workflow and Google Calendar integration |
+
+### Data note
+
+| Source | Count | Used by |
+|--------|-------|---------|
+| `candidates.jsonl` | 100,000 | Offline ranker (`rank.py`) |
+| SQLite seed (default) | 12 | Demo UI until import |
+| Top-100 import | 100 | Dashboard aligned with `submission.csv` |
+
+To load ranked challenge candidates into the dashboard:
+
+```bash
+./scripts/import-challenge-candidates.sh
+```
+
+---
+
+## Architecture
+
+### Graded path (submission)
+
+```mermaid
+flowchart LR
+  subgraph input [Input]
+    JD[jd_config.py]
+    POOL[candidates.jsonl]
+    EMB[embeddings.fp16.npz]
+  end
+
+  subgraph ranker [Offline ranker]
+    BLURB[Template-blurb index]
+    SCORE[Hybrid scorer v6]
+    TRAP[Honeypot + availability gates]
+    CAL[Score calibration]
+  end
+
+  subgraph output [Output]
+    CSV[submission.csv]
+  end
+
+  POOL --> BLURB
+  POOL --> SCORE
+  JD --> SCORE
+  EMB --> SCORE
+  BLURB --> SCORE
+  SCORE --> TRAP
+  TRAP --> CAL
+  CAL --> CSV
+```
+
+### Demo path (web application)
+
+```mermaid
+flowchart TB
+  subgraph presentation [Presentation]
+    FE[Next.js 14 App Router]
+  end
+
+  subgraph api [API layer]
+    API[FastAPI]
+    LG[LangGraph orchestrator]
+  end
+
+  subgraph agents [Agents]
+    A1[Job understanding]
+    A2[Candidate intelligence]
+    A3[Semantic matching]
+    A4[Ranking]
+    A5[Explainability]
+    A6[Behavioral intelligence]
+    A7[Career trajectory]
+  end
+
+  subgraph data [Data]
+    PG[(PostgreSQL)]
+    QD[(Qdrant)]
+    VEC[BGE embeddings]
+  end
+
+  FE --> API
+  API --> LG
+  LG --> A1 & A2 & A3 & A4 & A5 & A6 & A7
+  API --> PG
+  API --> QD
+  API --> VEC
+```
+
+For a full breakdown, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Sections covering LangGraph and the web stack are explicitly labeled **demo only**.
+
+---
+
+## Quick start
 
 ### Prerequisites
-- Node.js 18+
-- Python 3.11+
-- Docker (optional, for Qdrant + Postgres)
 
-### 1. Clone & Setup
+- Python 3.11+
+- Node.js 18+
+- Official challenge bundle synced into `data/` (see `./scripts/sync_challenge_data.sh`)
+- Docker (optional — Postgres, Qdrant, ranker container)
+
+### A. Run the graded ranker
+
 ```bash
-cd recruitgpt-x
-cp .env.example .env
-# Add your OPENAI_API_KEY (or ANTHROPIC_API_KEY) to .env
+python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv
 ```
 
-### 2. Start Infrastructure
+### B. Run the demo application
+
+**1. Environment**
+
+```bash
+cp backend/.env.example backend/.env
+# Set OPENAI_API_KEY or ANTHROPIC_API_KEY in backend/.env for chat features
+```
+
+**2. Infrastructure (optional)**
+
 ```bash
 docker compose up -d qdrant postgres
 ```
 
-### 3. Start Backend
+**3. Backend**
+
 ```bash
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python -m app.data.seed        # Loads demo candidates
-uvicorn app.main:app --reload  # → http://localhost:8000
+python -m app.data.seed
+uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-### 4. Start Frontend
+**4. Frontend**
+
 ```bash
 cd frontend
 npm install
-npm run dev                    # → http://localhost:3000
+npm run dev
 ```
 
-### 5. Open the App (optional demo — not the submission ranker)
-Visit **http://localhost:3000** — explore the LangGraph demo UI. **Graded ranking** is `python rank.py` over `candidates.jsonl`, not this web flow.
+Open [http://localhost:3000](http://localhost:3000). The API runs at [http://localhost:8000](http://localhost:8000).
 
 ---
 
-## 🤖 The 7 Agents
+## Repository layout
 
-| # | Agent | Job |
-|---|---|---|
-| 1 | **Job Understanding** | Parse JDs into structured hiring blueprints |
-| 2 | **Candidate Intelligence** | Extract skills, projects, achievements |
-| 3 | **Behavioral Intelligence** | GitHub, learning, consistency scores |
-| 4 | **Career Trajectory** | Growth velocity & adaptability |
-| 5 | **Semantic Matching** | Embedding-based meaning match |
-| 6 | **Ranking** | Weighted multi-signal scoring |
-| 7 | **Explainability** | Recruiter-friendly reasoning |
-
-All orchestrated via **LangGraph** with shared state and conditional routing.
+```
+recruitgpt-x/
+├── rank.py                    # CLI entry — produces submission.csv
+├── submission.csv             # Committed top-100 artifact
+├── submission_metadata.yaml   # Portal metadata
+├── JUDGES.md                  # 60-second judge orientation
+├── challenge/                 # Offline ranker (graded)
+│   ├── redrob_ranker.py       # Hybrid scorer v6
+│   ├── career_blurb.py        # Template deduplication
+│   ├── honeypot.py            # Structural trap detection
+│   └── jd_config.py           # Parsed JD requirements
+├── data/
+│   └── embeddings/            # Committed fp16 bi-encoder bundle
+├── scripts/                   # Reproduction, validation, import
+├── sandbox/                   # HuggingFace Space bundle
+├── backend/                   # FastAPI + LangGraph (demo)
+├── frontend/                  # Next.js recruiter UI (demo)
+└── docs/                      # Architecture, API, evaluation, pitch
+```
 
 ---
 
-## ✨ Wow Features
+## Validation and reproduction
 
-- 🎯 **AI Recruiter Chat** — Ask "Why is Rahul above Amit?" in plain English
-- 📡 **Candidate Radar** — Interactive skill cluster visualization
-- 🔮 **Future Potential Predictor** — "Where will this person be in 2 years?"
-- 🔄 **What-If Analysis** — Drop a requirement, see ranking shift live
-- ⚖️ **Bias Detection** — Surface demographic skew in your shortlist
-- 🧠 **Natural Language Search** — "Show SQL-strong, PowerBI-weak candidates"
+| Check | Command | Expected |
+|-------|---------|----------|
+| CSV format | `python validate_submission.py submission.csv` | Valid |
+| Honeypots | `python scripts/check_honeypots.py submission.csv` | 0% in top-100 |
+| Reasoning quality | `python scripts/mock_stage4_review.py submission.csv` | PASS |
+| Byte reproducibility | `python scripts/verify_submission_artifact.py` | PASS |
+| Unit tests | `python -m pytest challenge/test_ranker.py -q` | All pass |
 
----
-
-## 📚 Documentation
-
-- [Architecture Deep Dive](docs/ARCHITECTURE.md)
-- [Demo Script](docs/DEMO_SCRIPT.md)
-- [Pitch Deck Outline](docs/PITCH_DECK.md)
-- [API Reference](docs/API.md)
-- [Evaluation Metrics](docs/EVALUATION.md)
-- [Evaluation Limitations](docs/evaluation_limitations.md) — proxy vs synthetic vs hidden GT
-- [Evaluation Honesty Statement](docs/evaluation_honesty_statement.md)
-- [Judge FAQ](docs/judge_faq.md)
+Artifact hash is pinned in `data/SUBMISSION_ARTIFACT.sha256`.
 
 ---
 
-## 🏆 Hackathon Winning Differentiators
+## Documentation
 
-1. **True multi-agent reasoning** — not a single LLM call
-2. **Behavioral + Trajectory intelligence** — beyond resumes
-3. **Explainable rankings** — every score has reasoning
-4. **Bias detection built-in** — fair AI hiring
-5. **Live what-if analysis** — interactive recruiter experience
-6. **Future potential** — predicts who'll be great, not just who is now
-
----
-
-Built for the **India Runs Data & AI Challenge: Intelligent Candidate Discovery** hackathon.
-
-> **Git repo:** This folder is the submission repo (`recruitgpt-x`). Initialize here, not in the parent monorepo. Stage 4 reviewers look for incremental commits — commit as you build, not as one dump at the end.
-
-### Why does the UI show 12 candidates but rank.py uses 100,000?
-
-| System | Data source | Count |
-|---|---|---|
-| **Web app** (`/candidates`) | SQLite via `seed.py` (demo profiles) | 12 by default |
-| **Offline ranker** (`rank.py`) | `candidates.jsonl` (challenge file) | 100,000 |
-
-To load your **top-100 ranked** challenge candidates into the dashboard:
-
-```bash
-./scripts/import-challenge-candidates.sh
-# or: cd backend && python -m app.data.import_challenge --top-100 --replace
-```
-
-Importing all 100K into SQLite is possible (`--limit 100000`) but slow and heavy for local demo — the submission CSV only needs the offline ranker.
+| Document | Audience | Content |
+|----------|----------|---------|
+| [JUDGES.md](JUDGES.md) | Hackathon reviewers | What to run, what to ignore |
+| [docs/judge_faq.md](docs/judge_faq.md) | Technical interview | Evidence-backed design answers |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Engineers | System design (demo + ranker) |
+| [docs/API.md](docs/API.md) | Integrators | FastAPI reference (demo backend) |
+| [docs/EVALUATION.md](docs/EVALUATION.md) | Reviewers | Metrics and benchmarks |
+| [docs/evaluation_honesty_statement.md](docs/evaluation_honesty_statement.md) | Reviewers | Proxy vs. hidden GT |
+| [docs/evaluation_limitations.md](docs/evaluation_limitations.md) | Reviewers | What offline NDCG does not prove |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Operators | Production deployment |
+| [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) | Presenters | Live demo walkthrough |
+| [sandbox/README.md](sandbox/README.md) | Sandbox deploy | HuggingFace Space setup |
 
 ---
 
-## Hackathon Offline Ranker
+## AI disclosure
 
-The challenge requires a **CPU-only, no-network** ranker over `candidates.jsonl`. Use the `challenge/` module at the repo root:
+Grok and Cursor were used for architecture discussion, code review, and implementation assistance. **No rows from `candidates.jsonl` were sent to any LLM during ranking.** The offline ranker runs entirely on CPU with no network calls. Chat and agent features in the demo application use LLMs separately from the submission pipeline.
 
-```bash
-# One-command pipeline (rank + validate + tests):
-./scripts/finalize_submission.sh
+Full declaration: [submission_metadata.yaml](submission_metadata.yaml).
 
-# Portal export with your registered participant ID:
-RECROB_PARTICIPANT_ID=team_xxx ./scripts/finalize_submission.sh
+---
 
-# Full pre-push checklist (metadata, docker, backend):
-./scripts/pre-submit.sh
-```
+## Built for
 
-### Docker reproduction (Stage 3)
+**India Runs Data & AI Challenge — Intelligent Candidate Discovery & Ranking** (Redrob)
 
-```bash
-docker compose -f docker-compose.ranker.yml build
-docker compose -f docker-compose.ranker.yml run --rm ranker   # needs data/candidates.jsonl mounted
-```
-
-### HuggingFace sandbox (§10.5)
-
-```bash
-./scripts/prepare_hf_space.sh   # bundle sandbox/ for upload
-# Deploy sandbox/ to HF Space → set sandbox_link in submission_metadata.yaml
-python -m pytest challenge/test_ranker.py -q
-python rank.py --self-test
-```
-
-See `sandbox/README.md` for Space deploy steps.
-
-### Deliverables in this repo
-
-| File | Description |
-|---|---|
-| `submission.csv` | Top-100 ranked candidates (validated) |
-| `submission_metadata.yaml` | Reproducibility + team metadata for portal |
-| `docs/RecruitGPT_X_Approach.pptx` | Approach deck |
-| `docs/RecruitGPT_X_Approach.pdf` | PDF version for submission |
-| `challenge/redrob_ranker.py` | Hybrid scoring engine |
-| `challenge/jd_config.py` | Parsed JD requirements from `job_description.docx` |
-
-### Ranking approach (summary)
-
-**Submission pipeline** (`RANKER_USE_CROSS_ENCODER=0`, byte-reproducible):
-
-1. **Title + career** — Senior AI / Recommendation Systems / Search / ML roles boosted; honeypot titles heavily penalized.
-2. **Skills** — Core AI/IR skills (embeddings, retrieval, vector DBs, ranking) with endorsement + duration trust.
-3. **Bi-encoder** — Committed `embeddings.fp16.npz` (MiniLM-L6-v2@1110a243); TF-IDF fallback if absent.
-4. **Production + product pedigree** — Deployment signals; product-company history over pure consulting.
-5. **Behavioral + logistics** — Response rate, GitHub, notice period, title-chaser penalty.
-6. **Honeypot traps** — Structural traps → multiplicative penalty.
-
-**Not used in submission artifact:** cross-encoder rerank (`RANKER_USE_CROSS_ENCODER=1` is experimental only; requires offline HF cache).
-
-### Evaluation disclaimer
-
-Offline metrics in `data/eval_report.json` are **proxies**, not hidden ground truth.  
-`synthetic_proxy_labels.json` is **automatically generated** by `scripts/build_synthetic_proxy_labels.py` — **not human-labeled ground truth** (excludes submission top-100).  
-See [evaluation_honesty_statement.md](docs/evaluation_honesty_statement.md) and [audit_resolution_checklist.md](docs/audit_resolution_checklist.md).
-
-### Reproduce & verify
-
-```bash
-./scripts/reproduce_ranking.sh          # rank + byte-verify
-python scripts/verify_submission_artifact.py
-```
-
-Dataset: mount `candidates.jsonl` via `--candidates`, `CHALLENGE_DATA_ROOT`, or `./scripts/sync_challenge_data.sh`.
+Team: RecruitGPT X — Rahul Kumar Singh

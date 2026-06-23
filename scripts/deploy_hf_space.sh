@@ -31,7 +31,7 @@ fi
 
 if [[ -z "$TOKEN" ]]; then
   echo "ERROR: Set HF_TOKEN or create .env.deploy"
-  echo "  cp .env.deploy.example .env.deploy   # add your token"
+  echo "  Create .env.deploy with HF_TOKEN and space settings"
   exit 1
 fi
 

@@ -11,7 +11,7 @@ echo "╚═══════════════════════�
 echo
 
 if [[ ! -f "$ROOT/.env.deploy" ]]; then
-  echo "Create $ROOT/.env.deploy from .env.deploy.example with your tokens."
+  echo "Create $ROOT/.env.deploy with GITHUB_TOKEN and HF credentials."
   exit 1
 fi
 

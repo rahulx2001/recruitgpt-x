@@ -19,7 +19,7 @@ TOKEN="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
 
 if [[ -z "$TOKEN" ]]; then
   echo "ERROR: Set GITHUB_TOKEN (or GH_TOKEN) or create .env.deploy"
-  echo "  cp .env.deploy.example .env.deploy   # add your token"
+  echo "  Create .env.deploy with GITHUB_TOKEN (repo scope)"
   exit 1
 fi
 
