@@ -20,6 +20,12 @@ import {
   TrendingUp,
   Sparkles,
   ChevronRight,
+  Briefcase,
+  Users,
+  CalendarClock,
+  Target,
+  Filter,
+  Activity,
 } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
 import {
@@ -100,30 +106,63 @@ export default function DashboardPage() {
         <DashboardLoadingShell />
       ) : (
       <>
+      <div className="dash-banner">
+        <div>
+          <p className="dash-banner__title">Good morning — here&apos;s your hiring pulse</p>
+          <p className="dash-banner__meta">
+            {stats?.synced
+              ? "Challenge rankings synced · pipeline metrics updated"
+              : "Import challenge candidates to refresh live rankings"}
+          </p>
+        </div>
+        <div className="dash-banner__chips">
+          <span className="stat-chip">
+            <Activity size={14} className="text-accent" />
+            <strong>{stats?.jobs ?? "—"}</strong> open roles
+          </span>
+          <span className="stat-chip">
+            <Users size={14} className="text-cool" />
+            <strong>{stats ? stats.candidates.toLocaleString() : "—"}</strong> in pool
+          </span>
+          <span className="stat-chip">
+            <Target size={14} className="text-positive" />
+            <strong>{funnelRate}</strong>
+          </span>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 mb-6">
         <KpiLink
           href="/jobs"
           label="Active jobs"
           value={stats ? String(stats.jobs) : "—"}
           delta="open requisitions"
+          icon={Briefcase}
+          sparkSeed={1}
         />
         <KpiLink
           href="/candidates"
           label="Candidates in pipeline"
           value={stats ? stats.candidates.toLocaleString() : "—"}
           delta={stats?.pool_label ?? "challenge pool"}
+          icon={Users}
+          sparkSeed={2}
         />
         <KpiLink
           href="/interviews"
           label="Interviews scheduled"
           value={stats ? String(stats.interviews) : "—"}
           delta="active pipeline"
+          icon={CalendarClock}
+          sparkSeed={3}
         />
         <KpiLink
           href="/analytics"
           label="Offer acceptance"
           value={offerKpi?.value ?? "—"}
           delta={offerKpi?.delta ?? ""}
+          icon={TrendingUp}
+          sparkSeed={4}
         />
       </div>
 
@@ -132,16 +171,18 @@ export default function DashboardPage() {
           <div className="card p-5">
             <SectionHeader
               title="Hiring funnel"
+              subtitle="Click a stage to filter candidates in the pipeline"
+              icon={Filter}
               action={
                 <Link
                   href="/analytics"
-                  className="badge badge--positive badge--dot hover:opacity-80 transition-opacity"
+                  className="badge badge--positive badge--dot hover:opacity-90 transition-opacity"
                 >
                   {funnelRate}
                 </Link>
               }
             />
-            <div className="space-y-2.5 mt-4">
+            <div className="space-y-2.5 mt-3">
               {funnel.map((s, i) => {
                 const pct = (s.count / maxFunnel) * 100;
                 const conv =
@@ -186,6 +227,7 @@ export default function DashboardPage() {
             <div className="p-5 pb-3">
               <SectionHeader
                 title="Top candidates this week"
+                subtitle="Highest match scores from your challenge ranker"
                 action={
                   <Link
                     href="/candidates"
@@ -288,24 +330,26 @@ export default function DashboardPage() {
                 </button>
               }
             />
-            <div className="space-y-1 mt-1">
+            <div className="timeline mt-2">
               {activity.map((a) => (
                 <button
                   key={a.id}
                   type="button"
-                  className="w-full flex gap-3 py-2 text-left rounded-lg hover:bg-subtle transition-colors px-1 -mx-1"
+                  className="timeline-item w-full text-left rounded-lg hover:bg-subtle/80 transition-colors pr-1"
                   onClick={() => router.push(a.href)}
                 >
-                  <Avatar name={a.actor} color={a.actor_color} size={28} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] text-ink-secondary leading-snug">
-                      <span className="font-semibold text-ink">{a.actor}</span>{" "}
-                      {a.action}{" "}
-                      <span className="font-semibold text-ink">{a.target}</span>
-                    </p>
-                    <p className="text-[12px] text-ink-faint truncate">
-                      {a.context} · {a.time}
-                    </p>
+                  <div className="flex gap-3">
+                    <Avatar name={a.actor} color={a.actor_color} size={28} />
+                    <div className="min-w-0 flex-1 pt-0.5">
+                      <p className="text-[13px] text-ink-secondary leading-snug">
+                        <span className="font-semibold text-ink">{a.actor}</span>{" "}
+                        {a.action}{" "}
+                        <span className="font-semibold text-ink">{a.target}</span>
+                      </p>
+                      <p className="text-[12px] text-ink-faint truncate mt-0.5">
+                        {a.context} · {a.time}
+                      </p>
+                    </div>
                   </div>
                 </button>
               ))}
@@ -386,33 +430,41 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <Link href="/analytics" className="card p-5 block card--hover">
-            <SectionHeader title="Time to hire" />
-            <div className="flex items-end gap-1 mt-3 h-20">
+          <Link href="/analytics" className="card p-5 block card--hover group">
+            <SectionHeader
+              title="Time to hire"
+              subtitle="Monthly trend · lower is better"
+              icon={TrendingUp}
+            />
+            <div className="flex items-end gap-1.5 mt-4 h-24">
               {timeToHire.map((t, idx) => (
                 <div
                   key={t.month}
-                  className="flex-1 flex flex-col items-center gap-1.5"
+                  className="flex-1 flex flex-col items-center gap-1.5 min-w-0"
+                  title={`${t.month}: ${t.days} days`}
                 >
                   <div
-                    className="w-full rounded-md bg-accent/15"
-                    style={{ height: `${(t.days / maxDays) * 100}%` }}
+                    className="w-full rounded-lg bg-accent/10 overflow-hidden flex flex-col justify-end transition-all duration-300 group-hover:bg-accent/15"
+                    style={{ height: `${Math.max((t.days / maxDays) * 100, 12)}%` }}
                   >
                     <div
-                      className="w-full rounded-md bg-accent"
+                      className="w-full rounded-lg bg-gradient-to-t from-accent to-accent/70 transition-opacity duration-300"
                       style={{
                         height: "100%",
-                        opacity: idx === timeToHire.length - 1 ? 1 : 0.35,
+                        opacity: idx === timeToHire.length - 1 ? 1 : 0.4,
                       }}
                     />
                   </div>
+                  <span className="text-[10px] text-ink-faint truncate w-full text-center">
+                    {t.month.slice(0, 3)}
+                  </span>
                 </div>
               ))}
             </div>
-            <div className="flex items-center justify-between mt-3">
-              <span className="text-[13px] text-ink-muted">Now</span>
-              <span className="text-[15px] font-semibold text-ink inline-flex items-center gap-1">
-                <TrendingUp size={15} className="text-positive" />{" "}
+            <div className="flex items-center justify-between mt-4 pt-3 border-t border-line/40">
+              <span className="text-[12.5px] text-ink-muted">Current month</span>
+              <span className="text-[16px] font-semibold text-ink inline-flex items-center gap-1.5 tnum">
+                <TrendingUp size={15} className="text-positive" />
                 {currentDays != null ? `${currentDays} days` : "—"}
               </span>
             </div>

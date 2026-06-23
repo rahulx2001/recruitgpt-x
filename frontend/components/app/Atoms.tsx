@@ -1,6 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
-import { UserRound } from "lucide-react";
+import { UserRound, type LucideIcon } from "lucide-react";
 import { initials } from "@/lib/utils";
 import {
   resolveCandidateGender,
@@ -191,31 +191,95 @@ export function MatchScore({ value, size = 44 }: { value: number; size?: number 
   );
 }
 
-export function Kpi({
+function MiniSparkline({ seed = 1 }: { seed?: number }) {
+  const heights = React.useMemo(() => {
+    const out: number[] = [];
+    let v = 40 + (seed % 5) * 8;
+    for (let i = 0; i < 8; i++) {
+      v = Math.max(22, Math.min(100, v + ((seed + i) % 3) * 9 - 10));
+      out.push(v);
+    }
+    return out;
+  }, [seed]);
+  return (
+    <div className="kpi__spark" aria-hidden>
+      {heights.map((h, i) => (
+        <div
+          key={i}
+          className="kpi__spark-bar"
+          style={{ height: `${h}%`, animationDelay: `${i * 0.04}s` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function KpiBody({
   label,
   value,
   delta,
   positive = true,
+  icon: Icon,
+  sparkSeed,
 }: {
   label: string;
   value: string;
   delta?: string;
   positive?: boolean;
+  icon?: LucideIcon;
+  sparkSeed?: number;
 }) {
   return (
-    <div className="kpi group">
-      <div className="kpi__label">{label}</div>
+    <>
+      <div className="kpi__head">
+        <div className="kpi__label">{label}</div>
+        {Icon ? (
+          <span className="kpi__icon" aria-hidden>
+            <Icon size={17} strokeWidth={2} />
+          </span>
+        ) : null}
+      </div>
       <div className="kpi__value transition-transform duration-200 group-hover:scale-[1.02] origin-left">
         {value}
       </div>
-      {delta && (
+      {delta ? (
         <div
-          className="kpi__delta"
+          className={`kpi__delta ${positive ? "" : "is-negative"}`}
           style={{ color: positive ? "var(--positive)" : "var(--critical)" }}
         >
           {positive ? "▲" : "▼"} {delta}
         </div>
-      )}
+      ) : null}
+      {sparkSeed != null ? <MiniSparkline seed={sparkSeed} /> : null}
+    </>
+  );
+}
+
+export function Kpi({
+  label,
+  value,
+  delta,
+  positive = true,
+  icon,
+  sparkSeed,
+}: {
+  label: string;
+  value: string;
+  delta?: string;
+  positive?: boolean;
+  icon?: LucideIcon;
+  sparkSeed?: number;
+}) {
+  return (
+    <div className="kpi group">
+      <KpiBody
+        label={label}
+        value={value}
+        delta={delta}
+        positive={positive}
+        icon={icon}
+        sparkSeed={sparkSeed}
+      />
     </div>
   );
 }
@@ -226,42 +290,58 @@ export function KpiLink({
   value,
   delta,
   positive = true,
+  icon,
+  sparkSeed,
 }: {
   href: string;
   label: string;
   value: string;
   delta?: string;
   positive?: boolean;
+  icon?: LucideIcon;
+  sparkSeed?: number;
 }) {
   return (
     <Link href={href} className="kpi kpi--link group">
-      <div className="kpi__label">{label}</div>
-      <div className="kpi__value transition-transform duration-200 group-hover:scale-[1.02] origin-left">
-        {value}
-      </div>
-      {delta && (
-        <div
-          className="kpi__delta"
-          style={{ color: positive ? "var(--positive)" : "var(--critical)" }}
-        >
-          {positive ? "▲" : "▼"} {delta}
-        </div>
-      )}
+      <KpiBody
+        label={label}
+        value={value}
+        delta={delta}
+        positive={positive}
+        icon={icon}
+        sparkSeed={sparkSeed}
+      />
     </Link>
   );
 }
 
 export function SectionHeader({
   title,
+  subtitle,
   action,
+  icon: Icon,
 }: {
   title: string;
+  subtitle?: string;
   action?: React.ReactNode;
+  icon?: LucideIcon;
 }) {
   return (
-    <div className="flex items-center justify-between mb-3">
-      <h2 className="text-[15px] font-semibold text-ink tracking-tight">{title}</h2>
-      {action}
+    <div className="flex items-start justify-between gap-3 mb-1">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          {Icon ? (
+            <span className="card-header-accent__icon" aria-hidden>
+              <Icon size={16} strokeWidth={2} />
+            </span>
+          ) : null}
+          <h2 className="text-[15px] font-semibold text-ink tracking-tight">{title}</h2>
+        </div>
+        {subtitle ? (
+          <p className="text-[12.5px] text-ink-muted mt-0.5 leading-snug">{subtitle}</p>
+        ) : null}
+      </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
     </div>
   );
 }

@@ -238,7 +238,15 @@ export function AppShell({
             </button>
           </div>
         </header>
-        <div className="content">{children}</div>
+        <div
+          className={`content${
+            pathname === "/dashboard" || pathname === "/analytics"
+              ? " content--wide"
+              : ""
+          }`}
+        >
+          {children}
+        </div>
       </div>
 
       {toast && (
