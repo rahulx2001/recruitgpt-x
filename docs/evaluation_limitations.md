@@ -12,7 +12,7 @@ These metrics estimate **internal consistency** and **heuristic alignment**. The
 |---|---|---|---|---|---|
 | `metrics_self_consistency_proxy` | **Self-consistency proxy** | Title tiers, IR skill phrases, production language, career keywords, experience band (via `proxy_relevance`) | **High (circular)** — uses the same JD rubric family the ranker optimizes | Sanity check that ranker ordering is consistent with its own rubric | Not predictive of hidden GT; can look strong while overfitting rubric |
 | `metrics_behavioral_independent_proxy` | **Behavioral proxy** | Education tier, `github_activity_score`, `search_appearance_30d`, `profile_completeness_score` only | **Low** — excludes ranker features (`saved_by_recruiters_30d`, `open_to_work`, `recruiter_response_rate`, etc.) | Weak external signal check | Heuristic, near-saturated on holdout; weak correlation to JD fit |
-| `synthetic_proxy_eval` | **Synthetic relevance proxy** | Auto-generated tiers from `scripts/build_hand_labels.py` (title/keyword/honeypot rules) | **High (circular + self-grading)** — rules overlap ranker features; includes submission top-100 | Diagnostic ablation on rule-based tiers | **Not human labels**; do not cite as validation against hidden GT |
+| `synthetic_proxy_eval` | **Synthetic relevance proxy** | Auto-generated tiers from `scripts/build_synthetic_proxy_labels.py` (title/keyword/honeypot rules) | **High (circular)** — rules overlap ranker features; **excludes submission top-100** | Diagnostic ablation on rule-based tiers | **Not human labels**; do not cite as validation against hidden GT |
 | `weight_ablation_on_behavioral_proxy` | **Behavioral proxy ablation** | Same as behavioral proxy, across weight presets | Low for behavioral features; ablation target is weak proxy | Compare weight presets on non-ranker signals | Does not justify weights vs hidden GT |
 | `weight_ablation_on_synthetic_proxy` | **Synthetic proxy ablation** | Same as synthetic proxy labels | High (circular) | Internal weight comparison only | Misleading if presented as human eval |
 
@@ -32,6 +32,6 @@ Per `data/eval_report.json` note: expect real hidden-GT composite roughly **0.60
 ## Regenerating reports
 
 ```bash
-python scripts/build_hand_labels.py   # synthetic proxy labels (NOT human)
+python scripts/build_synthetic_proxy_labels.py   # synthetic proxy labels (NOT human)
 python scripts/run_eval.py --candidates ./data/candidates.jsonl
 ```

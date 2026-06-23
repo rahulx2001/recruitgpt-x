@@ -1,7 +1,8 @@
 # Offline ranker — Stage 3 reproduction (CPU, network_mode: none)
 # SUBMISSION PATH: numpy + PyYAML only. Cross-encoder is NOT used.
 pytest>=8.0
-numpy>=1.24.0,<3.0.0
+# Pinned band: byte-identical reproduction verified on numpy 2.3.5–2.4.6 (artifact 6bf83241…)
+numpy>=2.3.5,<2.5.0
 PyYAML>=6.0
 
 # ── NOT required for submission artifact (intentionally excluded) ──

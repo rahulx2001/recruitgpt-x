@@ -22,9 +22,9 @@ echo
 
 # ── 0. Official challenge data ───────────────────────────────────
 if bash scripts/sync_challenge_data.sh >/dev/null 2>&1; then
-  ok "official challenge data synced (Downloads bundle)"
+  ok "official challenge data synced (CHALLENGE_DATA_ROOT or ./data/)"
 else
-  bad "sync_challenge_data.sh failed — check CHALLENGE_DATA_ROOT / Downloads path"
+  bad "sync_challenge_data.sh failed — set CHALLENGE_DATA_ROOT or place candidates.jsonl in ./data/"
 fi
 
 # ── 1. Repo structure ──────────────────────────────────────────────

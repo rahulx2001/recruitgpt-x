@@ -13,5 +13,8 @@ Default path: `./data/candidates.jsonl`
 
 ## Synthetic proxy labels
 
-`data/synthetic_proxy_labels.json` is **auto-generated** by `scripts/build_hand_labels.py`.
+`data/synthetic_proxy_labels.json` is **auto-generated** by `scripts/build_synthetic_proxy_labels.py`.
 **This dataset is automatically generated and is not human-labeled ground truth.**
+Excludes `submission.csv` top-100 (no self-grading).
+
+Locked artifact hash: `data/SUBMISSION_ARTIFACT.sha256`

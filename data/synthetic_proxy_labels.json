@@ -2,7 +2,8 @@
   "_provenance": {
     "label_method": "synthetic_proxy_labels_v1",
     "disclaimer": "This dataset is automatically generated and is not human-labeled ground truth.",
-    "generator": "scripts/build_hand_labels.py",
+    "generator": "scripts/build_synthetic_proxy_labels.py",
+    "excludes_submission_top100": true,
     "n_labels": 250
   },
   "labels": {
@@ -355,706 +356,6 @@
       "rationale": "non-ML weak title (JD disqualifier)",
       "labeler": "heuristic_relevance_proxy_v1",
       "source": "sample_candidates.json"
-    },
-    "CAND_0005649": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0041669": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0017960": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0077285": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0010685": {
-      "tier": 2,
-      "relevance": 0.5,
-      "rationale": "partial IR career signal",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0002025": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0049896": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0096142": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0058575": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0061655": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0001610": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0083307": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0046525": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0046064": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0006567": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0011162": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0075249": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0064904": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0053695": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0070333": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0088025": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0036863": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0007412": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0067322": {
-      "tier": 2,
-      "relevance": 0.5,
-      "rationale": "partial IR career signal",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0061339": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0055905": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0005538": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0031593": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0065878": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0099751": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0020991": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0081852": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0016659": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0018722": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0008425": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0021410": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0057701": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0015065": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0018499": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0051292": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0032089": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0098846": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0011432": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0052335": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0064326": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0011643": {
-      "tier": 1,
-      "relevance": 0.25,
-      "rationale": "adjacent ML/data, weak IR depth",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0006418": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0060715": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0014858": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0037944": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0072660": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0086154": {
-      "tier": 1,
-      "relevance": 0.25,
-      "rationale": "adjacent ML/data, weak IR depth",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0061265": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0054394": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0081053": {
-      "tier": 2,
-      "relevance": 0.5,
-      "rationale": "partial IR career signal",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0092706": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0010257": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0098952": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0076831": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0033987": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0074225": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0069248": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0096172": {
-      "tier": 2,
-      "relevance": 0.5,
-      "rationale": "partial IR career signal",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0069773": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0077337": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0022023": {
-      "tier": 1,
-      "relevance": 0.25,
-      "rationale": "adjacent ML/data, weak IR depth",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0099269": {
-      "tier": 2,
-      "relevance": 0.5,
-      "rationale": "partial IR career signal",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0067866": {
-      "tier": 2,
-      "relevance": 0.5,
-      "rationale": "partial IR career signal",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0048558": {
-      "tier": 2,
-      "relevance": 0.5,
-      "rationale": "partial IR career signal",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0015760": {
-      "tier": 1,
-      "relevance": 0.25,
-      "rationale": "adjacent ML/data, weak IR depth",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0046132": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0086022": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0080472": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0066791": {
-      "tier": 1,
-      "relevance": 0.25,
-      "rationale": "adjacent ML/data, weak IR depth",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0098454": {
-      "tier": 1,
-      "relevance": 0.25,
-      "rationale": "adjacent ML/data, weak IR depth",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0011327": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0018549": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0013122": {
-      "tier": 1,
-      "relevance": 0.25,
-      "rationale": "adjacent ML/data, weak IR depth",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0003575": {
-      "tier": 1,
-      "relevance": 0.25,
-      "rationale": "adjacent ML/data, weak IR depth",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0087778": {
-      "tier": 1,
-      "relevance": 0.25,
-      "rationale": "adjacent ML/data, weak IR depth",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0027691": {
-      "tier": 2,
-      "relevance": 0.5,
-      "rationale": "partial IR career signal",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0030348": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0081846": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0055960": {
-      "tier": 1,
-      "relevance": 0.25,
-      "rationale": "adjacent ML/data, weak IR depth",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0019480": {
-      "tier": 2,
-      "relevance": 0.5,
-      "rationale": "partial IR career signal",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0024620": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0011687": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0094025": {
-      "tier": 1,
-      "relevance": 0.25,
-      "rationale": "adjacent ML/data, weak IR depth",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0076995": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0022812": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0029367": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0063862": {
-      "tier": 1,
-      "relevance": 0.25,
-      "rationale": "adjacent ML/data, weak IR depth",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0068932": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0030468": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0061257": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0010283": {
-      "tier": 1,
-      "relevance": 0.25,
-      "rationale": "adjacent ML/data, weak IR depth",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0058300": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0012957": {
-      "tier": 3,
-      "relevance": 0.75,
-      "rationale": "strong IR alignment, lighter production proof",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0053527": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
-    },
-    "CAND_0040677": {
-      "tier": 4,
-      "relevance": 1.0,
-      "rationale": "strong IR title + shipped retrieval/ranking narrative",
-      "labeler": "heuristic_relevance_proxy_v1",
-      "source": "submission_top100_diagnostic_only"
     },
     "CAND_0000065": {
       "tier": 0,
@@ -1750,6 +1051,706 @@
       "source": "stratified_pool_hash"
     },
     "CAND_0013274": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0013410": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0013419": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0013495": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0013560": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0013795": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0013890": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0013937": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0013985": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0014166": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0014247": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0014465": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0014482": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0014572": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0014572)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0014657": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "structural honeypot / impossible profile",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0014754": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0015234": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0015433": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0015692": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0015867": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0015888": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0016117": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0016149": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0016156": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0016243": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0016520": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0016645": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0016736": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0016736)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0016749": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0016833": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0016957": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0017009": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "structural honeypot / impossible profile",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0017025": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0017025)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0017151": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0017351": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0017389": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0017389)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0017404": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0017644": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0017682": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0017791": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0017822": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0017822)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0017923": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0018082": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0018200": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0018505": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0018505)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0018777": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0018852": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0018918": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0018925": {
+      "tier": 4,
+      "relevance": 1.0,
+      "rationale": "strong IR title + shipped retrieval/ranking narrative",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0019275": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0019389": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0019597": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0019628": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0019628)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0019900": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0020008": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0020008)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0020134": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0020169": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0020175": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0020181": {
+      "tier": 1,
+      "relevance": 0.25,
+      "rationale": "adjacent ML/data, weak IR depth",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0020219": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0020219)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0020421": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0020421)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0020487": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0020861": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0020974": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0021137": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0021351": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0021593": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0022115": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "structural honeypot / impossible profile",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0022292": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0022292)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0022393": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0022393)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0022684": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0022684)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0022798": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0022973": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0023194": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0023194)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0023250": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0023334": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0023363": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0023471": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0023471)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0023585": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0023698": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0024611": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0024611)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0024826": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0024826)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0024961": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0025010": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0025586": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0025682": {
+      "tier": 1,
+      "relevance": 0.25,
+      "rationale": "adjacent ML/data, weak IR depth",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0026276": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0026328": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0026381": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0026501": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0026501)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0026658": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0026672": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0026672)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0026846": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0026963": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0027202": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0027340": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "low JD fit (CAND_0027340)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0027353": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0027593": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0027755": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0027955": {
+      "tier": 0,
+      "relevance": 0.0,
+      "rationale": "non-ML weak title (JD disqualifier)",
+      "labeler": "rule_based_proxy_v1",
+      "source": "stratified_pool_hash"
+    },
+    "CAND_0027979": {
       "tier": 0,
       "relevance": 0.0,
       "rationale": "non-ML weak title (JD disqualifier)",

@@ -239,8 +239,8 @@ See `sandbox/README.md` for Space deploy steps.
 ### Evaluation disclaimer
 
 Offline metrics in `data/eval_report.json` are **proxies**, not hidden ground truth.  
-`synthetic_proxy_labels.json` is **automatically generated** by `scripts/build_hand_labels.py` — **not human-labeled ground truth**.  
-See [evaluation_honesty_statement.md](docs/evaluation_honesty_statement.md).
+`synthetic_proxy_labels.json` is **automatically generated** by `scripts/build_synthetic_proxy_labels.py` — **not human-labeled ground truth** (excludes submission top-100).  
+See [evaluation_honesty_statement.md](docs/evaluation_honesty_statement.md) and [audit_resolution_checklist.md](docs/audit_resolution_checklist.md).
 
 ### Reproduce & verify
 

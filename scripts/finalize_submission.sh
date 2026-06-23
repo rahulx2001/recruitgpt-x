@@ -37,7 +37,7 @@ python -m pytest challenge/test_ranker.py -q
 echo
 
 echo "==> Hand labels (sample set)..."
-python scripts/build_hand_labels.py
+python scripts/build_synthetic_proxy_labels.py
 echo "==> Offline eval harness (behavioral proxy + hand labels)..."
 python scripts/run_eval.py --candidates ./data/candidates.jsonl --out ./data/eval_report.json
 python scripts/scan_honeypot_recall.py

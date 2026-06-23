@@ -22,7 +22,7 @@
 ## Proxy vs synthetic vs human
 
 - **Proxy:** Heuristic function approximating JD fit without calling the ranker (`proxy_relevance`, `behavioral_proxy_relevance`).
-- **Synthetic:** Labels produced by `scripts/build_hand_labels.py` using deterministic rules (`rule_based_proxy_v1`, `heuristic_relevance_proxy_v1`). **Not human annotation.**
+- **Synthetic:** Labels produced by `scripts/build_synthetic_proxy_labels.py` using deterministic rules (`rule_based_proxy_v1`, `heuristic_relevance_proxy_v1`). **Not human annotation.** Submission top-100 excluded.
 - **Human-labeled:** We do **not** claim any human-labeled evaluation set in this submission.
 
 ## Hidden GT
@@ -31,7 +31,7 @@ The hackathon composite score uses a **secret** labeled set. Our offline metrics
 
 ## Self-grading disclosure
 
-`synthetic_proxy_labels.json` includes IDs from our own `submission.csv` top-100 for diagnostic coverage. This is **not** independent validation — it is labeled with the same rule family the ranker uses. We disclose this to avoid implying circular self-grading as human eval.
+`synthetic_proxy_labels.json` **excludes** `submission.csv` top-100 IDs to avoid circular self-grading. Labels come from `sample_candidates.json` and a hash-stratified pool sample only.
 
 ## Transparency goal
 
