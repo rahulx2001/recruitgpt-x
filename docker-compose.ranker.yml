@@ -9,7 +9,8 @@ services:
     volumes:
       - ./data/candidates.jsonl:/app/data/candidates.jsonl:ro
       - ./data/embeddings:/app/data/embeddings:ro
+      - ./data/docker_repro:/app/docker_repro
     command: >
       python rank.py
       --candidates ./data/candidates.jsonl
-      --out ./submission.csv
+      --out ./docker_repro/submission.csv

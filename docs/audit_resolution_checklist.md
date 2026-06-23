@@ -29,6 +29,11 @@ Maps each finding from the Final Independent Audit to current repo state (`HEAD`
 - Feature engineering / model weights
 - `submission.csv` content
 
+| 19 | Stage 4 reasoning templating | ✅ RESOLVED | `a0ca1bd` — 0/100 banned phrase; peak 6-gram 8/100; `mock_stage4_review.py` |
+| 20 | Docker repro output not captured | ✅ RESOLVED | `docker-compose.ranker.yml` mounts `data/docker_repro/`; `verify_docker_ranker.sh` |
+| 21 | Stage 5 interview prep | ✅ RESOLVED | `docs/stage5_interview_prep.md` |
+| 22 | Portal readiness script | ✅ RESOLVED | `scripts/portal_ready.sh` |
+
 ## Remaining honest risks (disclosed to judges)
 
 1. Synthetic proxy labels correlate with ranker rubric (circular) — labeled as proxy, not GT

@@ -1,34 +1,45 @@
 # Reasoning Diversity Report (Stage 4)
 
-Analysis of committed `submission.csv` reasoning text. **No ranker changes were made** — submission artifact locked.
+Analysis of committed `submission.csv` after `a0ca1bd` reasoning diversification pass.  
+**Ranking locked** — only `reasoning` column changed; `candidate_id`, `rank`, `score` identical.
 
 ## Method
 
 - Parsed 100 `reasoning` fields
-- Extracted opener = text before first `Ranked #` clause (candidate-specific lead line)
+- Measured full-string uniqueness and repeated 6-grams in judge prose (excludes quoted career excerpts)
+- Banned-template check for legacy phrase
 
 ## Results
 
-| Metric | Value |
-|---|---|
-| Total rows | 100 |
-| Unique openers | **100** |
-| Repeated openers (>1) | **0** |
+| Metric | Before (`fbd08ea`) | After (`a0ca1bd`) |
+|---|---|---|
+| Banned template phrase | 89/100 | **0/100** |
+| Unique full reasoning strings | 100/100 | **100/100** |
+| Peak repeated 6-gram (core prose) | 89/100 | **8/100** |
+| `validate_reasoning.py` | shallow PASS | **strict PASS** |
 
-Every row opens with a distinct candidate-specific lead (`{title} @ {company}, {years}y, {location}.`).
+## Variant engine
 
-## Template rotation
+Deterministic rotation via `sha256(candidate_id + tag)`:
 
-**Not implemented** — not required. Current artifact already has 100/100 unique openers. Introducing phrasing rotation would change `submission.csv` bytes (forbidden under artifact lock).
+- 20+ career strength phrasings
+- 15+ concern phrasings (shuffled order per candidate)
+- 8 rank intro formats, 4 lead formats, 8 layout templates
+- Rank-tier tone for ranks 85+ (marginal) and 90+ (cutoff)
 
 ## Stage 4 validator
 
 `scripts/validate_reasoning.py` checks:
+
 - No empty reasoning
 - Unique ratio ≥ 50% (actual: 100%)
+- Banned legacy template phrase absent
+- No 6-gram repeated in >8/100 core-prose rows
 - No mid-word ellipsis truncation
 - Top-10 opener diversity
 
-## Recommendation for judges
+Mock judge sampling: `python scripts/mock_stage4_review.py submission.csv`
 
-Reasoning is fact-grounded from profile fields; variation comes from per-candidate titles, companies, locations, and career snippets — not a single template string.
+## Artifact
+
+Hash: `ec7ff84f4efe438ee4d5846951dd6e2020782fba3607a6f099e38068f14fb49e` (`data/SUBMISSION_ARTIFACT.sha256`)

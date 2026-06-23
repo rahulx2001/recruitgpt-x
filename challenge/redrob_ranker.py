@@ -618,8 +618,18 @@ def _build_reasoning(
         concern_txt = (
             f" {concern_lead}: marginal JD fit — included as lower-band coverage for rank {rank}."
         )
+    elif rank <= 30:
+        concern_txt = (
+            f" {concern_lead}: solid but outside top-10 — IR depth or availability may trail leaders."
+        )
+    elif rank <= 60:
+        concern_txt = (
+            f" {concern_lead}: mid-band fit — weaker retrieval signals than top-30 candidates."
+        )
     else:
-        concern_txt = ""
+        concern_txt = (
+            f" {concern_lead}: upper-lower band — included for coverage; gaps versus top-50 picks."
+        )
 
     jd_tie = ""
     if rank <= 10 and ir_snippet:

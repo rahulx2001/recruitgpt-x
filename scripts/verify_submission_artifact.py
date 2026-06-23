@@ -119,6 +119,10 @@ def main() -> int:
         print("  3. ./scripts/sync_challenge_data.sh  (symlink into ./data/)", file=sys.stderr)
         return 1
 
+    if args.fresh_out is not None and args.fresh_out.exists():
+        print(f"==> Compare {args.artifact} vs existing {args.fresh_out}")
+        return compare(args.artifact, args.fresh_out)
+
     tmp: tempfile.NamedTemporaryFile[str] | None = None
     fresh_path = args.fresh_out
     if fresh_path is None:

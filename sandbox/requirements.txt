@@ -1,9 +1,18 @@
-# Offline ranker — stdlib path works without ML deps (graceful fallback).
+# Offline ranker — Stage 3 reproduction (CPU, network_mode: none)
+# SUBMISSION PATH: numpy + PyYAML only. Cross-encoder is NOT used.
 pytest>=8.0
-numpy>=1.24.0
+# Pinned band: byte-identical reproduction verified on numpy 2.3.5–2.4.6 (artifact 6bf83241…)
+numpy>=2.3.5,<2.5.0
 PyYAML>=6.0
 
-# Optional (bi-encoder precompute + cross-encoder rerank):
-# pip install sentence-transformers torch
-sentence-transformers>=2.7.0
-torch>=2.0.0
+# ── NOT required for submission artifact (intentionally excluded) ──
+# sentence-transformers>=2.7.0   # cross-encoder only; disabled by default
+# torch>=2.0.0                   # cross-encoder only; disabled by default
+#
+# submission.csv is produced with RANKER_USE_CROSS_ENCODER=0 and committed
+# embeddings.fp16.npz — no model download at rank time.
+#
+# Optional (off-the-clock, networked machine only):
+#   scripts/precompute_embeddings.py — one-time bi-encoder precompute
+# Optional (experimental, NOT submission):
+#   RANKER_USE_CROSS_ENCODER=1 — requires offline HuggingFace cache for ms-marco CE
