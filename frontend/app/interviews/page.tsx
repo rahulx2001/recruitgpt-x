@@ -3,44 +3,204 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Clock, FileText, User, Calendar, X } from "lucide-react";
+import {
+  CalendarClock,
+  Clock,
+  FileText,
+  Plus,
+  ArrowRight,
+  X,
+  ClipboardList,
+} from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
-import { Avatar } from "@/components/app/Atoms";
+import { Avatar, CandidateAvatar, Kpi } from "@/components/app/Atoms";
 import { useWorkspaceInterviews } from "@/lib/useWorkspaceInterviews";
 import { useWorkspaceStats } from "@/lib/useWorkspaceStats";
 
-const tone: Record<string, string> = {
+type Interview = {
+  id: string;
+  candidate_id: string;
+  candidate: string;
+  candidate_color: string;
+  role: string;
+  round: string;
+  interviewer: string;
+  when: string;
+  status: "Scheduled" | "Awaiting feedback" | "Completed";
+  recommendation: string;
+};
+
+const STATUS_BADGE: Record<Interview["status"], string> = {
   Scheduled: "badge--accent",
   "Awaiting feedback": "badge--warning",
   Completed: "badge--positive",
 };
 
-const groups = ["Scheduled", "Awaiting feedback", "Completed"] as const;
+const GROUPS = ["Scheduled", "Awaiting feedback", "Completed"] as const;
 const VIEWS = ["Today", "Week", "Month"] as const;
 type View = (typeof VIEWS)[number];
 
+const INTERVIEWER_COLORS = [
+  "#4F46E5",
+  "#0E9F6E",
+  "#2563EB",
+  "#7C3AED",
+  "#B45309",
+];
+
+function interviewerColor(name: string): string {
+  const i = [...name].reduce((a, c) => a + c.charCodeAt(0), 0);
+  return INTERVIEWER_COLORS[i % INTERVIEWER_COLORS.length]!;
+}
+
 function candidateHref(candidateId: string) {
-  const params = new URLSearchParams({ highlight: candidateId });
-  return `/candidates?${params.toString()}`;
+  return `/candidates?${new URLSearchParams({ highlight: candidateId }).toString()}`;
 }
 
 function matchesView(when: string, view: View): boolean {
   if (view === "Today") return when.startsWith("Today");
-  if (view === "Week")
+  if (view === "Week") {
     return (
       when.startsWith("Today") ||
       when.startsWith("Tomorrow") ||
-      when.includes("Mon") ||
-      when.includes("Tue") ||
-      when.includes("Wed") ||
-      when.includes("Thu") ||
-      when.includes("Fri")
+      /Mon|Tue|Wed|Thu|Fri/.test(when)
     );
+  }
   return true;
 }
 
-export default function InterviewsPage() {
+function parseWhen(when: string): { primary: string; secondary: string } {
+  const parts = when.split(" · ");
+  if (parts.length >= 2) {
+    return { primary: parts[parts.length - 1]!, secondary: parts.slice(0, -1).join(" · ") };
+  }
+  return { primary: when, secondary: "" };
+}
+
+function InterviewCard({
+  interview,
+  onReschedule,
+  onCancel,
+}: {
+  interview: Interview;
+  onReschedule: () => void;
+  onCancel: () => void;
+}) {
   const router = useRouter();
+  const { primary, secondary } = parseWhen(interview.when);
+
+  return (
+    <article className="interview-card">
+      <div className="interview-card__main">
+        <button
+          type="button"
+          className="interview-card__candidate"
+          onClick={() => router.push(candidateHref(interview.candidate_id))}
+        >
+          <CandidateAvatar name={interview.candidate} size={40} />
+          <div className="min-w-0">
+            <div className="interview-card__name">{interview.candidate}</div>
+            <div className="interview-card__role">{interview.role}</div>
+            <div className="interview-card__round">{interview.round}</div>
+          </div>
+        </button>
+
+        <div className="interview-card__meta">
+          <span className={`badge ${STATUS_BADGE[interview.status]}`}>
+            {interview.status}
+          </span>
+          <div className="text-right">
+            <div className="interview-card__time">{primary}</div>
+            {secondary ? (
+              <div className="interview-card__time-sub">{secondary}</div>
+            ) : null}
+          </div>
+          <span className="interview-card__interviewer">
+            <Avatar
+              name={interview.interviewer}
+              color={interviewerColor(interview.interviewer)}
+              size={20}
+            />
+            {interview.interviewer}
+          </span>
+        </div>
+      </div>
+
+      <div className="interview-card__foot">
+        {interview.status === "Scheduled" ? (
+          <>
+            <button type="button" className="text-action" onClick={onReschedule}>
+              <Clock size={13} /> Reschedule
+            </button>
+            <div className="interview-card__actions">
+              <button
+                type="button"
+                className="text-action text-ink-faint hover:text-critical"
+                aria-label={`Cancel interview with ${interview.candidate}`}
+                onClick={onCancel}
+              >
+                <X size={14} />
+              </button>
+              <Link
+                href={candidateHref(interview.candidate_id)}
+                className="btn btn--secondary btn--sm"
+              >
+                View profile <ArrowRight size={14} />
+              </Link>
+            </div>
+          </>
+        ) : interview.status === "Awaiting feedback" ? (
+          <>
+            <span className="text-[12px] text-ink-muted inline-flex items-center gap-1.5">
+              <ClipboardList size={13} className="text-ink-faint" />
+              Scorecard due
+            </span>
+            <Link
+              href={candidateHref(interview.candidate_id)}
+              className="btn btn--primary btn--sm interview-card__actions"
+            >
+              <FileText size={14} /> Complete scorecard
+            </Link>
+          </>
+        ) : (
+          <>
+            <span className="text-[12px] text-ink-muted">Interview completed</span>
+            <Link
+              href={candidateHref(interview.candidate_id)}
+              className={`badge ${STATUS_BADGE.Completed} badge--dot interview-card__actions`}
+            >
+              {interview.recommendation || "Completed"}
+            </Link>
+          </>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function InterviewsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="metrics-row metrics-row--3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="kpi">
+            <div className="skeleton h-3 w-24 mb-3" />
+            <div className="skeleton h-7 w-12" />
+          </div>
+        ))}
+      </div>
+      <div className="interview-layout">
+        <div className="panel p-5 space-y-3">
+          <div className="skeleton h-4 w-28" />
+          <div className="skeleton h-28 w-full rounded-xl" />
+          <div className="skeleton h-28 w-full rounded-xl" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function InterviewsPage() {
   const { data: stats } = useWorkspaceStats();
   const { data: interviews = [], isLoading, isError } = useWorkspaceInterviews();
   const [view, setView] = React.useState<View>("Today");
@@ -59,178 +219,159 @@ export default function InterviewsPage() {
     (i) => !cancelledIds.has(i.id) && matchesView(i.when, view)
   );
 
-  const scheduled = interviews.filter(
+  const scheduledTotal = interviews.filter(
     (i) => i.status === "Scheduled" && !cancelledIds.has(i.id)
   ).length;
-  const pending = interviews.filter(
+  const pendingScorecards = interviews.filter(
     (i) => i.status === "Awaiting feedback"
   ).length;
+  const completedCount = interviews.filter((i) => i.status === "Completed").length;
 
   const subtitle = stats
-    ? `${scheduled} scheduled across all roles · ${stats.scorecards_pending ?? pending} need scorecards`
+    ? `${scheduledTotal} scheduled across all roles · ${stats.scorecards_pending ?? pendingScorecards} need scorecards`
     : isLoading
     ? "Loading interview pipeline…"
-    : `${scheduled} scheduled · ${pending} need scorecards`;
+    : `${scheduledTotal} scheduled · ${pendingScorecards} need scorecards`;
 
   return (
     <AppShell
       title="Interviews"
       subtitle={subtitle}
       actions={
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-subtle border border-line">
-          {VIEWS.map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setView(v)}
-              className={`px-3 h-8 rounded-md text-[13px] font-medium transition-colors ${
-                view === v
-                  ? "bg-surface text-ink shadow-sm"
-                  : "text-ink-muted hover:text-ink"
-              }`}
-            >
-              <Calendar size={14} className="inline mr-1.5 -mt-0.5" />
-              {v}
-            </button>
-          ))}
-        </div>
+        <>
+          <div className="seg" role="tablist" aria-label="Interview period">
+            {VIEWS.map((v) => (
+              <button
+                key={v}
+                type="button"
+                role="tab"
+                aria-selected={view === v}
+                className={`seg-btn ${view === v ? "is-active" : ""}`}
+                onClick={() => setView(v)}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="btn btn--primary btn--sm"
+            onClick={() => window.alert("Schedule interview (demo)")}
+          >
+            <Plus size={15} /> Schedule
+          </button>
+        </>
       }
     >
-      {isLoading && (
-        <div className="card p-12 text-center text-ink-muted text-[14px]">
-          Loading interviews from challenge candidates…
-        </div>
-      )}
-
-      {isError && (
-        <div className="card p-8 text-center">
-          <p className="text-critical text-[14px] font-medium">
-            Could not load interviews from API.
+      {isLoading ? (
+        <InterviewsSkeleton />
+      ) : isError ? (
+        <div className="panel max-w-lg mx-auto text-center py-10">
+          <p className="text-[14px] font-medium text-critical">
+            Could not load interviews
           </p>
-          <p className="text-ink-faint text-[12px] mt-3">
+          <p className="text-[12.5px] text-ink-muted mt-2">
             Ensure the backend is running on :8000 with imported candidates.
           </p>
         </div>
-      )}
+      ) : (
+        <div className="space-y-6">
+          <div className="metrics-row metrics-row--3">
+            <Kpi
+              label="Scheduled"
+              value={String(scheduledTotal)}
+              hint="across all roles"
+              icon={CalendarClock}
+            />
+            <Kpi
+              label="Scorecards due"
+              value={String(pendingScorecards)}
+              hint="awaiting feedback"
+              icon={FileText}
+            />
+            <Kpi
+              label={`In ${view.toLowerCase()}`}
+              value={String(active.length)}
+              hint="matching filter"
+              icon={Clock}
+            />
+          </div>
 
-      {!isLoading && !isError && active.length === 0 && (
-        <div className="card p-12 text-center text-ink-muted text-[14px]">
-          No interviews in this view.{" "}
-          <button
-            type="button"
-            className="text-accent font-medium"
-            onClick={() => setView("Month")}
-          >
-            Show all
-          </button>
-        </div>
-      )}
-
-      {!isLoading && !isError && active.length > 0 && (
-        <div className="space-y-7 max-w-4xl">
-          {groups.map((g) => {
-            const items = active.filter((i) => i.status === g);
-            if (!items.length) return null;
-            return (
-              <div key={g}>
-                <div className="flex items-center gap-2 mb-3">
-                  <h2 className="text-[13px] font-semibold text-ink tracking-tight">
-                    {g}
-                  </h2>
-                  <span className="badge badge--neutral">{items.length}</span>
-                </div>
-                <div className="card divide-y divide-line overflow-hidden">
-                  {items.map((i) => (
-                    <div
-                      key={i.id}
-                      className="flex flex-wrap items-center gap-3 sm:gap-4 px-5 py-3.5 hover:bg-subtle transition-colors"
-                    >
-                      <button
-                        type="button"
-                        className="flex items-center gap-4 flex-1 min-w-[200px] text-left"
-                        onClick={() => router.push(candidateHref(i.candidate_id))}
-                      >
-                        <Avatar
-                          name={i.candidate}
-                          color={i.candidate_color}
-                          size={40}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-[14px] font-semibold text-ink">
-                            {i.candidate}
-                          </div>
-                          <div className="text-[12.5px] text-ink-muted truncate">
-                            {i.round} · {i.role}
-                          </div>
+          {active.length === 0 ? (
+            <div className="panel text-center py-14 max-w-lg">
+              <p className="text-[14px] font-medium text-ink">
+                No interviews in this view
+              </p>
+              <p className="text-[13px] text-ink-muted mt-1.5">
+                Try a wider date range or schedule a new interview.
+              </p>
+              <button
+                type="button"
+                className="btn btn--secondary btn--sm mt-4"
+                onClick={() => setView("Month")}
+              >
+                Show all this month
+              </button>
+            </div>
+          ) : (
+            <div className="interview-layout">
+              {GROUPS.map((group) => {
+                const items = active.filter((i) => i.status === group);
+                if (!items.length) return null;
+                return (
+                  <section key={group} className="interview-group">
+                    <div className="panel">
+                      <div className="panel__head">
+                        <div>
+                          <h2 className="panel__title">{group}</h2>
+                          <p className="panel__subtitle">
+                            {group === "Scheduled"
+                              ? "Upcoming conversations with ranked candidates"
+                              : group === "Awaiting feedback"
+                              ? "Interviews pending interviewer scorecards"
+                              : "Recently completed with recommendations"}
+                          </p>
                         </div>
-                      </button>
-                      <div className="hidden sm:flex items-center gap-2 text-[12.5px] text-ink-muted">
-                        <Avatar name={i.interviewer} color="#475569" size={22} />
-                        {i.interviewer}
+                        <span className="badge badge--neutral tnum">
+                          {items.length}
+                        </span>
                       </div>
-                      <span className="inline-flex items-center gap-1.5 text-[12.5px] text-ink-secondary whitespace-nowrap">
-                        <Clock size={13} className="text-ink-faint" />
-                        {i.when}
-                      </span>
-                      <span className={`badge ${tone[i.status]}`}>{i.status}</span>
-                      {i.status === "Scheduled" ? (
-                        <>
-                          <Link
-                            href={candidateHref(i.candidate_id)}
-                            className="btn btn--secondary btn--sm"
-                          >
-                            <User size={14} /> View profile
-                          </Link>
-                          <button
-                            type="button"
-                            className="btn btn--ghost btn--sm"
-                            onClick={() =>
-                              setToast(`Reschedule request sent for ${i.candidate}`)
-                            }
-                          >
-                            Reschedule
-                          </button>
-                          <button
-                            type="button"
-                            className="h-8 w-8 grid place-items-center rounded-md border border-line text-ink-faint hover:text-critical hover:border-critical/30 transition-colors"
-                            aria-label={`Cancel interview with ${i.candidate}`}
-                            onClick={() => {
-                              setCancelledIds((prev) => new Set(prev).add(i.id));
-                              setToast(`Cancelled interview with ${i.candidate}`);
-                            }}
-                          >
-                            <X size={15} />
-                          </button>
-                        </>
-                      ) : i.status === "Awaiting feedback" ? (
-                        <Link
-                          href={candidateHref(i.candidate_id)}
-                          className="btn btn--primary btn--sm"
-                        >
-                          <FileText size={14} /> Scorecard
-                        </Link>
-                      ) : (
-                        <Link
-                          href={candidateHref(i.candidate_id)}
-                          className="badge badge--positive badge--dot hover:opacity-80 transition-opacity"
-                        >
-                          {i.recommendation || "Completed"}
-                        </Link>
-                      )}
+                      <div className="panel__body panel__body--tight">
+                        <div className="interview-stack">
+                          {items.map((i) => (
+                            <InterviewCard
+                              key={i.id}
+                              interview={i}
+                              onReschedule={() =>
+                                setToast(`Reschedule request sent for ${i.candidate}`)
+                              }
+                              onCancel={() => {
+                                setCancelledIds((prev) => new Set(prev).add(i.id));
+                                setToast(`Cancelled interview with ${i.candidate}`);
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+                  </section>
+                );
+              })}
+            </div>
+          )}
+
+          {!isLoading && completedCount > 0 && view !== "Month" && (
+            <p className="text-[12px] text-ink-faint max-w-xl">
+              {completedCount} completed interview
+              {completedCount === 1 ? "" : "s"} not shown in &ldquo;{view}&rdquo;
+              view. Switch to Month to see full history.
+            </p>
+          )}
         </div>
       )}
 
       {toast && (
-        <div
-          role="status"
-          className="toast"
-        >
+        <div role="status" className="toast">
           {toast}
         </div>
       )}

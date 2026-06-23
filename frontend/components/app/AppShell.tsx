@@ -242,7 +242,8 @@ export function AppShell({
           className={`content${
             pathname === "/dashboard" ||
             pathname === "/analytics" ||
-            pathname === "/shortlists"
+            pathname === "/shortlists" ||
+            pathname === "/interviews"
               ? " content--wide"
               : ""
           }`}
