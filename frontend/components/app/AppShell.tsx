@@ -240,7 +240,9 @@ export function AppShell({
         </header>
         <div
           className={`content${
-            pathname === "/dashboard" || pathname === "/analytics"
+            pathname === "/dashboard" ||
+            pathname === "/analytics" ||
+            pathname === "/shortlists"
               ? " content--wide"
               : ""
           }`}
