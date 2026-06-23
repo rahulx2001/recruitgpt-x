@@ -52,3 +52,5 @@ sandbox/validate_submission.py
 
 
 *.tsbuildinfo
+.vercel
+.env*.local
