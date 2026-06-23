@@ -83,6 +83,7 @@ function ChartCard({
   footer,
   tall,
   compact,
+  fill,
   className = "",
 }: {
   title: string;
@@ -95,11 +96,16 @@ function ChartCard({
   tall?: boolean;
   /** Shorter chart area for simple bar charts */
   compact?: boolean;
+  /** Grow body to match sibling cards in a bento row */
+  fill?: boolean;
   className?: string;
 }) {
   const chartHeight = tall ? "h-[228px]" : compact ? "h-[172px]" : "h-[208px]";
+  const bodyClass = fill
+    ? "chart-card__body chart-card__body--fill mt-3"
+    : `${chartHeight} mt-3 shrink-0`;
   return (
-    <div className={`chart-card ${className}`}>
+    <div className={`chart-card ${fill ? "chart-card--fill" : ""} ${className}`}>
       <div className="chart-card__head">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
@@ -119,7 +125,7 @@ function ChartCard({
           </div>
         ) : null}
       </div>
-      <div className={`${chartHeight} mt-3 shrink-0`}>{children}</div>
+      <div className={bodyClass}>{children}</div>
       {footer}
     </div>
   );
@@ -136,6 +142,151 @@ function scoreBinRange(bin: string): [number, number] {
   return map[bin] ?? [0, 100];
 }
 
+function ScoreDistributionPanel({
+  histogram,
+  stats,
+  recommendationMix,
+  rankScatter,
+  topCandidates,
+  selectedBin,
+  onSelectBin,
+}: {
+  histogram: WorkspaceAnalyticsPayload["score_histogram"];
+  stats: WorkspaceAnalyticsPayload["score_stats"];
+  recommendationMix: WorkspaceAnalyticsPayload["recommendation_mix"];
+  rankScatter: WorkspaceAnalyticsPayload["rank_scatter"];
+  topCandidates: WorkspaceAnalyticsPayload["top_candidates"];
+  selectedBin: string | null;
+  onSelectBin: (bin: string | null) => void;
+}) {
+  const total = histogram.reduce((sum, row) => sum + row.count, 0) || 1;
+  const maxCount = Math.max(...histogram.map((row) => row.count), 1);
+
+  const binCandidates = React.useMemo(() => {
+    if (!selectedBin) return [];
+    const [lo, hi] = scoreBinRange(selectedBin);
+    return rankScatter
+      .filter((p) => p.score >= lo && p.score < hi)
+      .sort((a, b) => a.rank - b.rank)
+      .slice(0, 6);
+  }, [rankScatter, selectedBin]);
+
+  const defaultPreview = topCandidates.slice(0, 6);
+
+  return (
+    <div className="score-dist">
+      <div className="score-dist__bars">
+        {histogram.map((row) => {
+          const pct = Math.round((row.count / total) * 100);
+          const width = Math.max((row.count / maxCount) * 100, row.count > 0 ? 6 : 0);
+          const isSelected = selectedBin === row.bin;
+          return (
+            <button
+              key={row.bin}
+              type="button"
+              className={`score-dist__bar-row${isSelected ? " is-selected" : ""}`}
+              onClick={() => onSelectBin(isSelected ? null : row.bin)}
+              aria-pressed={isSelected}
+            >
+              <span className="score-dist__bin">{row.bin}</span>
+              <span className="score-dist__track">
+                <span
+                  className="score-dist__fill"
+                  style={{ width: `${width}%` }}
+                />
+              </span>
+              <span className="score-dist__count tnum">
+                {row.count}
+                <span className="score-dist__pct"> ({pct}%)</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="score-dist__stats">
+        <div className="score-dist__stat">
+          <span className="score-dist__stat-label">Mean</span>
+          <span className="score-dist__stat-value tnum">{stats.mean ?? "—"}</span>
+        </div>
+        <div className="score-dist__stat">
+          <span className="score-dist__stat-label">Median</span>
+          <span className="score-dist__stat-value tnum">{stats.median ?? "—"}</span>
+        </div>
+        <div className="score-dist__stat">
+          <span className="score-dist__stat-label">P90</span>
+          <span className="score-dist__stat-value tnum">{stats.p90 ?? "—"}</span>
+        </div>
+        <div className="score-dist__stat">
+          <span className="score-dist__stat-label">σ spread</span>
+          <span className="score-dist__stat-value tnum">{stats.std_dev ?? "—"}</span>
+        </div>
+      </div>
+
+      {recommendationMix.length > 0 ? (
+        <div className="score-dist__rec">
+          <span className="score-dist__rec-label">Recommendation mix</span>
+          <div className="score-dist__rec-chips">
+            {recommendationMix.map((row) => (
+              <span
+                key={row.tier}
+                className="score-dist__rec-chip"
+                style={{ borderColor: REC_COLORS[row.tier] ?? MUTED }}
+              >
+                <span
+                  className="score-dist__rec-dot"
+                  style={{ background: REC_COLORS[row.tier] ?? MUTED }}
+                />
+                {row.tier}
+                <span className="tnum text-ink-muted">{row.count}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="score-dist__panel">
+        <div className="score-dist__panel-head">
+          <span className="text-[12px] font-semibold text-ink">
+            {selectedBin ? `${selectedBin} bucket` : "Top finalists in pool"}
+          </span>
+          {selectedBin ? (
+            <button
+              type="button"
+              className="text-action text-[11.5px]"
+              onClick={() => onSelectBin(null)}
+            >
+              Show top finalists
+            </button>
+          ) : (
+            <span className="text-[11px] text-ink-faint">Click a bucket to filter</span>
+          )}
+        </div>
+        <ul className="score-dist__list">
+          {(selectedBin ? binCandidates : defaultPreview).map((c) => (
+            <li key={c.candidate_id}>
+              <Link
+                href={`/candidates?highlight=${c.candidate_id}`}
+                className="score-dist__row"
+              >
+                <span className="font-medium text-ink truncate">{c.name}</span>
+                <span className="text-[11px] text-ink-muted tnum shrink-0">
+                  #{c.rank} · {c.score}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+        {selectedBin && !binCandidates.length ? (
+          <p className="text-[12px] text-ink-muted mt-1">
+            No candidates in this score range.
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function AnalyticsCharts({ data }: { data: WorkspaceAnalyticsPayload }) {
   const stats = data.score_stats ?? {};
   const interviews = data.interviews_summary;
@@ -145,15 +296,6 @@ export function AnalyticsCharts({ data }: { data: WorkspaceAnalyticsPayload }) {
   const hired = data.conversion_funnel.find((s) => s.stage === "Hired")?.count ?? 0;
   const hireRate =
     applied > 0 ? `${((hired / applied) * 100).toFixed(1)}%` : "0%";
-
-  const binCandidates = React.useMemo(() => {
-    if (!selectedBin) return [];
-    const [lo, hi] = scoreBinRange(selectedBin);
-    return data.rank_scatter
-      .filter((p) => p.score >= lo && p.score < hi)
-      .sort((a, b) => a.rank - b.rank)
-      .slice(0, 8);
-  }, [data.rank_scatter, selectedBin]);
 
   const compareWith = data.top_candidates[0]?.candidate_id;
 
@@ -176,84 +318,21 @@ export function AnalyticsCharts({ data }: { data: WorkspaceAnalyticsPayload }) {
 
         <ChartCard
           title="Score distribution"
-          subtitle="Click a bucket to see who’s in it"
+          subtitle="Bucket breakdown · stats · finalists"
           metric={stats.median != null ? `${stats.median}` : "—"}
           metricHint={`median · P90 ${stats.p90 ?? "—"}`}
-          compact
-          footer={
-            selectedBin ? (
-              <div className="histogram-drilldown">
-                <div className="histogram-drilldown__head">
-                  <span className="text-[12px] font-semibold text-ink">
-                    {selectedBin} bucket
-                  </span>
-                  <button
-                    type="button"
-                    className="text-action text-[11.5px]"
-                    onClick={() => setSelectedBin(null)}
-                  >
-                    Clear
-                  </button>
-                </div>
-                {binCandidates.length ? (
-                  <ul className="histogram-drilldown__list">
-                    {binCandidates.map((c) => (
-                      <li key={c.candidate_id}>
-                        <Link
-                          href={`/candidates?highlight=${c.candidate_id}`}
-                          className="histogram-drilldown__row"
-                        >
-                          <span className="font-medium text-ink truncate">{c.name}</span>
-                          <span className="text-[11px] text-ink-muted tnum">
-                            #{c.rank} · {c.score}
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-[12px] text-ink-muted">
-                    No candidates in this score range.
-                  </p>
-                )}
-              </div>
-            ) : null
-          }
+          className="chart-card--score"
+          fill
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={data.score_histogram}
-              margin={{ left: -8, right: 8, top: 4, bottom: 4 }}
-              onClick={(state) => {
-                const bin = state?.activeLabel;
-                if (typeof bin === "string") {
-                  setSelectedBin((prev) => (prev === bin ? null : bin));
-                }
-              }}
-              style={{ cursor: "pointer" }}
-            >
-              <CartesianGrid stroke={grid} vertical={false} strokeDasharray="3 3" />
-              <XAxis dataKey="bin" tick={axis} axisLine={false} tickLine={false} dy={4} />
-              <YAxis
-                tick={axis}
-                axisLine={false}
-                tickLine={false}
-                width={32}
-                domain={[0, "dataMax + 2"]}
-                allowDecimals={false}
-              />
-              <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="count" name="Candidates" radius={[6, 6, 0, 0]} maxBarSize={36}>
-                {data.score_histogram.map((row) => (
-                  <Cell
-                    key={row.bin}
-                    fill={selectedBin === row.bin ? COOL : INK}
-                    opacity={selectedBin && selectedBin !== row.bin ? 0.35 : 1}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <ScoreDistributionPanel
+            histogram={data.score_histogram}
+            stats={stats}
+            recommendationMix={data.recommendation_mix}
+            rankScatter={data.rank_scatter}
+            topCandidates={data.top_candidates}
+            selectedBin={selectedBin}
+            onSelectBin={setSelectedBin}
+          />
         </ChartCard>
       </div>
 
@@ -264,6 +343,7 @@ export function AnalyticsCharts({ data }: { data: WorkspaceAnalyticsPayload }) {
           subtitle="Ranker tier breakdown — not ATS acceptance"
           metric={`${data.recommendation_mix[0]?.count ?? 0}`}
           metricHint="strong hires"
+          compact
         >
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
@@ -303,6 +383,7 @@ export function AnalyticsCharts({ data }: { data: WorkspaceAnalyticsPayload }) {
           badge="Modeled"
           metric={`${data.stage_velocity.find((s) => s.stage === "Interview")?.median_days ?? "—"}d`}
           metricHint="interview stage"
+          compact
         >
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
@@ -341,6 +422,7 @@ export function AnalyticsCharts({ data }: { data: WorkspaceAnalyticsPayload }) {
               : "—"
           }
           metricHint={data.rank_buckets[0]?.bucket}
+          compact
         >
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
