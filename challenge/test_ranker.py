@@ -369,6 +369,36 @@ def test_no_embeddings_top10_overlap():
     assert overlap5 >= 4, f"no-embeddings top-5 set overlap {overlap5}/5"
 
 
+def test_embeddings_guard_blocks_silent_fallback():
+    import os
+    import tempfile
+
+    import challenge.embeddings as emb_mod
+    import challenge.redrob_ranker as rr
+    from challenge.embeddings import guard_canonical_embeddings
+
+    empty = Path(tempfile.mkdtemp())
+    old_dir = emb_mod._DEFAULT_DIR
+    old_store = rr._EMBED_STORE
+    old_req = os.environ.get("RANKER_REQUIRE_EMBEDDINGS")
+    try:
+        emb_mod._DEFAULT_DIR = empty
+        rr._EMBED_STORE = None
+        os.environ["RANKER_REQUIRE_EMBEDDINGS"] = "1"
+        try:
+            guard_canonical_embeddings(rr._embedding_store())
+            raise AssertionError("expected RuntimeError for missing embeddings")
+        except RuntimeError as exc:
+            assert "Committed embeddings not loaded" in str(exc)
+    finally:
+        emb_mod._DEFAULT_DIR = old_dir
+        rr._EMBED_STORE = old_store
+        if old_req is None:
+            os.environ.pop("RANKER_REQUIRE_EMBEDDINGS", None)
+        else:
+            os.environ["RANKER_REQUIRE_EMBEDDINGS"] = old_req
+
+
 def test_cross_encoder_disabled_by_default():
     import os
 

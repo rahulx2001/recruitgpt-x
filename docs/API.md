@@ -1,4 +1,6 @@
-# RecruitGPT X — API Reference
+# RecruitGPT X — API Reference (Web Demo Only)
+
+> **Not the hackathon submission ranker.** Graded output is `rank.py` → `submission.csv` (offline, CPU, no network). This document covers the optional FastAPI demo backend.
 
 Base URL: `http://localhost:8000` (dev) · `https://<railway-app>.up.railway.app` (prod)
 

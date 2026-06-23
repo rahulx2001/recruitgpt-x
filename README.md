@@ -2,7 +2,20 @@
 
 > **The AI Recruiter That Thinks Like a Hiring Manager**
 
-An intelligent candidate discovery platform that ranks candidates based on **semantic understanding**, **career trajectory**, **behavioral signals**, and **future potential** — not just keyword overlap.
+## What we submit (judges: read this first)
+
+| Component | Role in hackathon |
+|---|---|
+| **`rank.py` + `challenge/`** | **Graded ranker** — produces `submission.csv` (CPU, no network, CE off) |
+| **`submission.csv`** | Top-100 ranked candidates |
+| **`data/embeddings/embeddings.fp16.npz`** | Committed MiniLM bi-encoder artifact (required for canonical path) |
+| **Web app** (`backend/`, `frontend/`) | Optional demo UI — **not** the graded ranking path |
+
+Submit the repo via **`git clone` or `git archive`** — not a raw folder zip with local `data/` symlinks.
+
+---
+
+An intelligent candidate discovery platform with an optional multi-agent **demo UI**. The **hackathon submission** is the offline ranker above — semantic understanding, career signals, and behavioral features via `challenge/redrob_ranker.py`, not the LangGraph web stack.
 
 [![Demo](https://img.shields.io/badge/demo-ready-brightgreen)](#)
 [![License](https://img.shields.io/badge/license-MIT-blue)](#)
@@ -101,8 +114,8 @@ npm install
 npm run dev                    # → http://localhost:3000
 ```
 
-### 5. Open the App
-Visit **http://localhost:3000** — paste a job description, watch the multi-agent system rank candidates, and explore the explanations.
+### 5. Open the App (optional demo — not the submission ranker)
+Visit **http://localhost:3000** — explore the LangGraph demo UI. **Graded ranking** is `python rank.py` over `candidates.jsonl`, not this web flow.
 
 ---
 

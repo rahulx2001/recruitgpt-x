@@ -16,7 +16,7 @@ from challenge.assessment import (
     top_ir_assessments,
 )
 from challenge.availability import availability_modifier, availability_score
-from challenge.embeddings import EmbeddingStore
+from challenge.embeddings import EmbeddingStore, guard_canonical_embeddings
 from challenge.rerank import (
     blend_stage1_cross_encoder,
     cross_encoder_enabled,
@@ -801,6 +801,16 @@ def rank_candidates(candidates_path, top_k: int = 100) -> List[ScoredCandidate]:
     2) Optional cross-encoder rerank (RANKER_USE_CROSS_ENCODER=1 only)
     3) Calibrated top_k with grounded reasoning
     """
+    import sys
+
+    guard_canonical_embeddings(_embedding_store())
+    if cross_encoder_enabled():
+        print(
+            "WARNING: RANKER_USE_CROSS_ENCODER=1 — experimental path; "
+            "submission artifact uses CE OFF (see submission_metadata.yaml).",
+            file=sys.stderr,
+        )
+
     pool_size = max(top_k, RERANK_POOL_SIZE)
     heap: list[Tuple[float, str, ScoredCandidate, Dict[str, Any]]] = []
     for raw in load_candidates(candidates_path):

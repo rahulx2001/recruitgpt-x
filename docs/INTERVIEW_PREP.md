@@ -1,28 +1,56 @@
-# RecruitGPT X — Interview Prep (private)
+# Interview Prep — Canonical Submission Path Only
 
-## Architecture (30-second pitch)
-Bi-encoder (committed embeddings.fp16.npz) → hybrid JD-aligned scorer → calibrated top-100. Cross-encoder is opt-in only (`RANKER_USE_CROSS_ENCODER=1`); submission uses CE OFF for byte-identical reproduction.
+> **Judges:** This doc describes the **offline ranker that produced `submission.csv`**.
+> For the optional LangGraph web demo, see `docs/ARCHITECTURE.md` (marked DEMO ONLY).
+> Cross-encoder and LLM agents are **not** used in the submission artifact.
 
-## Cold questions
+## 30-second pitch
 
-**Why bi-encoder + cross-encoder vs pure lexical?**
-Lexical misses Tier-5 plain-language fits ("built a recommendation system at a product company"). Bi-encoder scales to 100K via precomputed cosine. Cross-encoder adds deep (JD, career) relevance on the decision boundary (top-500 → top-10).
+Hybrid CPU ranker: committed `all-MiniLM-L6-v2` embeddings (`embeddings.fp16.npz`) + lexical/title/signals → calibrated top-100. **Cross-encoder OFF.** No LLM at rank time. Byte-reproducible via `./scripts/reproduce_ranking.sh`.
 
-**Offline ↔ online correlation?**
-Track NDCG@10 on recruiter shortlist feedback; monitor saved_by_recruiters and interview_completion_rate lift for ranked cohort vs baseline keyword ATS.
+## Architecture (submission)
 
-**A/B test plan?**
-50/50 traffic split on shortlist order; primary: recruiter contact rate + interview pass rate; guardrail: time-to-shortlist.
+```
+candidates.jsonl → hybrid scorer (10 weighted signals) → top-500 pool → calibrate → top-100 + reasoning → submission.csv
+```
 
-**Why these weights?**
-Ablation on behavioral-independent proxy + hand labels on sample set; current blend balances title/IR depth, production narrative, availability (JD explicitly values open-to-work).
+Required artifacts: `data/embeddings/embeddings.fp16.npz` (committed, 71 MB). If missing, `rank.py` **aborts** (`RANKER_REQUIRE_EMBEDDINGS=1`) rather than silently falling back to TF-IDF.
 
-**Scale to 2M?**
-Precompute embeddings once; serve ANN index (FAISS HNSW) for bi-encoder retrieval → same rerank pipeline on top-K.
+## Cold questions — honest answers
 
-**Honeypot failure modes?**
-Subtle impossibilities (education vs YoE, overlapping tenure). Mitigated by structural rules + cross-encoder narrative mismatch on stuffers.
+**Why bi-encoder vs pure lexical?**  
+Lexical misses plain-language Tier-5 fits. Precomputed MiniLM cosine scales to 100K in ~49s CPU. Without `.npz`, top-10 **set** overlap vs canonical drops to ~3/10 (positional ~4/10) — not interchangeable.
 
-**Graceful degradation?**
-Missing embeddings.npy → TF-IDF JD proxy substitutes bi-encoder cosine (top-5 identical, top-10 set 10/10).
-Committed `embeddings.fp16.npz` (~71MB) + `./scripts/reproduce_ranking.sh` is the canonical judge path.
+**Why is cross-encoder OFF?**  
+CE needs HF cache/network, drifts across machines (prior audit: 3/10 top-10 drift CE-on). Spec requires network OFF. `RANKER_USE_CROSS_ENCODER=0` default; torch not in `requirements-ranker.txt`.
+
+**Why these weights?**  
+Ablation on **behavioral-independent proxy** and **synthetic rule-based labels** (`synthetic_proxy_labels.json`) — **not human labels** (`docs/evaluation_honesty_statement.md`).
+
+**Honeypot / stuffer defense?**  
+Structural rules in `challenge/honeypot.py` + title/skill/career scoring — **not** cross-encoder. Tests: `test_keyword_stuffer_far_from_top`, `test_impossible_tenure_demoted`.
+
+**Hidden GT estimate ~0.60–0.68?**  
+Honest guess with **zero correlation evidence** — offline proxies are diagnostics only, not validation against secret labels.
+
+**Byte-identical on judge hardware?**  
+Ordering is deterministic. Score **bytes** may differ across numpy/BLAS; `verify_submission_artifact.py` accepts identical top-100 ordering as secondary PASS.
+
+**Title weight 0.24?**  
+Founding Senior AI Engineer JD; title captures role evidence. Plain-language shippers score via `career_semantic` + bi-encoder. See `docs/judge_faq.md` Q1–2.
+
+**Precompute vs runtime constraints?**  
+Spec allows one-time off-the-clock embedding job. Ranking step itself: no network, CPU only. See `docs/precompute_policy.md`.
+
+**What are you submitting vs the web app?**  
+**Graded:** `rank.py` + `challenge/` → `submission.csv`. **Optional demo:** FastAPI/Next.js LangGraph UI — separate product surface, not the submission ranker.
+
+## Live commands
+
+```bash
+./scripts/reproduce_ranking.sh
+python scripts/verify_submission_artifact.py --artifact submission.csv
+python scripts/mock_stage4_review.py submission.csv
+```
+
+Extended prep: `docs/stage5_interview_prep.md` · Evidence: `docs/judge_faq.md`

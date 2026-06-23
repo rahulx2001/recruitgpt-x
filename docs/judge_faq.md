@@ -59,3 +59,15 @@ We do **not** have one. Stated explicitly in `evaluation_honesty_statement.md`. 
 ## 15. Scaling to 2M in 5 minutes?
 
 Current: linear scan ~48s/100K → ~8 min/2M on same CPU. Production path: ANN index (FAISS/HNSW), shard by geography, precomputed embeddings — documented as future work; submission scope is 100K offline rank.
+
+## 16. What if embeddings.fp16.npz is missing?
+
+`rank.py` defaults `RANKER_REQUIRE_EMBEDDINGS=1` and **aborts** with an explicit error instead of silently using TF-IDF fallback (which yields a different ranking). Ablation only: `--allow-tfidf-fallback` or `RANKER_REQUIRE_EMBEDDINGS=0`. **Evidence:** `challenge/embeddings.py`, `rank.py`.
+
+## 17. Web app vs submission ranker?
+
+**Graded:** `rank.py` + `challenge/redrob_ranker.py` → `submission.csv`. **Optional demo:** FastAPI/LangGraph/Next.js (`backend/`, `frontend/`) — not used for the artifact. **Evidence:** `README.md` (What we submit), `ARCHITECTURE.md` banner.
+
+## 18. Hidden GT ~0.60–0.68 estimate?
+
+Unverifiable heuristic — **no correlation study** against secret labels. Offline NDCG numbers are diagnostics only. We do not cite them as predicted composite score. **Evidence:** `evaluation_honesty_statement.md`, `eval_report.json` note.

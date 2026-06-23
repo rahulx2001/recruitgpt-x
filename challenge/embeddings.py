@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import os
+import sys
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -96,6 +98,37 @@ class EmbeddingStore:
     def model_name() -> str:
         return _BI_ENCODER_MODEL
 
+    def describe(self) -> str:
+        if self.available:
+            npz = self.root / "embeddings.fp16.npz"
+            artifact = "embeddings.fp16.npz" if npz.exists() else "embeddings.npy"
+            return f"LOADED ({_BI_ENCODER_MODEL}, {artifact})"
+        return "MISSING — TF-IDF JD proxy fallback (non-canonical ranking path)"
+
     @staticmethod
     def jd_source_text() -> str:
         return JD_DOCUMENT
+
+
+def embeddings_required() -> bool:
+    """Default ON: refuse silent TF-IDF fallback during submission reproduction."""
+    return os.environ.get("RANKER_REQUIRE_EMBEDDINGS", "1").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+
+
+def guard_canonical_embeddings(store: EmbeddingStore) -> None:
+    """Fail or warn when committed embeddings are not loaded."""
+    if store.available:
+        return
+    msg = (
+        "Committed embeddings not loaded (expected data/embeddings/embeddings.fp16.npz). "
+        "Ranking would use TF-IDF fallback and produce a DIFFERENT submission.csv. "
+        "Mount data/embeddings/ or run ./scripts/reproduce_ranking.sh. "
+        "Set RANKER_REQUIRE_EMBEDDINGS=0 only for ablation/diagnostics."
+    )
+    if embeddings_required():
+        raise RuntimeError(msg)
+    print(f"WARNING: {msg}", file=sys.stderr)

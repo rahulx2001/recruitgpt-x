@@ -33,6 +33,12 @@ Maps each finding from the Final Independent Audit to current repo state (`HEAD`
 | 20 | Docker repro output not captured | ✅ RESOLVED | `docker-compose.ranker.yml` mounts `data/docker_repro/`; `verify_docker_ranker.sh` |
 | 21 | Stage 5 interview prep | ✅ RESOLVED | `docs/stage5_interview_prep.md` |
 | 22 | Portal readiness script | ✅ RESOLVED | `scripts/portal_ready.sh` |
+| 23 | INTERVIEW_PREP CE/hand-label contradictions | ✅ RESOLVED | Rewritten; points to canonical path only |
+| 24 | ARCHITECTURE.md BGE/LLM methodology claim | ✅ RESOLVED | DEMO ONLY banners; Agent 5 corrected |
+| 25 | Silent TF-IDF embeddings fallback | ✅ RESOLVED | `RANKER_REQUIRE_EMBEDDINGS=1` default; `rank.py` aborts |
+| 26 | Two-product README/API conflation | ✅ RESOLVED | "What we submit" table; API.md banner |
+| 27 | Packaging personal paths | ✅ RESOLVED | `data/.challenge_source` gitignored; sync uses `CHALLENGE_DATA_ROOT` only |
+| 28 | Precompute time metadata drift | ✅ RESOLVED | `submission_metadata.yaml` 10 min ≈ `meta.json` 624.9s |
 
 ## Remaining honest risks (disclosed to judges)
 

@@ -1,8 +1,24 @@
 # RecruitGPT X — Architecture Deep Dive
 
+> **Hackathon judges — read first**
+>
+> | What gets scored | What this document describes |
+> |---|---|
+> | `rank.py` + `challenge/redrob_ranker.py` → `submission.csv` | Optional **web demo** (FastAPI + LangGraph + Next.js) |
+> | MiniLM bi-encoder (`embeddings.fp16.npz`), CE **OFF**, no LLM | LLM agents, Qdrant, BGE-style demo embeddings |
+>
+> Sections 2–7 below are **DEMO ONLY** unless labeled otherwise. Submission methodology: `submission_metadata.yaml`, `docs/judge_faq.md`.
+
+---
+
 ## 1. System Overview
 
-RecruitGPT X is a **multi-agent AI recruitment platform** built around a single principle:
+RecruitGPT X includes two surfaces:
+
+1. **Submission ranker (graded)** — offline hybrid scorer over `candidates.jsonl` (see `README.md` § Hackathon Offline Ranker).
+2. **Web demo (optional)** — multi-agent recruitment UI described below.
+
+The web demo is built around a single principle:
 
 > **Ranking = f(Semantics, Trajectory, Behavior, Context)**
 
@@ -20,9 +36,11 @@ The system is composed of three loosely coupled layers:
 
 ---
 
-## 2. Multi-Agent Graph (LangGraph)
+## 2. Multi-Agent Graph (LangGraph) — WEB DEMO ONLY
 
-The core of the system is a **LangGraph state machine** with 7 agents that collaborate on a shared `RecruitmentState` object.
+> Not used to produce `submission.csv`. The graded ranker is `challenge/redrob_ranker.py` (no LangGraph, no LLM).
+
+The web demo core is a **LangGraph state machine** with 7 agents that collaborate on a shared `RecruitmentState` object.
 
 ```
 ┌──────────────────┐
@@ -148,9 +166,10 @@ class RecruitmentState(TypedDict):
   }
   ```
 
-### Agent 5 — Semantic Matching Agent
+### Agent 5 — Semantic Matching Agent (web demo)
 - **Input**: Hiring blueprint + candidate profile
-- **Method**: BGE embeddings + LLM cross-encoder reasoning
+- **Method (demo UI)**: Hosted embedding search in Qdrant + optional LLM reasoning in the agent graph
+- **Submission ranker uses instead**: `all-MiniLM-L6-v2` cosine from committed `embeddings.fp16.npz` + TF-IDF overlap — no LLM, cross-encoder **OFF** (`meta.json`, `redrob_ranker.py`)
 - **Output**:
   ```json
   {

@@ -7,6 +7,7 @@ cd "$ROOT"
 
 # Canonical pipeline: bi-encoder + hybrid scorer only (no network-dependent CE).
 export RANKER_USE_CROSS_ENCODER=0
+export RANKER_REQUIRE_EMBEDDINGS=1
 
 echo "╔══════════════════════════════════════════════════╗"
 echo "║  RecruitGPT X — Reproduce Ranking (Stage 3)      ║"
@@ -66,11 +67,14 @@ import os
 import tempfile
 from pathlib import Path
 
+import os
+
 import challenge.embeddings as emb_mod
 import challenge.redrob_ranker as rr
 from challenge.data_paths import challenge_file
 from challenge.redrob_ranker import rank_candidates, write_submission
 
+os.environ["RANKER_REQUIRE_EMBEDDINGS"] = "0"
 empty = Path(tempfile.mkdtemp())
 emb_mod._DEFAULT_DIR = empty
 rr._EMBED_STORE = None

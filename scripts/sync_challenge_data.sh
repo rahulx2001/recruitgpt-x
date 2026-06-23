@@ -5,23 +5,16 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-# Load override if set
 if [[ -f "$ROOT/.env.deploy" ]]; then
   # shellcheck disable=SC1091
   set -a && source "$ROOT/.env.deploy" && set +a
 fi
 
-if [[ -z "${CHALLENGE_DATA_ROOT:-}" ]]; then
-  # Common local paths (dev convenience only — judges should set CHALLENGE_DATA_ROOT)
-  for candidate in \
-    "$HOME/Downloads/[PUB] India_runs_data_and_ai_challenge/India_runs_data_and_ai_challenge" \
-    "$HOME/Downloads/India_runs_data_and_ai_challenge" \
-    ; do
-    if [[ -d "$candidate" ]]; then
-      CHALLENGE_DATA_ROOT="$candidate"
-      break
-    fi
-  done
+# Judges: set CHALLENGE_DATA_ROOT to the official bundle path.
+# If data/candidates.jsonl is already a regular file (not symlink), skip sync.
+if [[ -f data/candidates.jsonl && ! -L data/candidates.jsonl ]]; then
+  echo "==> data/candidates.jsonl present (regular file) — skip sync"
+  exit 0
 fi
 
 OFFICIAL="${CHALLENGE_DATA_ROOT:-}"
@@ -30,7 +23,7 @@ if [[ -z "$OFFICIAL" || ! -d "$OFFICIAL" ]]; then
   echo "ERROR: Official challenge folder not found."
   echo "Set CHALLENGE_DATA_ROOT to your bundle path, e.g.:"
   echo "  export CHALLENGE_DATA_ROOT=\"/path/to/India_runs_data_and_ai_challenge\""
-  echo "Or place candidates.jsonl at data/candidates.jsonl and skip sync."
+  echo "Or copy candidates.jsonl into data/candidates.jsonl (regular file, not symlink)."
   exit 1
 fi
 
@@ -68,7 +61,7 @@ for f in "${FILES[@]}"; do
   linked=$((linked + 1))
 done
 
-# Record source for debugging / reproduction
+# Dev-only debug file (gitignored) — never required for reproduction
 printf '%s\n' "$OFFICIAL" > data/.challenge_source
 
 echo
@@ -78,3 +71,4 @@ if [[ "$missing" -gt 0 ]]; then
 fi
 
 echo "Official data is now the only source for data/* inputs."
+echo "Note: data/.challenge_source is gitignored; use git archive for submission packaging."
