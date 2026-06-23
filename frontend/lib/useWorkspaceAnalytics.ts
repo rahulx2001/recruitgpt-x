@@ -8,7 +8,7 @@ export function useWorkspaceAnalytics() {
     queryKey: ["workspace-analytics"],
     queryFn: () => api.workspaceAnalytics(),
     staleTime: 30_000,
-    retry: 1,
-    retryDelay: 1500,
+    retry: 3,
+    retryDelay: 5000,
   });
 }

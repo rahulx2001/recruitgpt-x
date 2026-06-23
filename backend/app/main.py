@@ -85,10 +85,13 @@ async def lifespan(app: FastAPI):
     if settings.auto_import_challenge_top100:
         try:
             from app.data.import_challenge import import_top100_if_needed
+            from app.data.seed import seed_demo_job_if_empty
 
             n = await import_top100_if_needed()
             if n:
                 log.info("Auto-imported %d challenge candidates (top-100 bundle).", n)
+            if await seed_demo_job_if_empty():
+                log.info("Seeded demo job after challenge import.")
         except Exception as e:
             log.warning("Challenge top-100 import skipped: %s", e)
     elif settings.auto_seed_on_startup:

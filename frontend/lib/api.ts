@@ -18,7 +18,12 @@ const API_BASE =
 const DEV_USER_ID =
   process.env.NEXT_PUBLIC_DEV_USER_ID || "dev-user";
 
-const REQUEST_TIMEOUT_MS = 15_000;
+const REQUEST_TIMEOUT_MS =
+  typeof window !== "undefined" &&
+  !API_BASE.includes("localhost") &&
+  !API_BASE.includes("127.0.0.1")
+    ? 90_000
+    : 15_000;
 
 type TokenGetter = () => Promise<string | null>;
 

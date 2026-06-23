@@ -839,6 +839,28 @@ async def seed_if_empty() -> bool:
     return True
 
 
+async def seed_demo_job_if_empty() -> bool:
+    """Ensure the sample JD exists without touching candidates (post challenge import)."""
+    settings = get_settings()
+    owner_id = settings.default_dev_user_id
+    await create_all()
+    sm = get_session_maker()
+    async with sm() as session:
+        existing = await list_all_jobs(session)
+        if existing:
+            return False
+        payload = JobCreate(
+            title=SAMPLE_JOB["title"],
+            description=SAMPLE_JOB["description"],
+        )
+        blueprint = await parse_job_description(payload.title, payload.description)
+        job = await create_job(session, payload, blueprint, owner_id=owner_id)
+        index_job(str(job.id), job.title, job.description, blueprint.model_dump())
+        await session.commit()
+        log.info("Seeded demo job: %s (id=%s)", job.title, job.id)
+        return True
+
+
 async def seed():
     settings = get_settings()
     owner_id = settings.default_dev_user_id
