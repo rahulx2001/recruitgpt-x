@@ -1,9 +1,9 @@
-/** Signed-in workspace user shown in sidebar & settings. */
+/** @deprecated Use `useWorkspaceMe()` — profile is served from `/api/workspace/me`. */
 export const WORKSPACE_USER = {
-  name: "Priya Sharma",
-  role: "Head of Talent",
-  company: "Northwind",
-  email: "priya.sharma@northwind.com",
+  name: "",
+  role: "",
+  company: "",
+  email: "",
   color: "#4F46E5",
-  avatarSrc: "/avatars/priya-sharma-profile.jpg",
+  avatarSrc: "",
 } as const;

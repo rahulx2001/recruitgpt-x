@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -19,6 +20,9 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s — %(message)s"
 )
 log = logging.getLogger("recruitgpt")
+
+_indexing_task: asyncio.Task | None = None
+_indexing_ready = False
 
 
 async def _index_all_at_startup() -> None:
@@ -54,6 +58,18 @@ async def _index_all_at_startup() -> None:
             log.info("Indexed %d jobs into vector store", len(jobs))
     except Exception as e:
         log.warning("Startup indexing failed: %s", e)
+    else:
+        global _indexing_ready
+        _indexing_ready = True
+        log.info("Vector index ready for search.")
+
+
+async def _run_startup_indexing() -> None:
+    """Load embeddings + index in background so HTTP handlers start immediately."""
+    try:
+        await _index_all_at_startup()
+    except Exception as e:
+        log.warning("Background indexing failed: %s", e)
 
 
 @asynccontextmanager
@@ -82,11 +98,18 @@ async def lifespan(app: FastAPI):
         get_ranking_weights(),
     )
 
-    # Index all candidates + jobs into the (in-memory) vector store so
-    # /api/search and semantic features work immediately.
-    await _index_all_at_startup()
+    # Index in background — loading BGE on startup blocks requests for ~30s otherwise.
+    global _indexing_task, _indexing_ready
+    _indexing_ready = False
+    _indexing_task = asyncio.create_task(_run_startup_indexing())
 
     yield
+    if _indexing_task and not _indexing_task.done():
+        _indexing_task.cancel()
+        try:
+            await _indexing_task
+        except asyncio.CancelledError:
+            pass
     log.info("Shutting down.")
 
 
@@ -131,9 +154,16 @@ async def root():
 
 
 @app.get("/health")
+@app.get("/api/health")
 async def health():
-    """Liveness check."""
-    return {"status": "ok"}
+    """Liveness check — returns immediately even while vector index warms up."""
+    return {
+        "status": "ok",
+        "vector_index_ready": _indexing_ready,
+        "vector_index_running": bool(
+            _indexing_task and not _indexing_task.done()
+        ),
+    }
 
 
 @app.post("/api/reindex")

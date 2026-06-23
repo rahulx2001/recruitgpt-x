@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { useWorkspaceActivity } from "@/lib/useWorkspaceBundle";
-import { activity as fallbackActivity } from "@/lib/mock";
 
 export type QuickFindItem = {
   label: string;
@@ -30,8 +29,8 @@ export function ShellOverlays({
   onNotifOpenChange,
 }: ShellOverlaysProps) {
   const router = useRouter();
-  const { data: liveActivity } = useWorkspaceActivity();
-  const notifications = liveActivity?.length ? liveActivity : fallbackActivity;
+  const { data: liveActivity = [] } = useWorkspaceActivity();
+  const notifications = liveActivity;
   const [query, setQuery] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -156,6 +155,11 @@ export function ShellOverlays({
               </button>
             </div>
             <div className="max-h-[360px] overflow-y-auto divide-y divide-line">
+              {notifications.length === 0 ? (
+                <p className="px-4 py-6 text-[13px] text-ink-muted">
+                  No notifications yet.
+                </p>
+              ) : null}
               {notifications.slice(0, 8).map((a) => (
                 <button
                   key={a.id}

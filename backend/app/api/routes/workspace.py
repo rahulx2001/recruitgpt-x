@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends
@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import CurrentUser, get_current_user
+from app.config import get_settings
 from app.api.deps import get_session
 from app.models.schemas import RankedCandidate
 from app.services.ranking_repo import get_cached_ranking
@@ -24,6 +25,7 @@ from app.services.workspace_data import (
     candidate_matches_job,
     job_display_meta,
     jobs_for_owner,
+    role_catalog_by_title,
     load_submission_rankings,
     load_workspace_context,
     score_to_recommendation,
@@ -39,17 +41,7 @@ _AVATAR_COLORS = [
     "#7C3AED", "#D1453B", "#0891B2", "#57534E",
 ]
 _ROUNDS = ["Technical screen", "System design", "Case study", "Skills deep-dive", "Final loop"]
-_INTERVIEWERS = ["Jordan Lee", "Priya Raman", "Sam Devi", "Alex Romero"]
-_WHEN_SCHEDULED = [
-    "Today · 9:00 AM",
-    "Today · 11:00 AM",
-    "Today · 2:00 PM",
-    "Today · 4:30 PM",
-    "Tomorrow · 10:00 AM",
-    "Wed · 3:00 PM",
-]
-_STARTS_IN_MINUTES = [15, 20, 45, 90, 120, 180]
-_WHEN_UPCOMING = ["Next Mon · 9:00 AM", "Next Tue · 2:30 PM", "Next Wed · 11:00 AM"]
+_SCHEDULE_SLOTS = [(9, 0), (11, 0), (14, 0), (16, 30), (10, 0), (15, 0)]
 _ANALYTICS_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
 _ACTIVITY_COLORS = ["#4F46E5", "#0E9F6E", "#7C3AED", "#C2780C", "#2563EB"]
 
@@ -192,8 +184,31 @@ class TopCandidateRow(BaseModel):
     rank: int
     score: int
     stage: str
+    recommendation: str = ""
     top_signal: str
     concern: str = ""
+
+
+class AttentionQueueItem(BaseModel):
+    id: str
+    rank: Optional[int] = None
+    name: str
+    subtitle: str
+    detail: str = ""
+    recommendation: str = ""
+    stage: str = ""
+    href: str
+    action_label: str
+    priority: int
+
+
+class WorkspaceUserProfile(BaseModel):
+    name: str
+    role: str
+    company: str
+    email: str
+    color: str
+    avatar_url: str
 
 
 class InterviewsSummary(BaseModel):
@@ -267,6 +282,7 @@ class WorkspaceAnalytics(BaseModel):
     score_stats: Dict[str, float] = Field(default_factory=dict)
     recruiting_health: Optional[RecruitingHealth] = None
     ai_summary: Optional[AiSummary] = None
+    attention_queue: List[AttentionQueueItem] = Field(default_factory=list)
 
 
 class ActivityItem(BaseModel):
@@ -356,6 +372,70 @@ def _funnel_models(ctx: WorkspaceContext) -> List[FunnelStage]:
     return [FunnelStage(**s) for s in build_funnel(ctx)]
 
 
+def _workspace_user_profile() -> WorkspaceUserProfile:
+    s = get_settings()
+    return WorkspaceUserProfile(
+        name=s.workspace_user_name,
+        role=s.workspace_user_role,
+        company=s.workspace_user_company,
+        email=s.workspace_user_email,
+        color=s.workspace_user_color,
+        avatar_url=s.workspace_user_avatar_url,
+    )
+
+
+def _relative_time(dt: datetime) -> str:
+    now = datetime.now(timezone.utc)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    delta = now - dt
+    mins = max(0, int(delta.total_seconds() / 60))
+    if mins < 1:
+        return "just now"
+    if mins < 60:
+        return f"{mins}m ago"
+    hours = mins // 60
+    if hours < 24:
+        return f"{hours}h ago"
+    days = hours // 24
+    return f"{days}d ago"
+
+
+def _format_clock(dt: datetime) -> str:
+    return dt.strftime("%I:%M %p").lstrip("0")
+
+
+def _job_pool(ctx: WorkspaceContext, job_title: str) -> List[CandidateRow]:
+    return [
+        row
+        for row in ctx.candidates
+        if row.ranking and candidate_matches_job(row, job_title)
+    ]
+
+
+def _job_stages_for_pool(pool: List[CandidateRow]) -> JobStageCounts:
+    counts = {"Applied": 0, "Screened": 0, "Interview": 0, "Offer": 0}
+    for row in pool:
+        if not row.ranking:
+            continue
+        stage = score_to_stage(row.ranking.rank, row.ranking.score)
+        if stage in counts:
+            counts[stage] += 1
+    return JobStageCounts(
+        applied=counts["Applied"],
+        screened=counts["Screened"],
+        interview=counts["Interview"],
+        offer=counts["Offer"],
+    )
+
+
+def _interview_owner(row: CandidateRow) -> str:
+    role_title = assign_candidate_role(row)
+    catalog = role_catalog_by_title()
+    fallback = next(iter(catalog.values()))
+    return catalog.get(role_title, fallback)["owner"]
+
+
 def _interview_status(rank: int, stage: str) -> str:
     if stage == "Interview":
         if rank <= 4:
@@ -368,14 +448,31 @@ def _interview_status(rank: int, stage: str) -> str:
     return ""
 
 
-def _interview_when(rank: int, stage: str, status: str) -> str:
+def _interview_when(
+    rank: int, stage: str, status: str
+) -> tuple[str, Optional[int]]:
+    now = datetime.now()
     if status == "Awaiting feedback":
-        return "Yesterday"
+        return "Yesterday", None
     if status == "Completed":
-        return "Mon · 11:00 AM"
+        completed = now - timedelta(days=max(1, (rank % 5) + 1))
+        weekday = completed.strftime("%a")
+        slot_h, slot_m = _SCHEDULE_SLOTS[(rank - 1) % len(_SCHEDULE_SLOTS)]
+        return f"{weekday} · {_format_clock(completed.replace(hour=slot_h, minute=slot_m))}", None
+    hour, minute = _SCHEDULE_SLOTS[(rank - 1) % len(_SCHEDULE_SLOTS)]
+    slot = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
     if stage == "Interview":
-        return _WHEN_SCHEDULED[(rank - 1) % len(_WHEN_SCHEDULED)]
-    return _WHEN_UPCOMING[(rank - 11) % len(_WHEN_UPCOMING)]
+        if slot <= now:
+            slot += timedelta(days=1)
+            day_label = "Tomorrow" if slot.date() == (now + timedelta(days=1)).date() else slot.strftime("%a")
+        else:
+            day_label = "Today"
+        starts_in = max(1, int((slot - now).total_seconds() / 60)) if day_label == "Today" else None
+        return f"{day_label} · {_format_clock(slot)}", starts_in
+    days_ahead = max(1, ((rank - 11) % 5) + 1)
+    future = now + timedelta(days=days_ahead)
+    day_label = future.strftime("%a")
+    return f"{day_label} · {_format_clock(future.replace(hour=hour, minute=minute))}", None
 
 
 def _build_interviews(ctx: WorkspaceContext) -> List[WorkspaceInterview]:
@@ -392,11 +489,8 @@ def _build_interviews(ctx: WorkspaceContext) -> List[WorkspaceInterview]:
         if not status:
             continue
         rid = row.redrob_id
-        role = row.orm.current_role or row.orm.headline or "Candidate"
-        when = _interview_when(rank, stage, status)
-        starts_in: Optional[int] = None
-        if status == "Scheduled" and when.startswith("Today"):
-            starts_in = _STARTS_IN_MINUTES[(rank - 1) % len(_STARTS_IN_MINUTES)]
+        role = assign_candidate_role(row)
+        when, starts_in = _interview_when(rank, stage, status)
         if status == "Scheduled":
             scorecard_status = "Pending"
         elif status == "Awaiting feedback":
@@ -411,7 +505,7 @@ def _build_interviews(ctx: WorkspaceContext) -> List[WorkspaceInterview]:
                 candidate_color=_avatar_color(rid),
                 role=role,
                 round=_ROUNDS[(rank - 1) % len(_ROUNDS)],
-                interviewer=_INTERVIEWERS[(rank - 1) % len(_INTERVIEWERS)],
+                interviewer=_interview_owner(row),
                 when=when,
                 status=status,
                 recommendation=(
@@ -594,11 +688,108 @@ def _build_recruiting_health(
             )
         )
     cta_href = "/candidates"
+    cta_label = "Review candidates"
     if strong_in_applied > 0:
         cta_href = "/candidates?filter=Strong+Hire"
+        cta_label = "Review Strong Hires"
     elif awaiting_feedback > 0:
-        cta_href = "/interviews"
-    return RecruitingHealth(alerts=alerts[:5], cta_href=cta_href)
+        cta_href = "/interviews?filter=feedback"
+        cta_label = "Submit scorecards"
+    return RecruitingHealth(
+        alerts=alerts[:5],
+        cta_href=cta_href,
+        cta_label=cta_label,
+    )
+
+
+def _build_attention_queue(
+    top_candidates: List[TopCandidateRow],
+    interview_rows: List[WorkspaceInterview],
+) -> List[AttentionQueueItem]:
+    items: List[AttentionQueueItem] = []
+    seen_ids: set[str] = set()
+
+    for c in top_candidates:
+        if (
+            c.recommendation == "Strong Hire"
+            and c.stage in ("Applied", "Screened")
+        ):
+            items.append(
+                AttentionQueueItem(
+                    id=f"strong-{c.candidate_id}",
+                    rank=c.rank,
+                    name=c.name,
+                    subtitle=c.top_signal,
+                    detail=c.concern,
+                    recommendation=c.recommendation,
+                    stage=c.stage,
+                    href=f"/candidates?highlight={c.candidate_id}",
+                    action_label="Move to interview",
+                    priority=1,
+                )
+            )
+            seen_ids.add(c.candidate_id)
+
+    for i in interview_rows:
+        if i.when.startswith("Today"):
+            items.append(
+                AttentionQueueItem(
+                    id=f"today-{i.id}",
+                    name=i.candidate,
+                    subtitle=f"{i.round} · {i.role}",
+                    stage="Interview",
+                    href="/interviews?filter=today",
+                    action_label="View schedule",
+                    priority=2,
+                )
+            )
+
+    for i in interview_rows:
+        if i.status == "Awaiting feedback":
+            items.append(
+                AttentionQueueItem(
+                    id=f"feedback-{i.id}",
+                    name=i.candidate,
+                    subtitle=f"{i.round} · feedback due",
+                    href="/interviews?filter=feedback",
+                    action_label="Submit scorecard",
+                    priority=3,
+                )
+            )
+
+    for c in top_candidates:
+        if c.concern and c.candidate_id not in seen_ids:
+            items.append(
+                AttentionQueueItem(
+                    id=f"concern-{c.candidate_id}",
+                    rank=c.rank,
+                    name=c.name,
+                    subtitle=c.concern,
+                    stage=c.stage,
+                    href=f"/candidates?highlight={c.candidate_id}",
+                    action_label="Review",
+                    priority=4,
+                )
+            )
+            seen_ids.add(c.candidate_id)
+
+    for c in top_candidates:
+        if c.rank <= 10 and c.stage == "Applied" and c.candidate_id not in seen_ids:
+            items.append(
+                AttentionQueueItem(
+                    id=f"contact-{c.candidate_id}",
+                    rank=c.rank,
+                    name=c.name,
+                    subtitle="Top-10 · not yet in pipeline",
+                    recommendation=c.recommendation,
+                    stage="Applied",
+                    href=f"/candidates?highlight={c.candidate_id}",
+                    action_label="Add to shortlist",
+                    priority=5,
+                )
+            )
+
+    return sorted(items, key=lambda x: x.priority)[:6]
 
 
 def _build_ai_summary(
@@ -968,6 +1159,7 @@ def _build_analytics(
                 rank=rank,
                 score=round(score * 100),
                 stage=score_to_stage(rank, score),
+                recommendation=score_to_recommendation(score),
                 top_signal=_extract_top_signal(row.ranking.reasoning),
                 concern=_extract_concern(row.ranking.reasoning),
             )
@@ -1008,11 +1200,19 @@ def _build_analytics(
         strong_in_applied,
         quality,
     )
+    attention_queue = _build_attention_queue(top_candidates, interview_rows)
 
     jobs_pipeline: List[JobPipelineRow] = []
     now = datetime.now(timezone.utc)
-    stages = _job_stages(ctx)
     for job in jobs or []:
+        pool = _job_pool(ctx, job.title)
+        job_stages = _job_stages_for_pool(pool)
+        job_strong_hires = sum(
+            1
+            for row in pool
+            if row.ranking
+            and score_to_recommendation(row.ranking.score) == "Strong Hire"
+        )
         created = job.created_at
         if created.tzinfo is None:
             created = created.replace(tzinfo=timezone.utc)
@@ -1021,11 +1221,11 @@ def _build_analytics(
             JobPipelineRow(
                 job_id=str(job.id),
                 title=job.title.strip(),
-                applied=stages.applied,
-                screened=stages.screened,
-                interview=stages.interview,
-                offer=stages.offer,
-                strong_hires=min(10, strong_hire),
+                applied=job_stages.applied,
+                screened=job_stages.screened,
+                interview=job_stages.interview,
+                offer=job_stages.offer,
+                strong_hires=job_strong_hires,
                 days_open=days_open,
             )
         )
@@ -1084,6 +1284,7 @@ def _build_analytics(
         },
         recruiting_health=recruiting_health,
         ai_summary=ai_summary,
+        attention_queue=attention_queue,
     )
 
 
@@ -1243,22 +1444,28 @@ async def _build_shortlists(
 def _build_activity(ctx: WorkspaceContext) -> List[ActivityItem]:
     ranked = sorted_by_rank(ctx)
     items: List[ActivityItem] = []
-    items.append(
-        ActivityItem(
-            id="act_import",
-            actor="RecruitGPT",
-            actor_color="#7C3AED",
-            action="loaded",
-            target=f"{ctx.total} challenge candidates",
-            context=ctx.pool_label,
-            time="just now",
-            href="/candidates",
+    if ranked:
+        newest = max(
+            (r.orm.created_at for r in ranked if r.orm.created_at),
+            default=datetime.now(timezone.utc),
         )
-    )
+        items.append(
+            ActivityItem(
+                id="act_import",
+                actor="RecruitGPT",
+                actor_color="#7C3AED",
+                action="loaded",
+                target=f"{ctx.total} challenge candidates",
+                context=ctx.pool_label,
+                time=_relative_time(newest),
+                href="/candidates",
+            )
+        )
     for i, row in enumerate(ranked[:4]):
         if not row.ranking:
             continue
         stage = score_to_stage(row.ranking.rank, row.ranking.score)
+        created = row.orm.created_at or datetime.now(timezone.utc)
         items.append(
             ActivityItem(
                 id=f"act_{row.redrob_id}",
@@ -1267,12 +1474,12 @@ def _build_activity(ctx: WorkspaceContext) -> List[ActivityItem]:
                 action="ranked",
                 target=row.orm.full_name,
                 context=f"#{row.ranking.rank} · {stage} · {round(row.ranking.score * 100)}% match",
-                time=f"{row.ranking.rank}h ago",
+                time=_relative_time(created),
                 href=f"/candidates?highlight={row.redrob_id}",
             )
         )
     interviews = _build_interviews(ctx)
-    for i, iv in enumerate(interviews[:2]):
+    for iv in interviews[:2]:
         items.append(
             ActivityItem(
                 id=f"act_iv_{iv.id}",
@@ -1281,8 +1488,8 @@ def _build_activity(ctx: WorkspaceContext) -> List[ActivityItem]:
                 action="scheduled interview with",
                 target=iv.candidate,
                 context=f"{iv.round} · {iv.when}",
-                time="today" if iv.when.startswith("Today") else "recent",
-                href="/interviews",
+                time="today" if iv.when.startswith("Today") else iv.when.split(" · ")[0].lower(),
+                href="/interviews?filter=today" if iv.when.startswith("Today") else "/interviews",
             )
         )
     return items[:8]
@@ -1340,37 +1547,28 @@ def _build_search_meta(ctx: WorkspaceContext, jobs: list) -> SearchMeta:
     return SearchMeta(suggested=suggested[:4], recent=recent, saved=saved)
 
 
-def _job_stages(ctx: WorkspaceContext) -> JobStageCounts:
-    funnel = {f["stage"]: f["count"] for f in build_funnel(ctx)}
-    return JobStageCounts(
-        applied=funnel.get("Applied", 0),
-        screened=funnel.get("Screened", 0),
-        interview=funnel.get("Interview", 0),
-        offer=funnel.get("Offer", 0),
-    )
-
-
 def _build_jobs_overview(ctx: WorkspaceContext, jobs: list) -> List[JobOverview]:
-    stages = _job_stages(ctx)
-    interview_n = stages.interview
     now = datetime.now(timezone.utc)
     out: List[JobOverview] = []
     for j in jobs:
+        pool = _job_pool(ctx, j.title)
+        stages = _job_stages_for_pool(pool)
+        meta = job_display_meta(j.title, j.description or "")
         created = j.created_at
         if created.tzinfo is None:
             created = created.replace(tzinfo=timezone.utc)
         days_open = max(1, (now - created).days)
-        if interview_n > 0:
+        if stages.interview > 0:
             status = "Interviewing"
-        elif stages.screened > 0:
-            status = "Open"
+        elif stages.offer > 0:
+            status = "Offer stage"
         else:
-            status = "Open"
+            status = meta["status"]
         out.append(
             JobOverview(
                 id=str(j.id),
                 title=j.title.strip(),
-                candidate_count=ctx.total,
+                candidate_count=len(pool),
                 stages=stages,
                 status=status,
                 created_at=created.isoformat(),
@@ -1399,6 +1597,12 @@ def _insight_text(ctx: WorkspaceContext) -> dict:
 
 
 # ── Routes ───────────────────────────────────────────────────
+
+
+@router.get("/me", response_model=WorkspaceUserProfile)
+async def workspace_me(user: CurrentUser = Depends(get_current_user)):
+    _ = user
+    return _workspace_user_profile()
 
 
 @router.get("/sync", response_model=SyncStatus)

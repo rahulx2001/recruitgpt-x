@@ -34,6 +34,14 @@ class Settings(BaseSettings):
     clerk_issuer: str = ""
     default_dev_user_id: str = "dev-user"
 
+    # Workspace profile shown in dashboard shell (override via env in production)
+    workspace_user_name: str = "Priya Sharma"
+    workspace_user_role: str = "Head of Talent"
+    workspace_user_company: str = "Northwind"
+    workspace_user_email: str = "priya.sharma@northwind.com"
+    workspace_user_color: str = "#4F46E5"
+    workspace_user_avatar_url: str = "/avatars/priya-sharma-profile.jpg"
+
     # Rate limits (per user+IP, in-memory — use Redis in production)
     rate_limit_expensive_per_minute: int = 10
     rate_limit_upload_per_minute: int = 5

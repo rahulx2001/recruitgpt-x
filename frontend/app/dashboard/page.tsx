@@ -16,10 +16,7 @@ import {
 } from "@/components/app/LoadingStates";
 import { RecruitingHealthSummary } from "@/components/app/RecruitingHealthSummary";
 import { AiInsightsCard } from "@/components/app/AiInsightsCard";
-import {
-  AttentionQueue,
-  buildAttentionQueue,
-} from "@/components/app/AttentionQueue";
+import { AttentionQueue } from "@/components/app/AttentionQueue";
 import { TopCandidatesTable } from "@/components/app/TopCandidatesTable";
 import { PipelineSnapshot } from "@/components/app/PipelineSnapshot";
 import { TodaySchedule } from "@/components/app/TodaySchedule";
@@ -30,18 +27,25 @@ import { useWorkspaceAnalytics } from "@/lib/useWorkspaceAnalytics";
 import {
   useWorkspaceActivity,
   useWorkspaceJobsOverview,
+  useWorkspaceMe,
 } from "@/lib/useWorkspaceBundle";
 import {
   dashboardGreeting,
   dashboardDateLabel,
+  dashboardUserFirstName,
   syncPillLabel,
   filterDashboardActivity,
   resolveRecruitingHealth,
 } from "@/lib/dashboardUtils";
 
 export default function DashboardPage() {
-  const { data: stats, isLoading: statsLoading } = useWorkspaceStats();
-  const { data: analytics, isLoading: analyticsLoading } = useWorkspaceAnalytics();
+  const { data: me } = useWorkspaceMe();
+  const { data: stats, isLoading: statsLoading, isError: statsError } = useWorkspaceStats();
+  const {
+    data: analytics,
+    isLoading: analyticsLoading,
+    isError: analyticsError,
+  } = useWorkspaceAnalytics();
   const { data: interviews = [] } = useWorkspaceInterviews();
   const { data: activity = [] } = useWorkspaceActivity();
   const { data: jobs = [] } = useWorkspaceJobsOverview();
@@ -54,33 +58,12 @@ export default function DashboardPage() {
       ? `${((hiredCount / appliedCount) * 100).toFixed(1)}%`
       : "—";
 
-  const topCandidates = React.useMemo(() => {
-    const rows = analytics?.top_candidates ?? [];
-    if (rows.length >= 8) return rows.slice(0, 8);
-    const extra = (analytics?.rank_scatter ?? [])
-      .filter((p) => !rows.some((r) => r.candidate_id === p.candidate_id))
-      .slice(0, 8 - rows.length)
-      .map((p) => ({
-        candidate_id: p.candidate_id,
-        name: p.name,
-        rank: p.rank,
-        score: p.score,
-        stage:
-          p.rank <= 10
-            ? "Interview"
-            : p.rank <= 30
-            ? "Screened"
-            : "Applied",
-        top_signal: "Ranked from challenge pool",
-        concern: "",
-      }));
-    return [...rows, ...extra].slice(0, 8);
-  }, [analytics]);
-
-  const attentionItems = React.useMemo(
-    () => buildAttentionQueue(topCandidates, interviews),
-    [topCandidates, interviews]
+  const topCandidates = React.useMemo(
+    () => (analytics?.top_candidates ?? []).slice(0, 8),
+    [analytics]
   );
+
+  const attentionItems = analytics?.attention_queue ?? [];
 
   const todayInterviews = interviews.filter((i) => i.when.startsWith("Today"));
   const awaitingFeedback = interviews.filter(
@@ -106,15 +89,35 @@ export default function DashboardPage() {
     (analytics?.jobs_pipeline ?? []).map((j) => [j.job_id, j])
   );
 
-  const initialLoad = statsLoading && analyticsLoading && !stats && !analytics;
+  const [loadTimedOut, setLoadTimedOut] = React.useState(false);
+  const stillLoading =
+    (statsLoading || analyticsLoading) && !stats && !analytics;
+
+  React.useEffect(() => {
+    if (!stillLoading) {
+      setLoadTimedOut(false);
+      return;
+    }
+    const t = window.setTimeout(() => setLoadTimedOut(true), 12_000);
+    return () => window.clearTimeout(t);
+  }, [stillLoading]);
+
+  const initialLoad = stillLoading && !loadTimedOut;
+  const dataUnavailable =
+    loadTimedOut || statsError || analyticsError || (!stats && !analytics && !stillLoading);
+
+  const firstName = dashboardUserFirstName(me?.name);
+  const titleName = firstName || "there";
 
   const subtitle = stats
     ? `${dashboardDateLabel()} · ${stats.jobs} open roles · ${stats.candidates.toLocaleString()} candidates`
+    : analytics
+    ? `${dashboardDateLabel()} · ${analytics.candidate_count.toLocaleString()} candidates`
     : "Loading workspace…";
 
   return (
     <AppShell
-      title={`${dashboardGreeting()}, Jordan`}
+      title={`${dashboardGreeting()}, ${titleName}`}
       subtitle={subtitle}
       actions={
         <>
@@ -138,6 +141,18 @@ export default function DashboardPage() {
     >
       {initialLoad ? (
         <DashboardLoadingShell />
+      ) : dataUnavailable ? (
+        <div className="panel p-8 text-center">
+          <p className="text-[15px] font-medium text-ink">
+            Could not load dashboard data
+          </p>
+          <p className="text-[13px] text-ink-muted mt-2">
+            Start the backend, then refresh:
+          </p>
+          <code className="block mt-3 text-[12px] text-ink-muted bg-subtle rounded-lg px-3 py-2">
+            cd backend && source .venv/bin/activate && uvicorn app.main:app --host 127.0.0.1 --port 8000
+          </code>
+        </div>
       ) : (
         <div className="bento bento--dash gap-4">
           {recruitingHealth && (
@@ -270,23 +285,29 @@ export default function DashboardPage() {
                 />
               </div>
               <div className="panel__body panel__body--list">
-                <div className="panel__list">
-                  {filteredActivity.map((a) => (
-                    <Link key={a.id} href={a.href} className="feed-item">
-                      <Avatar name={a.actor} color={a.actor_color} size={28} />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[12.5px] text-ink-secondary leading-snug">
-                          <span className="font-semibold text-ink">{a.actor}</span>{" "}
-                          {a.action}{" "}
-                          <span className="font-semibold text-ink">{a.target}</span>
-                        </p>
-                        <p className="text-[11.5px] text-ink-faint truncate mt-0.5">
-                          {a.context} · {a.time}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                {filteredActivity.length > 0 ? (
+                  <div className="panel__list">
+                    {filteredActivity.map((a) => (
+                      <Link key={a.id} href={a.href} className="feed-item">
+                        <Avatar name={a.actor} color={a.actor_color} size={28} />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[12.5px] text-ink-secondary leading-snug">
+                            <span className="font-semibold text-ink">{a.actor}</span>{" "}
+                            {a.action}{" "}
+                            <span className="font-semibold text-ink">{a.target}</span>
+                          </p>
+                          <p className="text-[11.5px] text-ink-faint truncate mt-0.5">
+                            {a.context} · {a.time}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[13px] text-ink-muted px-4 py-6">
+                    No recent activity yet.
+                  </p>
+                )}
               </div>
             </div>
           </div>

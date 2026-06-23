@@ -18,6 +18,8 @@ const API_BASE =
 const DEV_USER_ID =
   process.env.NEXT_PUBLIC_DEV_USER_ID || "dev-user";
 
+const REQUEST_TIMEOUT_MS = 15_000;
+
 type TokenGetter = () => Promise<string | null>;
 
 let authTokenGetter: TokenGetter | null = null;
@@ -66,12 +68,33 @@ async function http<T>(
 
   const headers = await buildAuthHeaders(baseHeaders);
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: { ...headers, ...(init?.headers as Record<string, string>) },
-    body,
-    cache: "no-store",
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    REQUEST_TIMEOUT_MS
+  );
+
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...init,
+      headers: { ...headers, ...(init?.headers as Record<string, string>) },
+      body,
+      cache: "no-store",
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error(
+        `Request timed out — is the backend running at ${API_BASE}?`
+      );
+    }
+    throw new Error(
+      `Cannot reach backend at ${API_BASE}. Start it with: uvicorn app.main:app --host 127.0.0.1 --port 8000`
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
   if (!res.ok) {
     const text = await res.text();
     let message = text;
@@ -148,6 +171,8 @@ export const api = {
     }),
 
   // Workspace (dashboard counts + challenge rankings)
+  workspaceMe: () =>
+    http<import("./analyticsTypes").WorkspaceUserProfile>("/api/workspace/me"),
   workspaceStats: () =>
     http<{
       candidates: number;

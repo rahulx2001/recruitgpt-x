@@ -30,6 +30,28 @@ export type AiSummary = {
   recommendation: string;
 };
 
+export type AttentionQueueItem = {
+  id: string;
+  rank?: number | null;
+  name: string;
+  subtitle: string;
+  detail?: string;
+  recommendation?: string;
+  stage?: string;
+  href: string;
+  action_label: string;
+  priority: number;
+};
+
+export type WorkspaceUserProfile = {
+  name: string;
+  role: string;
+  company: string;
+  email: string;
+  color: string;
+  avatar_url: string;
+};
+
 export type WorkspaceAnalyticsPayload = {
   pool_label: string;
   candidate_count: number;
@@ -80,9 +102,11 @@ export type WorkspaceAnalyticsPayload = {
     rank: number;
     score: number;
     stage: string;
+    recommendation?: string;
     top_signal: string;
     concern: string;
   }>;
+  attention_queue?: AttentionQueueItem[];
   interviews_summary: {
     scheduled: number;
     awaiting_feedback: number;

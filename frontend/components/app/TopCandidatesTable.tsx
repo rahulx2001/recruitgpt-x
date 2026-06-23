@@ -12,6 +12,7 @@ export type TopCandidateRow = {
   rank: number;
   score: number;
   stage: string;
+  recommendation?: string;
   top_signal: string;
   concern?: string;
 };

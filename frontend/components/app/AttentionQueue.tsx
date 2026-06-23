@@ -9,126 +9,12 @@ import {
   SectionHeader,
 } from "@/components/app/Atoms";
 import { RiskBadgeList } from "@/components/app/RiskBadge";
-import type { TopCandidateRow } from "./TopCandidatesTable";
-import type { PipelineStage, Recommendation } from "@/lib/mock";
+import type { AttentionQueueItem } from "@/lib/analyticsTypes";
+import type { Recommendation, PipelineStage } from "@/lib/mock";
 
-type Interview = {
-  id: string;
-  candidate: string;
-  candidate_color: string;
-  round: string;
-  when: string;
-  status: string;
-  role: string;
-};
+export type { AttentionQueueItem };
 
-export type AttentionItem = {
-  id: string;
-  rank?: number;
-  name: string;
-  subtitle: string;
-  detail?: string;
-  recommendation?: Recommendation;
-  stage?: PipelineStage;
-  href: string;
-  actionLabel: string;
-  priority: number;
-};
-
-function scoreToRecommendation(score: number): Recommendation {
-  if (score >= 88) return "Strong Hire";
-  if (score >= 75) return "Hire";
-  if (score >= 60) return "Lean Hire";
-  return "Hold";
-}
-
-export function buildAttentionQueue(
-  topCandidates: TopCandidateRow[],
-  interviews: Interview[]
-): AttentionItem[] {
-  const items: AttentionItem[] = [];
-
-  for (const c of topCandidates) {
-    const rec = scoreToRecommendation(c.score);
-    if (
-      rec === "Strong Hire" &&
-      (c.stage === "Applied" || c.stage === "Screened")
-    ) {
-      items.push({
-        id: `strong-${c.candidate_id}`,
-        rank: c.rank,
-        name: c.name,
-        subtitle: c.top_signal,
-        detail: c.concern,
-        recommendation: rec,
-        stage: c.stage as PipelineStage,
-        href: `/candidates?highlight=${c.candidate_id}`,
-        actionLabel: "Move to interview",
-        priority: 1,
-      });
-    }
-  }
-
-  for (const i of interviews.filter((x) => x.when.startsWith("Today"))) {
-    items.push({
-      id: `today-${i.id}`,
-      name: i.candidate,
-      subtitle: `${i.round} · ${i.role}`,
-      stage: "Interview",
-      href: "/interviews?filter=today",
-      actionLabel: "View schedule",
-      priority: 2,
-    });
-  }
-
-  for (const i of interviews.filter((x) => x.status === "Awaiting feedback")) {
-    items.push({
-      id: `feedback-${i.id}`,
-      name: i.candidate,
-      subtitle: `${i.round} · feedback due`,
-      href: "/interviews?filter=feedback",
-      actionLabel: "Submit scorecard",
-      priority: 3,
-    });
-  }
-
-  for (const c of topCandidates) {
-    if (c.concern && !items.some((x) => x.id.includes(c.candidate_id))) {
-      items.push({
-        id: `concern-${c.candidate_id}`,
-        rank: c.rank,
-        name: c.name,
-        subtitle: c.concern,
-        stage: c.stage as PipelineStage,
-        href: `/candidates?highlight=${c.candidate_id}`,
-        actionLabel: "Review",
-        priority: 4,
-      });
-    }
-  }
-
-  for (const c of topCandidates) {
-    if (c.rank <= 10 && c.stage === "Applied") {
-      items.push({
-        id: `contact-${c.candidate_id}`,
-        rank: c.rank,
-        name: c.name,
-        subtitle: "Top-10 · not yet in pipeline",
-        recommendation: scoreToRecommendation(c.score),
-        stage: "Applied",
-        href: `/candidates?highlight=${c.candidate_id}`,
-        actionLabel: "Add to shortlist",
-        priority: 5,
-      });
-    }
-  }
-
-  return items
-    .sort((a, b) => a.priority - b.priority)
-    .slice(0, 6);
-}
-
-export function AttentionQueue({ items }: { items: AttentionItem[] }) {
+export function AttentionQueue({ items }: { items: AttentionQueueItem[] }) {
   return (
     <div className="panel panel--flush h-full">
       <div className="panel__head">
@@ -162,9 +48,11 @@ export function AttentionQueue({ items }: { items: AttentionItem[] }) {
                     {item.name}
                   </span>
                   {item.recommendation ? (
-                    <RecommendationBadge value={item.recommendation} />
+                    <RecommendationBadge value={item.recommendation as Recommendation} />
                   ) : null}
-                  {item.stage ? <StageBadge value={item.stage} /> : null}
+                  {item.stage ? (
+                    <StageBadge value={item.stage as PipelineStage} />
+                  ) : null}
                 </div>
                 <p className="text-[11.5px] text-ink-muted truncate mt-0.5">
                   {item.detail ? (
@@ -174,7 +62,7 @@ export function AttentionQueue({ items }: { items: AttentionItem[] }) {
                   )}
                 </p>
               </div>
-              <span className="attention-queue__action">{item.actionLabel} →</span>
+              <span className="attention-queue__action">{item.action_label} →</span>
             </Link>
           ))}
         </div>

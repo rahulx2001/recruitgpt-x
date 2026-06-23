@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar } from "./Atoms";
-import { WORKSPACE_USER } from "@/lib/userProfile";
+import { useWorkspaceMe } from "@/lib/useWorkspaceBundle";
 import { Dropdown, DropdownItem } from "./Dropdown";
 import {
   ShellOverlays,
@@ -56,6 +56,7 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const { data: stats } = useWorkspaceStats();
+  const { data: me } = useWorkspaceMe();
   const [quickOpen, setQuickOpen] = React.useState(false);
   const [notifOpen, setNotifOpen] = React.useState(false);
   const [toast, setToast] = React.useState<string | null>(null);
@@ -186,17 +187,17 @@ export function AppShell({
                 aria-haspopup="menu"
               >
                 <Avatar
-                  name={WORKSPACE_USER.name}
-                  color={WORKSPACE_USER.color}
-                  src={WORKSPACE_USER.avatarSrc}
+                  name={me?.name ?? "User"}
+                  color={me?.color ?? "#4F46E5"}
+                  src={me?.avatar_url}
                   size={30}
                 />
                 <div className="min-w-0 flex-1">
                   <div className="text-[13px] font-semibold text-ink truncate">
-                    {WORKSPACE_USER.name}
+                    {me?.name ?? "Loading…"}
                   </div>
                   <div className="text-2xs text-ink-faint truncate">
-                    {WORKSPACE_USER.role}
+                    {me?.role ?? ""}
                   </div>
                 </div>
               </button>

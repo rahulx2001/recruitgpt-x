@@ -7,7 +7,7 @@ import { AppShell } from "@/components/app/AppShell";
 import { Avatar } from "@/components/app/Atoms";
 import { GoogleCalendarConnect } from "@/components/app/GoogleCalendarConnect";
 import { teamMembers } from "@/lib/mock";
-import { WORKSPACE_USER } from "@/lib/userProfile";
+import { useWorkspaceMe } from "@/lib/useWorkspaceBundle";
 
 const SECTIONS = [
   { id: "profile", label: "Profile" },
@@ -25,6 +25,7 @@ export default function SettingsPage() {
 }
 
 function SettingsView() {
+  const { data: me } = useWorkspaceMe();
   const searchParams = useSearchParams();
   const sectionParam = searchParams.get("section");
   const active =
@@ -70,27 +71,27 @@ function SettingsView() {
                 {active === "profile" ? "Profile" : "Workspace"}
               </h3>
               <div className="space-y-4">
-                {active === "profile" && (
+                {active === "profile" && me && (
                   <div className="flex items-center gap-3 mb-2">
                     <Avatar
-                      name={WORKSPACE_USER.name}
-                      color={WORKSPACE_USER.color}
-                      src={WORKSPACE_USER.avatarSrc}
+                      name={me.name}
+                      color={me.color}
+                      src={me.avatar_url}
                       size={48}
                     />
                     <div>
                       <div className="text-[15px] font-semibold text-ink">
-                        {WORKSPACE_USER.name}
+                        {me.name}
                       </div>
                       <div className="text-[13px] text-ink-muted">
-                        {WORKSPACE_USER.role} · {WORKSPACE_USER.company}
+                        {me.role} · {me.company}
                       </div>
                     </div>
                   </div>
                 )}
-                <Field label="Company name" value="Northwind" />
-                <Field label="Workspace URL" value="northwind.recruitgpt.com" />
-                <Field label="Default location" value="Pune, India" />
+                <Field label="Company name" value={me?.company ?? "—"} />
+                <Field label="Workspace email" value={me?.email ?? "—"} />
+                <Field label="Role" value={me?.role ?? "—"} />
                 <button
                   type="button"
                   className="btn btn--primary btn--sm"

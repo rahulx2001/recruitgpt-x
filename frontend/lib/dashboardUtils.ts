@@ -18,6 +18,11 @@ export function dashboardDateLabel(): string {
   });
 }
 
+export function dashboardUserFirstName(fullName: string | undefined): string {
+  if (!fullName?.trim()) return "";
+  return fullName.trim().split(/\s+/)[0] ?? "";
+}
+
 export function syncPillLabel(
   synced: boolean,
   matched: number,
@@ -64,64 +69,11 @@ export function filterDashboardActivity(items: ActivityItem[]): ActivityItem[] {
     out.push(item);
     if (out.length >= 4) break;
   }
-  return out.length ? out : items.slice(0, 4);
+  return out;
 }
 
 export function resolveRecruitingHealth(
   analytics: WorkspaceAnalyticsPayload | null | undefined
 ): RecruitingHealth | null {
-  if (analytics?.recruiting_health) return analytics.recruiting_health;
-  if (!analytics) return null;
-
-  const alerts: RecruitingHealth["alerts"] = [];
-  const screened =
-    analytics.conversion_funnel.find((s) => s.stage === "Screened")?.count ?? 0;
-  const strongInsight = analytics.insights.find((i) =>
-    i.message.toLowerCase().includes("strong hire")
-  );
-  const strongCount = strongInsight
-    ? parseInt(strongInsight.message, 10) || screened
-    : screened;
-
-  if (strongCount > 0) {
-    alerts.push({
-      kind: "warn",
-      message: `${strongCount} candidates need review`,
-      href: "/candidates?stage=Screened",
-    });
-  }
-  const awaiting = analytics.interviews_summary?.awaiting_feedback ?? 0;
-  if (awaiting > 0) {
-    alerts.push({
-      kind: "warn",
-      message: `${awaiting} scorecards overdue`,
-      href: "/interviews?filter=feedback",
-    });
-  }
-  const unmatched = Math.max(
-    0,
-    (analytics.sync?.db_candidates ?? analytics.candidate_count) -
-      (analytics.sync?.matched_rankings ?? analytics.candidate_count)
-  );
-  if (unmatched > 0) {
-    alerts.push({
-      kind: "warn",
-      message: `${unmatched} candidates unmatched`,
-      href: "/settings",
-    });
-  }
-  if (!alerts.length) {
-    alerts.push({
-      kind: "ok",
-      message: "Pipeline healthy — review top 10 candidates",
-      href: "/candidates",
-    });
-  }
-
-  return {
-    title: "Recruiting health",
-    alerts,
-    cta_label: "Review candidates",
-    cta_href: "/candidates",
-  };
+  return analytics?.recruiting_health ?? null;
 }

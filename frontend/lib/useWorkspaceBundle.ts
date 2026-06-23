@@ -42,3 +42,11 @@ export function useWorkspaceInsight() {
     staleTime: 30_000,
   });
 }
+
+export function useWorkspaceMe() {
+  return useQuery({
+    queryKey: ["workspace-me"],
+    queryFn: () => api.workspaceMe(),
+    staleTime: 300_000,
+  });
+}
