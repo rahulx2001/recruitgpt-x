@@ -31,3 +31,11 @@ services:
         value: dev-user
       - key: CORS_ORIGINS
         value: '["https://recruitgpt-x.vercel.app","http://localhost:3000"]'
+      - key: LLM_PROVIDER_PREFERENCE
+        value: nvidia
+      - key: NVIDIA_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
+      - key: NVIDIA_MODEL
+        value: moonshotai/kimi-k2.6
+      - key: NVIDIA_API_KEY
+        sync: false

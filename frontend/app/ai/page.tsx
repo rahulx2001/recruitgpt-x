@@ -89,9 +89,14 @@ export default function AiRecruiterPage() {
           content: t.text,
         }));
         const res = await api.chat(jobId, q, history);
-        const cited = topCandidates.filter((c) =>
+        const replyLower = res.reply.toLowerCase();
+        const citedFromApi = topCandidates.filter((c) =>
           res.referenced_candidates?.includes(c.id as string)
         );
+        const citedFromText = topCandidates.filter((c) =>
+          replyLower.includes(c.name.toLowerCase())
+        );
+        const cited = citedFromApi.length > 0 ? citedFromApi : citedFromText;
         setTurns((t) => [
           ...t,
           {
@@ -100,16 +105,12 @@ export default function AiRecruiterPage() {
             guardrail: Boolean(res.guardrail_notice),
             citations:
               cited.length > 0
-                ? cited.map((c) => ({
+                ? cited.slice(0, 4).map((c) => ({
                     id: c.id,
                     candidate: c.name,
                     detail: `${c.matchScore}% · ${c.stage}`,
                   }))
-                : topCandidates.slice(0, 2).map((c) => ({
-                    id: c.id,
-                    candidate: c.name,
-                    detail: `${c.matchScore}% · ${c.stage}`,
-                  })),
+                : undefined,
           },
         ]);
       } else if (topCandidates.length > 0) {

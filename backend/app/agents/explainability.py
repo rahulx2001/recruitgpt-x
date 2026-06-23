@@ -19,6 +19,7 @@ from app.models.schemas import (
     TrajectoryScores,
 )
 from app.services.llm import get_llm
+from app.services.recruiter_chat import data_grounded_chat_response
 from app.utils.ai_guardrails import (
     CHAT_SYSTEM_GUARDRAILS,
     redact_assistant_output,
@@ -215,5 +216,15 @@ RECRUITER'S QUESTION: {safe_message}
 
 Answer as a recruiting partner."""
 
-    raw = await llm.complete(system, user, temperature=0.3)
-    return redact_assistant_output(raw)
+    if llm.provider == "mock":
+        return data_grounded_chat_response(blueprint, ranked, safe_message)
+
+    try:
+        raw = await llm.complete(system, user, temperature=0.3)
+        cleaned = (raw or "").strip()
+        # Reject silent mock/heuristic fallbacks when a live provider was expected
+        if cleaned.startswith('{"note":') or cleaned.startswith('{"note"'):
+            return data_grounded_chat_response(blueprint, ranked, safe_message)
+        return redact_assistant_output(cleaned)
+    except Exception:
+        return data_grounded_chat_response(blueprint, ranked, safe_message)

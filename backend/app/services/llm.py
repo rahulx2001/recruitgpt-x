@@ -100,9 +100,11 @@ class LLMService:
                 ]
             )
             return resp.content if isinstance(resp.content, str) else str(resp.content)
-        except Exception as e:
-            # Fallback to mock on failure so the demo never breaks
-            return self._mock_complete(system, user, error=str(e))
+        except Exception:
+            # Live provider failed — let callers fall back to data-grounded chat
+            if self._client is not None:
+                raise
+            return self._mock_complete(system, user)
 
     async def structured_complete(
         self,
