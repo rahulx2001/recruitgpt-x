@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
@@ -11,11 +12,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import CurrentUser, get_current_user
 from app.api.deps import get_session
+from app.models.schemas import RankedCandidate
+from app.services.ranking_repo import get_cached_ranking
 from app.services.workspace_data import (
     CandidateRow,
     RankingEntry,
     WorkspaceContext,
+    assign_candidate_role,
+    best_role_for_job,
     build_funnel,
+    candidate_matches_job,
+    job_display_meta,
     jobs_for_owner,
     load_submission_rankings,
     load_workspace_context,
@@ -33,7 +40,15 @@ _AVATAR_COLORS = [
 ]
 _ROUNDS = ["Technical screen", "System design", "Case study", "Skills deep-dive", "Final loop"]
 _INTERVIEWERS = ["Jordan Lee", "Priya Raman", "Sam Devi", "Alex Romero"]
-_WHEN_SCHEDULED = ["Today · 2:00 PM", "Today · 4:30 PM", "Tomorrow · 10:00 AM", "Wed · 3:00 PM", "Thu · 1:00 PM", "Fri · 11:30 AM"]
+_WHEN_SCHEDULED = [
+    "Today · 9:00 AM",
+    "Today · 11:00 AM",
+    "Today · 2:00 PM",
+    "Today · 4:30 PM",
+    "Tomorrow · 10:00 AM",
+    "Wed · 3:00 PM",
+]
+_STARTS_IN_MINUTES = [15, 20, 45, 90, 120, 180]
 _WHEN_UPCOMING = ["Next Mon · 9:00 AM", "Next Tue · 2:30 PM", "Next Wed · 11:00 AM"]
 _ANALYTICS_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
 _ACTIVITY_COLORS = ["#4F46E5", "#0E9F6E", "#7C3AED", "#C2780C", "#2563EB"]
@@ -66,6 +81,13 @@ class WorkspaceInterview(BaseModel):
     when: str
     status: str
     recommendation: str = ""
+    rank: int = 0
+    match_score: int = 0
+    pipeline_stage: str = ""
+    concern: str = ""
+    starts_in_minutes: Optional[int] = None
+    meeting_url: str = ""
+    scorecard_status: str = ""
 
 
 class WorkspaceStats(BaseModel):
@@ -102,14 +124,113 @@ class TrendPoint(BaseModel):
     score: int
 
 
-class WorkspaceAnalytics(BaseModel):
-    pool_label: str
-    candidate_count: int
-    kpis: List[AnalyticsKpi]
-    time_to_hire: List[TimeToHirePoint]
-    conversion_funnel: List[FunnelStage]
-    source_quality: List[SourceQualityPoint]
-    trends: List[TrendPoint]
+class HistogramBin(BaseModel):
+    bin: str
+    count: int
+
+
+class RecommendationMixItem(BaseModel):
+    tier: str
+    count: int
+    pct: float
+
+
+class StageConversion(BaseModel):
+    from_stage: str
+    to_stage: str
+    rate: float
+
+
+class RankBucketPoint(BaseModel):
+    bucket: str
+    avg_score: int
+    count: int
+    strong_hire_pct: float
+    hires: int = 0
+
+
+class SignalCoveragePoint(BaseModel):
+    signal: str
+    top10_pct: float
+    pool_pct: float
+    lift: float = 0.0
+
+
+class AnalyticsInsight(BaseModel):
+    severity: str
+    message: str
+    href: str
+
+
+class JobPipelineRow(BaseModel):
+    job_id: str
+    title: str
+    applied: int
+    screened: int
+    interview: int
+    offer: int
+    strong_hires: int
+    days_open: int
+
+
+class RankScatterPoint(BaseModel):
+    rank: int
+    score: int
+    candidate_id: str
+    name: str
+    recommendation: str
+
+
+class StageVelocityPoint(BaseModel):
+    stage: str
+    median_days: int
+
+
+class TopCandidateRow(BaseModel):
+    candidate_id: str
+    name: str
+    rank: int
+    score: int
+    stage: str
+    top_signal: str
+    concern: str = ""
+
+
+class InterviewsSummary(BaseModel):
+    scheduled: int
+    awaiting_feedback: int
+    completed: int
+    pass_rate: int
+
+
+class ExecutiveKpi(BaseModel):
+    label: str
+    value: str
+    delta: str
+    hint: str = ""
+    href: str = ""
+    definition: str = ""
+    delta_positive: bool = True
+
+
+class HealthAlertItem(BaseModel):
+    kind: str  # warn | ok
+    message: str
+    href: str = ""
+
+
+class RecruitingHealth(BaseModel):
+    title: str = "Recruiting health"
+    alerts: List[HealthAlertItem] = Field(default_factory=list)
+    cta_label: str = "Review candidates"
+    cta_href: str = "/candidates"
+
+
+class AiSummary(BaseModel):
+    headline: str
+    bottleneck: str
+    risk: str
+    recommendation: str
 
 
 class SyncStatus(BaseModel):
@@ -120,6 +241,32 @@ class SyncStatus(BaseModel):
     missing_in_db: List[str] = Field(default_factory=list)
     missing_in_submission: List[str] = Field(default_factory=list)
     message: str
+
+
+class WorkspaceAnalytics(BaseModel):
+    pool_label: str
+    candidate_count: int
+    kpis: List[AnalyticsKpi]
+    time_to_hire: List[TimeToHirePoint]
+    conversion_funnel: List[FunnelStage]
+    source_quality: List[SourceQualityPoint]
+    trends: List[TrendPoint]
+    executive_kpis: List[ExecutiveKpi] = Field(default_factory=list)
+    score_histogram: List[HistogramBin] = Field(default_factory=list)
+    recommendation_mix: List[RecommendationMixItem] = Field(default_factory=list)
+    stage_conversion: List[StageConversion] = Field(default_factory=list)
+    rank_buckets: List[RankBucketPoint] = Field(default_factory=list)
+    signal_coverage: List[SignalCoveragePoint] = Field(default_factory=list)
+    insights: List[AnalyticsInsight] = Field(default_factory=list)
+    jobs_pipeline: List[JobPipelineRow] = Field(default_factory=list)
+    rank_scatter: List[RankScatterPoint] = Field(default_factory=list)
+    stage_velocity: List[StageVelocityPoint] = Field(default_factory=list)
+    top_candidates: List[TopCandidateRow] = Field(default_factory=list)
+    interviews_summary: Optional[InterviewsSummary] = None
+    sync: Optional[SyncStatus] = None
+    score_stats: Dict[str, float] = Field(default_factory=dict)
+    recruiting_health: Optional[RecruitingHealth] = None
+    ai_summary: Optional[AiSummary] = None
 
 
 class ActivityItem(BaseModel):
@@ -138,15 +285,24 @@ class ShortlistMember(BaseModel):
     name: str
     avatar_color: str
     match_score: int
+    title: str = ""
+    stage: str = ""
+    recommendation: str = ""
 
 
 class ShortlistCard(BaseModel):
     id: str
+    job_id: str
     name: str
     job: str
     owner: str
     owner_color: str
     members: List[ShortlistMember]
+    department: str = ""
+    location: str = ""
+    status: str = "Open"
+    strong_hire_count: int = 0
+    interview_count: int = 0
 
 
 class SavedSearchItem(BaseModel):
@@ -237,6 +393,16 @@ def _build_interviews(ctx: WorkspaceContext) -> List[WorkspaceInterview]:
             continue
         rid = row.redrob_id
         role = row.orm.current_role or row.orm.headline or "Candidate"
+        when = _interview_when(rank, stage, status)
+        starts_in: Optional[int] = None
+        if status == "Scheduled" and when.startswith("Today"):
+            starts_in = _STARTS_IN_MINUTES[(rank - 1) % len(_STARTS_IN_MINUTES)]
+        if status == "Scheduled":
+            scorecard_status = "Pending"
+        elif status == "Awaiting feedback":
+            scorecard_status = "Overdue" if when == "Yesterday" else "Feedback Due"
+        else:
+            scorecard_status = "Submitted"
         interviews.append(
             WorkspaceInterview(
                 id=f"int_{rid}",
@@ -246,50 +412,405 @@ def _build_interviews(ctx: WorkspaceContext) -> List[WorkspaceInterview]:
                 role=role,
                 round=_ROUNDS[(rank - 1) % len(_ROUNDS)],
                 interviewer=_INTERVIEWERS[(rank - 1) % len(_INTERVIEWERS)],
-                when=_interview_when(rank, stage, status),
+                when=when,
                 status=status,
                 recommendation=(
                     score_to_recommendation(score) if status == "Completed" else ""
                 ),
+                rank=rank,
+                match_score=round(score * 100),
+                pipeline_stage=stage,
+                concern=_extract_concern(row.ranking.reasoning),
+                starts_in_minutes=starts_in,
+                meeting_url=(
+                    f"https://meet.google.com/lookup/{rid[-8:].lower()}"
+                    if status == "Scheduled"
+                    else ""
+                ),
+                scorecard_status=scorecard_status,
             )
         )
     return interviews
 
 
-def _build_analytics(ctx: WorkspaceContext) -> WorkspaceAnalytics:
-    matched = [r.ranking for r in ctx.candidates if r.ranking]
-    n = len(matched)
-    funnel = _funnel_models(ctx)
+_SIGNAL_RULES = [
+    ("IR / retrieval in career", ("retrieval", "ranking", "semantic search", "embedding", "faiss", "milvus", "qdrant")),
+    ("Production shipped language", ("production", "shipped", "deployed", "scaled")),
+    ("Core IR stack skills", ("faiss", "pinecone", "weaviate", "sentence transformer", "information retrieval")),
+    ("Availability concern flagged", ("notice period", "60-day", "90-day", "60 day", "90 day")),
+]
 
-    if n == 0:
-        return WorkspaceAnalytics(
-            pool_label=ctx.pool_label,
-            candidate_count=ctx.total,
-            kpis=[
-                AnalyticsKpi(label="Candidates in pool", value=str(ctx.total), delta="import data"),
-                AnalyticsKpi(label="Offer acceptance", value="—", delta="no rankings"),
-                AnalyticsKpi(label="Ranker coverage", value="0%", delta="run ranker"),
-                AnalyticsKpi(label="Candidate quality", value="—", delta="no scores"),
-            ],
-            time_to_hire=[],
-            conversion_funnel=funnel,
-            source_quality=[],
-            trends=[],
+_STAGE_VELOCITY_DAYS = {
+    "Applied": 4,
+    "Screened": 8,
+    "Interview": 14,
+    "Offer": 6,
+    "Hired": 3,
+}
+
+
+def _reasoning_text(row: CandidateRow) -> str:
+    return (row.ranking.reasoning if row.ranking else "").lower()
+
+
+def _has_signal(text: str, keywords: tuple[str, ...]) -> bool:
+    return any(kw in text for kw in keywords)
+
+
+def _extract_top_signal(reasoning: str) -> str:
+    if not reasoning:
+        return "Ranked from challenge submission"
+    m = re.search(r"JD fit:\s*([^\.]+)", reasoning, re.I)
+    if m:
+        return m.group(1).strip()[:80]
+    m = re.search(r"@\s*([^:]+):", reasoning)
+    if m:
+        return m.group(0).strip()[:80]
+    return reasoning.split(".")[0][:80]
+
+
+def _extract_concern(reasoning: str) -> str:
+    if not reasoning:
+        return ""
+    for label in ("Concerns:", "Watch items:", "Flags:", "Gaps to validate:"):
+        if label.lower() in reasoning.lower():
+            part = re.split(label, reasoning, flags=re.I)[-1]
+            return part.split(".")[0].strip()[:100]
+    return ""
+
+
+def _score_histogram(scores_pct: List[int]) -> List[HistogramBin]:
+    bins = [
+        ("0–60", 0, 60),
+        ("60–70", 60, 70),
+        ("70–80", 70, 80),
+        ("80–90", 80, 90),
+        ("90–100", 90, 101),
+    ]
+    out: List[HistogramBin] = []
+    for label, lo, hi in bins:
+        count = sum(1 for s in scores_pct if lo <= s < hi)
+        out.append(HistogramBin(bin=label, count=count))
+    return out
+
+
+def _stage_conversions(funnel_counts: Dict[str, int]) -> List[StageConversion]:
+    order = ["Applied", "Screened", "Interview", "Offer", "Hired"]
+    out: List[StageConversion] = []
+    for i in range(len(order) - 1):
+        a, b = order[i], order[i + 1]
+        from_n = funnel_counts.get(a, 0)
+        to_n = funnel_counts.get(b, 0)
+        rate = round(100 * to_n / from_n, 1) if from_n else 0.0
+        out.append(StageConversion(from_stage=a, to_stage=b, rate=rate))
+    return out
+
+
+def _build_signal_coverage(rows: List[CandidateRow]) -> List[SignalCoveragePoint]:
+    ranked = [r for r in rows if r.ranking]
+    if not ranked:
+        return []
+    top10 = [r for r in ranked if r.ranking and r.ranking.rank <= 10]
+    out: List[SignalCoveragePoint] = []
+    for label, keywords in _SIGNAL_RULES:
+        pool_hit = sum(1 for r in ranked if _has_signal(_reasoning_text(r), keywords))
+        top_hit = sum(1 for r in top10 if _has_signal(_reasoning_text(r), keywords))
+        pool_pct = round(100 * pool_hit / len(ranked), 1)
+        top_pct = round(100 * top_hit / max(len(top10), 1), 1)
+        out.append(
+            SignalCoveragePoint(
+                signal=label,
+                top10_pct=top_pct,
+                pool_pct=pool_pct,
+                lift=round(top_pct - pool_pct, 1),
+            )
+        )
+    return sorted(out, key=lambda s: -abs(s.lift))
+
+
+def _build_recruiting_health(
+    ctx: WorkspaceContext,
+    funnel_counts: Dict[str, int],
+    strong_in_applied: int,
+    sync: SyncStatus,
+    interview_rows: List[WorkspaceInterview],
+    awaiting_feedback: int,
+    trends: List[TrendPoint],
+) -> RecruitingHealth:
+    alerts: List[HealthAlertItem] = []
+    screened = funnel_counts.get("Screened", 0)
+    need_review = screened + strong_in_applied
+    if need_review > 0:
+        alerts.append(
+            HealthAlertItem(
+                kind="warn",
+                message=f"{need_review} candidate{'s' if need_review != 1 else ''} need review",
+                href="/candidates?stage=Screened",
+            )
+        )
+    if awaiting_feedback > 0:
+        alerts.append(
+            HealthAlertItem(
+                kind="warn",
+                message=f"{awaiting_feedback} scorecard{'s' if awaiting_feedback != 1 else ''} overdue",
+                href="/interviews",
+            )
+        )
+    unmatched = max(0, ctx.total - ctx.matched_count)
+    if unmatched > 0:
+        alerts.append(
+            HealthAlertItem(
+                kind="warn",
+                message=f"{unmatched} candidate{'s' if unmatched != 1 else ''} unmatched",
+                href="/settings",
+            )
+        )
+    if trends and len(trends) >= 2:
+        score_delta = trends[-1].score - trends[-2].score
+        if score_delta > 0:
+            alerts.append(
+                HealthAlertItem(
+                    kind="ok",
+                    message=f"Top candidate score increased {score_delta}%",
+                    href="/analytics",
+                )
+            )
+    today_iv = sum(1 for i in interview_rows if i.when.startswith("Today"))
+    active_iv = today_iv + awaiting_feedback
+    if active_iv > 0:
+        alerts.append(
+            HealthAlertItem(
+                kind="ok",
+                message=f"{active_iv} interview{'s' if active_iv != 1 else ''} active today",
+                href="/interviews",
+            )
+        )
+    if not alerts:
+        alerts.append(
+            HealthAlertItem(
+                kind="ok",
+                message="Pipeline healthy — review top 10 candidates",
+                href="/candidates",
+            )
+        )
+    cta_href = "/candidates"
+    if strong_in_applied > 0:
+        cta_href = "/candidates?filter=Strong+Hire"
+    elif awaiting_feedback > 0:
+        cta_href = "/interviews"
+    return RecruitingHealth(alerts=alerts[:5], cta_href=cta_href)
+
+
+def _build_ai_summary(
+    funnel_counts: Dict[str, int],
+    stage_conversion: List[StageConversion],
+    notice_flags: int,
+    strong_in_applied: int,
+    avg_score: int,
+) -> AiSummary:
+    applied = funnel_counts.get("Applied", 0)
+    screened = funnel_counts.get("Screened", 0)
+    interview = funnel_counts.get("Interview", 0)
+    screen_to_iv = next(
+        (c for c in stage_conversion if c.from_stage == "Screened" and c.to_stage == "Interview"),
+        None,
+    )
+    screen_rate = screen_to_iv.rate if screen_to_iv else 0.0
+    applied_to_screen = next(
+        (c for c in stage_conversion if c.from_stage == "Applied" and c.to_stage == "Screened"),
+        None,
+    )
+    applied_rate = applied_to_screen.rate if applied_to_screen else 0.0
+
+    if screen_rate < 20 and screened > 0:
+        headline = "Your hiring funnel is bottlenecked at screening."
+        bottleneck = (
+            f"{screened} candidates reached screening but only "
+            f"{interview} progressed to interviews ({screen_rate}% conversion)."
+        )
+    elif applied_rate < 25 and applied > 0:
+        headline = "Applied volume is not converting into screened candidates."
+        bottleneck = (
+            f"{applied} candidates applied with only {screened} screened "
+            f"({applied_rate}% conversion)."
+        )
+    else:
+        headline = "Pipeline is moving — focus on top-ranked finalists."
+        bottleneck = (
+            f"{applied} in Applied, {screened} screened, {interview} in interview "
+            f"(avg match {avg_score})."
         )
 
-    matched.sort(key=lambda r: r.rank)
-    scores = [r.score for r in matched]
+    if notice_flags:
+        risk = (
+            f"{notice_flags} high-scoring candidates in top-20 have notice "
+            "periods above 60 days."
+        )
+    else:
+        risk = "No major availability risks flagged in the top-20 pool."
+
+    if strong_in_applied > 0:
+        recommendation = (
+            f"Move {strong_in_applied} Strong Hire{'s' if strong_in_applied != 1 else ''} "
+            "from Applied to interview, then review top-20 for notice-period risk."
+        )
+    elif notice_flags:
+        recommendation = (
+            "Review top-20 candidates and prioritize those below a 60-day notice period."
+        )
+    else:
+        recommendation = "Review top-10 finalists and schedule interviews for this week."
+
+    return AiSummary(
+        headline=headline,
+        bottleneck=bottleneck,
+        risk=risk,
+        recommendation=recommendation,
+    )
+
+
+def _build_insights(
+    ctx: WorkspaceContext,
+    funnel_counts: Dict[str, int],
+    strong_in_applied: int,
+    sync: SyncStatus,
+    stage_conversion: List[StageConversion],
+) -> List[AnalyticsInsight]:
+    insights: List[AnalyticsInsight] = []
+    if strong_in_applied > 0:
+        insights.append(
+            AnalyticsInsight(
+                severity="high",
+                message=f"{strong_in_applied} Strong Hire{'s' if strong_in_applied != 1 else ''} still in Applied stage",
+                href="/candidates?filter=Strong+Hire",
+            )
+        )
+    screen_to_iv = next(
+        (c for c in stage_conversion if c.from_stage == "Screened" and c.to_stage == "Interview"),
+        None,
+    )
+    if screen_to_iv and screen_to_iv.rate < 15:
+        insights.append(
+            AnalyticsInsight(
+                severity="medium",
+                message=f"Screened → Interview conversion {screen_to_iv.rate}% (below 15% benchmark)",
+                href="/candidates?stage=Screened",
+            )
+        )
+    notice_flags = 0
+    for row in sorted_by_rank(ctx)[:20]:
+        if row.ranking and _has_signal(_reasoning_text(row), ("60-day", "90-day", "60 day", "90 day")):
+            notice_flags += 1
+    if notice_flags:
+        insights.append(
+            AnalyticsInsight(
+                severity="low",
+                message=f"{notice_flags} candidates in top-20 flagged with notice > 60d",
+                href="/candidates?shortlist=shortlist-top10",
+            )
+        )
+    if not sync.ok:
+        insights.append(
+            AnalyticsInsight(
+                severity="critical",
+                message=sync.message,
+                href="/settings",
+            )
+        )
+    if not insights:
+        insights.append(
+            AnalyticsInsight(
+                severity="low",
+                message="Pipeline and ranker coverage look healthy — review top-10 finalists",
+                href="/candidates",
+            )
+        )
+    return insights[:6]
+
+
+def _build_analytics(
+    ctx: WorkspaceContext,
+    *,
+    jobs: Optional[list] = None,
+    interviews: Optional[List[WorkspaceInterview]] = None,
+    sync: Optional[SyncStatus] = None,
+) -> WorkspaceAnalytics:
+    matched_entries = [r.ranking for r in ctx.candidates if r.ranking]
+    n = len(matched_entries)
+    funnel = _funnel_models(ctx)
+    funnel_counts = {f.stage: f.count for f in funnel}
+    sync_status = sync or _sync_status(ctx)
+    interview_rows = interviews or _build_interviews(ctx)
+
+    empty = WorkspaceAnalytics(
+        pool_label=ctx.pool_label,
+        candidate_count=ctx.total,
+        kpis=[
+            AnalyticsKpi(label="Candidates in pool", value=str(ctx.total), delta="import data"),
+            AnalyticsKpi(label="Ranker coverage", value="0%", delta="run ranker"),
+        ],
+        time_to_hire=[],
+        conversion_funnel=funnel,
+        source_quality=[],
+        trends=[],
+        sync=sync_status,
+        interviews_summary=InterviewsSummary(
+            scheduled=0, awaiting_feedback=0, completed=0, pass_rate=0
+        ),
+    )
+
+    if n == 0:
+        empty.executive_kpis = [
+            ExecutiveKpi(
+                label="Ranker coverage",
+                value="0%",
+                delta="import candidates",
+                href="/candidates",
+                definition="submission.csv rows matched in DB",
+            )
+        ]
+        return empty
+
+    matched_entries.sort(key=lambda r: r.rank)
+    scores = [r.score for r in matched_entries]
+    scores_pct = [round(s * 100) for s in scores]
     avg_score = sum(scores) / n
     quality = round(avg_score * 100)
-    hire_plus = sum(1 for s in scores if s >= 0.75)
     strong_hire = sum(1 for s in scores if s >= 0.88)
-    offer_rate = round(100 * hire_plus / n)
+    hire_plus = sum(1 for s in scores if s >= 0.75)
+    coverage = round(100 * ctx.matched_count / max(ctx.total, 1))
 
+    active_pipeline = (
+        funnel_counts.get("Screened", 0)
+        + funnel_counts.get("Interview", 0)
+        + funnel_counts.get("Offer", 0)
+    )
+    applied_n = max(funnel_counts.get("Applied", 0), 1)
+    hired_n = funnel_counts.get("Hired", 0)
+    pipeline_conversion = round(100 * hired_n / applied_n, 1)
+
+    scheduled = sum(1 for i in interview_rows if i.status == "Scheduled")
+    awaiting = sum(1 for i in interview_rows if i.status == "Awaiting feedback")
+    completed = sum(1 for i in interview_rows if i.status == "Completed")
+    pass_rate = 0
+    if completed:
+        pass_rate = round(
+            100
+            * sum(
+                1
+                for i in interview_rows
+                if i.status == "Completed"
+                and i.recommendation in ("Strong Hire", "Hire")
+            )
+            / completed
+        )
+
+    # Legacy modeled series — used for KPI trend deltas and charts
     time_to_hire: List[TimeToHirePoint] = []
     trends: List[TrendPoint] = []
     for i, month in enumerate(_ANALYTICS_MONTHS):
         cutoff = max(1, round((i + 1) * n / len(_ANALYTICS_MONTHS)))
-        bucket = matched[:cutoff]
+        bucket = matched_entries[:cutoff]
         bucket_scores = [r.score for r in bucket]
         bucket_avg = sum(bucket_scores) / len(bucket_scores)
         days = max(14, round(44 - bucket_avg * 14))
@@ -297,48 +818,272 @@ def _build_analytics(ctx: WorkspaceContext) -> WorkspaceAnalytics:
         trends.append(
             TrendPoint(
                 month=month,
-                rate=round(100 * sum(1 for s in bucket_scores if s >= 0.75) / len(bucket_scores)),
+                rate=round(
+                    100 * sum(1 for s in bucket_scores if s >= 0.75) / len(bucket_scores)
+                ),
                 score=round(bucket_avg * 100),
             )
         )
 
-    current_days = time_to_hire[-1].days
-    start_days = time_to_hire[0].days
-    time_delta = (
-        f"{start_days - current_days}d faster"
-        if start_days > current_days
-        else "stable pipeline"
+    score_trend_delta = 0
+    if len(trends) >= 2:
+        score_trend_delta = trends[-1].score - trends[-2].score
+    score_delta_label = (
+        f"{abs(score_trend_delta)} from last ranking run"
+        if score_trend_delta != 0
+        else "stable this cycle"
+    )
+    coverage_week_delta = min(12, max(0, coverage - 50)) if coverage > 50 else 0
+    coverage_delta_label = (
+        f"{coverage_week_delta}% this week"
+        if coverage_week_delta > 0 and sync_status.ok
+        else ("synced" if sync_status.ok else "needs sync")
     )
 
-    tiers = [("Top 10", 1, 10), ("Rank 11–30", 11, 30), ("Rank 31–60", 31, 60), ("Rank 61–100", 61, 100)]
+    executive_kpis = [
+        ExecutiveKpi(
+            label="Active pipeline",
+            value=str(active_pipeline),
+            delta=f"{funnel_counts.get('Interview', 0)} in interview",
+            hint="Screened + Interview + Offer",
+            href="/candidates",
+            definition="Count of candidates in active hiring stages from rank-derived funnel",
+        ),
+        ExecutiveKpi(
+            label="Strong hire pool",
+            value=str(strong_hire),
+            delta=f"{round(100 * strong_hire / n)}% of ranked pool",
+            hint="score ≥ 88%",
+            href="/candidates?filter=Strong+Hire",
+            definition="Candidates with ranker score ≥ 0.88 from submission.csv",
+        ),
+        ExecutiveKpi(
+            label="Avg match score",
+            value=str(quality),
+            delta=score_delta_label,
+            hint="across ranked pool",
+            href="/analytics",
+            definition="Arithmetic mean of submission.csv scores × 100",
+            delta_positive=score_trend_delta >= 0,
+        ),
+        ExecutiveKpi(
+            label="Pipeline conversion",
+            value=f"{pipeline_conversion}%",
+            delta="Applied → Hired",
+            hint="end-to-end",
+            href="/candidates",
+            definition="Hired count / Applied count from stage model",
+            delta_positive=pipeline_conversion > 0,
+        ),
+        ExecutiveKpi(
+            label="Interviews active",
+            value=str(scheduled + awaiting),
+            delta=f"{awaiting} awaiting feedback",
+            hint="scheduled this cycle",
+            href="/interviews",
+            definition="Scheduled + awaiting feedback from workspace interviews",
+        ),
+        ExecutiveKpi(
+            label="Ranker coverage",
+            value=f"{coverage}%",
+            delta=coverage_delta_label,
+            hint=f"{ctx.matched_count}/{ctx.total} matched",
+            href="/settings",
+            definition="DB candidates with submission.csv ranking match",
+            delta_positive=sync_status.ok,
+        ),
+    ]
+
+    tiers = [
+        ("Top 10", 1, 10),
+        ("Rank 11–30", 11, 30),
+        ("Rank 31–60", 31, 60),
+        ("Rank 61–100", 61, 100),
+    ]
+    rank_buckets: List[RankBucketPoint] = []
     source_quality: List[SourceQualityPoint] = []
     for label, lo, hi in tiers:
-        tier = [r for r in matched if lo <= r.rank <= hi]
+        tier = [r for r in matched_entries if lo <= r.rank <= hi]
         if not tier:
             continue
         tier_avg = sum(r.score for r in tier) / len(tier)
+        strong_pct = round(
+            100 * sum(1 for r in tier if r.score >= 0.88) / len(tier), 1
+        )
+        hires = sum(1 for r in tier if r.score >= 0.75)
+        rank_buckets.append(
+            RankBucketPoint(
+                bucket=label,
+                avg_score=round(tier_avg * 100),
+                count=len(tier),
+                strong_hire_pct=strong_pct,
+                hires=hires,
+            )
+        )
         source_quality.append(
             SourceQualityPoint(
                 source=label,
                 quality=round(tier_avg * 100),
-                hires=sum(1 for r in tier if r.score >= 0.75),
+                hires=hires,
             )
         )
 
-    coverage = round(100 * ctx.matched_count / max(ctx.total, 1))
+    rec_order = ["Strong Hire", "Hire", "Lean Hire", "Hold"]
+    rec_counts = {t: 0 for t in rec_order}
+    for s in scores:
+        rec_counts[score_to_recommendation(s)] += 1
+    recommendation_mix = [
+        RecommendationMixItem(
+            tier=t,
+            count=rec_counts[t],
+            pct=round(100 * rec_counts[t] / n, 1),
+        )
+        for t in rec_order
+        if rec_counts[t] > 0
+    ]
+
+    sorted_rows = sorted_by_rank(ctx)
+    rank_scatter = [
+        RankScatterPoint(
+            rank=row.ranking.rank,
+            score=round(row.ranking.score * 100),
+            candidate_id=row.redrob_id,
+            name=row.orm.full_name,
+            recommendation=score_to_recommendation(row.ranking.score),
+        )
+        for row in sorted_rows
+        if row.ranking
+    ]
+
+    top_candidates = []
+    for row in sorted_rows[:10]:
+        if not row.ranking:
+            continue
+        rank = row.ranking.rank
+        score = row.ranking.score
+        top_candidates.append(
+            TopCandidateRow(
+                candidate_id=row.redrob_id,
+                name=row.orm.full_name,
+                rank=rank,
+                score=round(score * 100),
+                stage=score_to_stage(rank, score),
+                top_signal=_extract_top_signal(row.ranking.reasoning),
+                concern=_extract_concern(row.ranking.reasoning),
+            )
+        )
+
+    strong_in_applied = sum(
+        1
+        for row in sorted_rows
+        if row.ranking
+        and score_to_recommendation(row.ranking.score) == "Strong Hire"
+        and score_to_stage(row.ranking.rank, row.ranking.score) == "Applied"
+    )
+
+    stage_conversion = _stage_conversions(funnel_counts)
+    signal_coverage = _build_signal_coverage(sorted_rows)
+    notice_flags = sum(
+        1
+        for row in sorted_rows[:20]
+        if row.ranking
+        and _has_signal(_reasoning_text(row), ("60-day", "90-day", "60 day", "90 day"))
+    )
+    insights = _build_insights(
+        ctx, funnel_counts, strong_in_applied, sync_status, stage_conversion
+    )
+    recruiting_health = _build_recruiting_health(
+        ctx,
+        funnel_counts,
+        strong_in_applied,
+        sync_status,
+        interview_rows,
+        awaiting,
+        trends,
+    )
+    ai_summary = _build_ai_summary(
+        funnel_counts,
+        stage_conversion,
+        notice_flags,
+        strong_in_applied,
+        quality,
+    )
+
+    jobs_pipeline: List[JobPipelineRow] = []
+    now = datetime.now(timezone.utc)
+    stages = _job_stages(ctx)
+    for job in jobs or []:
+        created = job.created_at
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+        days_open = max(1, (now - created).days)
+        jobs_pipeline.append(
+            JobPipelineRow(
+                job_id=str(job.id),
+                title=job.title.strip(),
+                applied=stages.applied,
+                screened=stages.screened,
+                interview=stages.interview,
+                offer=stages.offer,
+                strong_hires=min(10, strong_hire),
+                days_open=days_open,
+            )
+        )
+
+    sorted_pct = sorted(scores_pct)
+    mid = len(sorted_pct) // 2
+    median = sorted_pct[mid] if sorted_pct else 0
+    p90_idx = min(len(sorted_pct) - 1, int(len(sorted_pct) * 0.9))
+    p90 = sorted_pct[p90_idx] if sorted_pct else 0
+    if len(scores_pct) > 1:
+        mean = sum(scores_pct) / len(scores_pct)
+        variance = sum((x - mean) ** 2 for x in scores_pct) / len(scores_pct)
+        std_dev = variance ** 0.5
+    else:
+        std_dev = 0.0
+
     return WorkspaceAnalytics(
         pool_label=ctx.pool_label,
         candidate_count=ctx.total,
         kpis=[
-            AnalyticsKpi(label="Avg. time to hire", value=f"{current_days} days", delta=time_delta),
-            AnalyticsKpi(label="Offer acceptance", value=f"{offer_rate}%", delta=f"{strong_hire} strong hires"),
-            AnalyticsKpi(label="Candidates in pool", value=str(ctx.total), delta=f"{coverage}% ranker coverage"),
-            AnalyticsKpi(label="Candidate quality", value=str(quality), delta="avg match score"),
+            AnalyticsKpi(label="Avg match score", value=str(quality), delta="ranker mean"),
+            AnalyticsKpi(label="Strong hire pool", value=str(strong_hire), delta=f"{round(100 * strong_hire / n)}%"),
+            AnalyticsKpi(label="Ranker coverage", value=f"{coverage}%", delta="synced" if sync_status.ok else "gap"),
+            AnalyticsKpi(label="Hire+ rate (proxy)", value=f"{round(100 * hire_plus / n)}%", delta="score ≥ 0.75"),
         ],
         time_to_hire=time_to_hire,
         conversion_funnel=funnel,
         source_quality=source_quality,
         trends=trends,
+        executive_kpis=executive_kpis,
+        score_histogram=_score_histogram(scores_pct),
+        recommendation_mix=recommendation_mix,
+        stage_conversion=stage_conversion,
+        rank_buckets=rank_buckets,
+        signal_coverage=signal_coverage,
+        insights=insights,
+        jobs_pipeline=jobs_pipeline,
+        rank_scatter=rank_scatter,
+        stage_velocity=[
+            StageVelocityPoint(stage=s, median_days=d)
+            for s, d in _STAGE_VELOCITY_DAYS.items()
+        ],
+        top_candidates=top_candidates,
+        interviews_summary=InterviewsSummary(
+            scheduled=scheduled,
+            awaiting_feedback=awaiting,
+            completed=completed,
+            pass_rate=pass_rate,
+        ),
+        sync=sync_status,
+        score_stats={
+            "median": float(median),
+            "p90": float(p90),
+            "std_dev": round(std_dev, 1),
+            "mean": float(quality),
+        },
+        recruiting_health=recruiting_health,
+        ai_summary=ai_summary,
     )
 
 
@@ -364,39 +1109,135 @@ def _sync_status(ctx: WorkspaceContext) -> SyncStatus:
     )
 
 
-def _member(row: CandidateRow) -> ShortlistMember:
-    score = round(row.ranking.score * 100) if row.ranking else 0
+def _member(
+    row: CandidateRow,
+    ranked: Optional[RankedCandidate] = None,
+) -> ShortlistMember:
+    if ranked:
+        rank = ranked.rank
+        score = ranked.hireability_score
+    else:
+        rank = row.ranking.rank if row.ranking else 999
+        score = row.ranking.score if row.ranking else 0.0
     return ShortlistMember(
         candidate_id=row.redrob_id,
         name=row.orm.full_name,
         avatar_color=_avatar_color(row.redrob_id),
-        match_score=score,
+        match_score=round(score * 100),
+        title=row.orm.current_role or row.orm.headline or "Candidate",
+        stage=score_to_stage(rank, score),
+        recommendation=score_to_recommendation(score),
     )
 
 
-def _build_shortlists(ctx: WorkspaceContext) -> List[ShortlistCard]:
-    ranked = sorted_by_rank(ctx)
-    tiers = [
-        ("shortlist-top10", "Top 10 — interview ready", "Challenge pool", 0, 10, "Jordan Lee", "#4F46E5"),
-        ("shortlist-11-25", "Rank 11–25 — strong fits", "Challenge pool", 10, 25, "Priya Raman", "#0E9F6E"),
-        ("shortlist-26-50", "Rank 26–50 — pipeline depth", "Challenge pool", 25, 50, "Alex Romero", "#2563EB"),
+def _shortlist_pool_rows(
+    ctx: WorkspaceContext,
+    job_title: str,
+    by_uuid: Dict[str, CandidateRow],
+    ranking_rows: Optional[List[RankedCandidate]],
+) -> List[tuple[CandidateRow, Optional[RankedCandidate]]]:
+    pool: List[tuple[CandidateRow, Optional[RankedCandidate]]] = []
+    if ranking_rows:
+        for rc in ranking_rows:
+            row = by_uuid.get(str(rc.candidate_id))
+            if row:
+                pool.append((row, rc))
+        return pool
+
+    matched = [
+        r
+        for r in ctx.candidates
+        if r.ranking and candidate_matches_job(r, job_title)
     ]
+    matched = sorted(matched, key=lambda r: r.ranking.rank if r.ranking else 999)
+    if matched:
+        return [(r, None) for r in matched]
+
+    return [
+        (r, None)
+        for r in sorted_by_rank(ctx)
+        if r.ranking
+    ]
+
+
+def _job_shortlist_status(
+    pool: List[tuple[CandidateRow, Optional[RankedCandidate]]],
+    fallback: str,
+) -> str:
+    interview_count = 0
+    for row, ranked in pool:
+        rank = ranked.rank if ranked else (row.ranking.rank if row.ranking else 999)
+        score = (
+            ranked.hireability_score
+            if ranked
+            else (row.ranking.score if row.ranking else 0.0)
+        )
+        if score_to_stage(rank, score) == "Interview":
+            interview_count += 1
+    if interview_count >= 3:
+        return "Interviewing"
+    if interview_count > 0:
+        return "Open"
+    return fallback
+
+
+async def _build_shortlists(
+    ctx: WorkspaceContext,
+    session: AsyncSession,
+    jobs: list,
+) -> List[ShortlistCard]:
+    by_uuid = {row.orm.id: row for row in ctx.candidates}
     out: List[ShortlistCard] = []
-    for sid, name, job, lo, hi, owner, color in tiers:
-        members = [_member(r) for r in ranked[lo:hi] if r.ranking]
-        if not members:
-            continue
+
+    for job in jobs:
+        job_id = str(job.id)
+        meta = job_display_meta(job.title, job.description)
+        ranking = await get_cached_ranking(session, job_id)
+        ranking_rows = ranking.ranked_candidates if ranking else None
+        pool = _shortlist_pool_rows(ctx, job.title, by_uuid, ranking_rows)
+
+        members = [_member(row, ranked) for row, ranked in pool[:12]]
+        strong_hires = sum(
+            1
+            for row, ranked in pool
+            if score_to_recommendation(
+                ranked.hireability_score
+                if ranked
+                else (row.ranking.score if row.ranking else 0.0)
+            )
+            == "Strong Hire"
+        )
+        interview_count = sum(
+            1
+            for row, ranked in pool
+            if score_to_stage(
+                ranked.rank if ranked else (row.ranking.rank if row.ranking else 999),
+                ranked.hireability_score
+                if ranked
+                else (row.ranking.score if row.ranking else 0.0),
+            )
+            == "Interview"
+        )
+        status = _job_shortlist_status(pool, meta["status"])
+
         out.append(
             ShortlistCard(
-                id=sid,
-                name=name,
-                job=job,
-                owner=owner,
-                owner_color=color,
+                id=f"shortlist-{job_id}",
+                job_id=job_id,
+                name=f"{job.title} — finalists",
+                job=job.title,
+                owner=meta["owner"],
+                owner_color=meta["owner_color"],
                 members=members,
+                department=meta["department"],
+                location=meta["location"],
+                status=status,
+                strong_hire_count=strong_hires,
+                interview_count=interview_count,
             )
         )
-    return out
+
+    return sorted(out, key=lambda s: (-len(s.members), -s.strong_hire_count))
 
 
 def _build_activity(ctx: WorkspaceContext) -> List[ActivityItem]:
@@ -470,11 +1311,31 @@ def _build_search_meta(ctx: WorkspaceContext, jobs: list) -> SearchMeta:
 
     funnel = build_funnel(ctx)
     stage_counts = {f["stage"]: f["count"] for f in funnel}
-    saved = [
-        SavedSearchItem(name="Top 10 — interview ready", query="rank <= 10", count=stage_counts.get("Interview", 0), owner="Jordan Lee"),
-        SavedSearchItem(name="Screened pipeline", query="stage Screened", count=stage_counts.get("Screened", 0), owner="Priya Raman"),
-        SavedSearchItem(name="Applied backlog", query="stage Applied", count=stage_counts.get("Applied", 0), owner="Alex Romero"),
-    ]
+    saved = []
+    for job in jobs[:3]:
+        role = best_role_for_job(job.title)
+        meta = job_display_meta(job.title, job.description)
+        saved.append(
+            SavedSearchItem(
+                name=f"{job.title} finalists",
+                query=f"role {job.title}",
+                count=sum(
+                    1
+                    for r in ctx.candidates
+                    if r.ranking and assign_candidate_role(r) == role
+                ),
+                owner=meta["owner"],
+            )
+        )
+    if not saved:
+        saved = [
+            SavedSearchItem(
+                name="Challenge pool finalists",
+                query="top ranked candidates",
+                count=ctx.matched_count,
+                owner="Jordan Lee",
+            )
+        ]
 
     return SearchMeta(suggested=suggested[:4], recent=recent, saved=saved)
 
@@ -591,7 +1452,10 @@ async def workspace_analytics(
     user: CurrentUser = Depends(get_current_user),
 ):
     ctx = await load_workspace_context(session, user.user_id)
-    return _build_analytics(ctx)
+    jobs = await jobs_for_owner(session, user.user_id)
+    interviews = _build_interviews(ctx)
+    sync = _sync_status(ctx)
+    return _build_analytics(ctx, jobs=jobs, interviews=interviews, sync=sync)
 
 
 @router.get("/activity", response_model=List[ActivityItem])
@@ -609,7 +1473,8 @@ async def workspace_shortlists(
     user: CurrentUser = Depends(get_current_user),
 ):
     ctx = await load_workspace_context(session, user.user_id)
-    return _build_shortlists(ctx)
+    jobs = await jobs_for_owner(session, user.user_id)
+    return await _build_shortlists(ctx, session, jobs)
 
 
 @router.get("/search-meta", response_model=SearchMeta)

@@ -33,7 +33,7 @@ from app.models.schemas import (
 )
 from app.services.candidate_repo import list_candidate_profiles
 from app.services.indexing import index_job
-from app.services.job_repo import create_job, get_job, list_jobs, update_blueprint
+from app.services.job_repo import create_job, delete_job, get_job, list_jobs, update_blueprint
 from app.services.ranking_repo import get_cached_ranking, save_ranking_cache
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
@@ -273,6 +273,20 @@ async def get_job_endpoint(
     if not job:
         raise HTTPException(404, "Job not found")
     return job
+
+
+@router.delete("/{job_id}")
+async def delete_job_endpoint(
+    job_id: UUID,
+    session: AsyncSession = Depends(get_session),
+    user: CurrentUser = Depends(get_current_user),
+):
+    """Delete a job and its cached ranking — removes the linked shortlist card."""
+    deleted = await delete_job(session, str(job_id), owner_id=user.user_id)
+    if not deleted:
+        raise HTTPException(404, "Job not found")
+    await session.commit()
+    return {"ok": True, "job_id": str(job_id)}
 
 
 @router.get("/{job_id}/rank/stream")

@@ -5,7 +5,9 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app/AppShell";
 import { Avatar } from "@/components/app/Atoms";
+import { GoogleCalendarConnect } from "@/components/app/GoogleCalendarConnect";
 import { teamMembers } from "@/lib/mock";
+import { WORKSPACE_USER } from "@/lib/userProfile";
 
 const SECTIONS = [
   { id: "profile", label: "Profile" },
@@ -70,13 +72,18 @@ function SettingsView() {
               <div className="space-y-4">
                 {active === "profile" && (
                   <div className="flex items-center gap-3 mb-2">
-                    <Avatar name="Jordan Lee" color="#4F46E5" size={48} />
+                    <Avatar
+                      name={WORKSPACE_USER.name}
+                      color={WORKSPACE_USER.color}
+                      src={WORKSPACE_USER.avatarSrc}
+                      size={48}
+                    />
                     <div>
                       <div className="text-[15px] font-semibold text-ink">
-                        Jordan Lee
+                        {WORKSPACE_USER.name}
                       </div>
                       <div className="text-[13px] text-ink-muted">
-                        Head of Talent · Northwind
+                        {WORKSPACE_USER.role} · {WORKSPACE_USER.company}
                       </div>
                     </div>
                   </div>
@@ -92,6 +99,27 @@ function SettingsView() {
                   Save changes
                 </button>
               </div>
+            </div>
+          )}
+
+          {active === "workspace" && (
+            <div className="card p-5">
+              <h3 className="text-[14px] font-semibold text-ink mb-1">
+                Calendar integrations
+              </h3>
+              <p className="text-[12.5px] text-ink-muted mb-4">
+                Connect Google Workspace so interviewer busy times block scheduling
+                conflicts. HR, interviewers, and candidates all see the same slots.
+              </p>
+              <GoogleCalendarConnect
+                onConnect={() => setToast("Google Calendar demo sync enabled")}
+                onError={(msg) => setToast(msg)}
+              />
+              <ul className="text-[12px] text-ink-muted mt-4 space-y-1.5 list-disc pl-4">
+                <li>Reads free/busy from each interviewer&apos;s Google Calendar</li>
+                <li>Creates interview events with Google Meet links on schedule</li>
+                <li>Sends calendar invites to candidates automatically</li>
+              </ul>
             </div>
           )}
 

@@ -10,12 +10,6 @@ import {
   Download,
   Check,
   X,
-  Github,
-  MapPin,
-  Briefcase,
-  TrendingUp,
-  Calendar,
-  Target,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -28,6 +22,7 @@ import {
   Kpi,
 } from "@/components/app/Atoms";
 import { CandidatesLoadingShell } from "@/components/app/LoadingStates";
+import { CandidateDrawer } from "@/components/app/CandidateDrawer";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { mapApiCandidates } from "@/lib/candidateAdapter";
@@ -114,6 +109,7 @@ function CandidatesView() {
   const searchParams = useSearchParams();
   const stageParam = searchParams.get("stage") as PipelineStage | null;
   const highlightId = searchParams.get("highlight");
+  const openScorecard = searchParams.get("scorecard") === "1";
   const shortlistId = searchParams.get("shortlist");
   const { data: stats } = useWorkspaceStats();
   const { data: shortlists = [] } = useWorkspaceShortlists();
@@ -204,7 +200,7 @@ function CandidatesView() {
     if (!highlightId) return;
     const match = pool.find((c) => c.id === highlightId);
     if (match) setSelected(match);
-  }, [highlightId, pool]);
+  }, [highlightId, pool, openScorecard]);
 
   const advanceCandidate = React.useCallback((c: Candidate) => {
     const next = nextStage(c.stage);
@@ -392,9 +388,15 @@ function CandidatesView() {
       {activeShortlist && (
         <div className="insight-callout mb-4 flex items-center justify-between gap-3">
           <p className="text-[13px] text-ink-secondary">
-            Shortlist{" "}
-            <span className="font-semibold text-ink">{activeShortlist.name}</span>{" "}
-            · {activeShortlist.job}
+            Role shortlist{" "}
+            <span className="font-semibold text-ink">{activeShortlist.job}</span>
+            {activeShortlist.department ? (
+              <>
+                {" "}
+                · {activeShortlist.department}
+                {activeShortlist.location ? ` · ${activeShortlist.location}` : ""}
+              </>
+            ) : null}
           </p>
           <Link href="/candidates" className="text-action shrink-0">
             Clear
@@ -821,9 +823,20 @@ function CandidatesView() {
           rank={rankById.get(selected.id) ?? 0}
           poolSize={basePool.length}
           poolAvgs={poolAvgs}
-          onClose={() => setSelected(null)}
-          onAdvance={() => advanceCandidate(selected)}
-          onReject={() => rejectCandidate(selected)}
+          onClose={() => {
+            setSelected(null);
+            if (highlightId || openScorecard) {
+              const params = new URLSearchParams();
+              if (shortlistId) params.set("shortlist", shortlistId);
+              const qs = params.toString();
+              router.replace(qs ? `/candidates?${qs}` : "/candidates", {
+                scroll: false,
+              });
+            }
+          }}
+          readonly={openScorecard}
+          onAdvance={openScorecard ? undefined : () => advanceCandidate(selected)}
+          onReject={openScorecard ? undefined : () => rejectCandidate(selected)}
         />
       )}
 
@@ -836,263 +849,4 @@ function CandidatesView() {
   );
 }
 
-const PIPELINE_STEPS: PipelineStage[] = [
-  "Applied",
-  "Screened",
-  "Interview",
-  "Offer",
-  "Hired",
-];
 
-function deltaLabel(value: number, avg: number): { text: string; up: boolean } {
-  const d = value - avg;
-  if (d > 2) return { text: `+${d} vs pool avg`, up: true };
-  if (d < -2) return { text: `${d} vs pool avg`, up: false };
-  return { text: "Near pool average", up: false };
-}
-
-function CandidateDrawer({
-  candidate: c,
-  rank,
-  poolSize,
-  poolAvgs,
-  onClose,
-  onAdvance,
-  onReject,
-}: {
-  candidate: Candidate;
-  rank: number;
-  poolSize: number;
-  poolAvgs: { match: number; skills: number; experience: number; github: number };
-  onClose: () => void;
-  onAdvance: () => void;
-  onReject: () => void;
-}) {
-  const advanceLabel =
-    c.stage === "Hired"
-      ? "Already hired"
-      : c.stage === "Offer"
-      ? "Mark as hired"
-      : c.stage === "Interview"
-      ? "Advance to offer"
-      : c.stage === "Screened"
-      ? "Advance to interview"
-      : "Advance to screened";
-
-  const percentile =
-    rank > 0 && poolSize > 0
-      ? Math.max(1, Math.round(((poolSize - rank + 1) / poolSize) * 100))
-      : null;
-  const stageIdx = PIPELINE_STEPS.indexOf(c.stage);
-  const signals = [
-    { name: "Skills", value: c.skillsMatch, avg: poolAvgs.skills },
-    { name: "Experience", value: c.experienceMatch, avg: poolAvgs.experience },
-    { name: "GitHub", value: c.githubMatch, avg: poolAvgs.github },
-    { name: "Overall", value: c.matchScore, avg: poolAvgs.match },
-  ];
-
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <button
-        type="button"
-        className="overlay-backdrop"
-        aria-label="Close scorecard"
-        onClick={onClose}
-      />
-      <aside className="scorecard-drawer" aria-label="Candidate scorecard">
-        <div className="scorecard-drawer__head">
-          <div>
-            <h2 className="panel__title">Candidate scorecard</h2>
-            <p className="panel__subtitle">Ranker reasoning & fit signals</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn btn--icon"
-            aria-label="Close"
-          >
-            <X size={17} />
-          </button>
-        </div>
-
-        <div className="scorecard-drawer__body">
-          <div className="scorecard-hero">
-            <CandidateAvatar name={c.name} size={52} />
-            <div className="min-w-0">
-              <h3 className="scorecard-hero__title">{c.name}</h3>
-              <p className="scorecard-hero__sub">
-                {c.title}
-                {c.company && c.company !== "—" ? ` @ ${c.company}` : ""}
-              </p>
-              <p className="scorecard-hero__loc">
-                <MapPin size={12} /> {c.location}
-              </p>
-            </div>
-          </div>
-
-          <div className="scorecard-score-row">
-            <MatchScore value={c.matchScore} size={52} />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <RecommendationBadge value={c.recommendation} />
-                <StageBadge value={c.stage} />
-              </div>
-              <p className="text-[12px] text-ink-muted mt-2">
-                {c.experienceYears}y experience · Growth {c.trajectory.toLowerCase()}
-              </p>
-              <p className="text-[11.5px] text-ink-faint mt-1 inline-flex items-center gap-1">
-                <Github size={12} /> GitHub signal {c.githubScore}
-              </p>
-            </div>
-          </div>
-
-          <div className="scorecard-stats">
-            <div className="scorecard-stat">
-              <div className="scorecard-stat__label">Challenge rank</div>
-              <div className="scorecard-stat__value">
-                {rank > 0 ? `#${rank}` : "—"}
-              </div>
-              <div className="scorecard-stat__hint">
-                of {poolSize.toLocaleString()} candidates
-              </div>
-            </div>
-            <div className="scorecard-stat">
-              <div className="scorecard-stat__label">Percentile</div>
-              <div className="scorecard-stat__value">
-                {percentile != null ? `Top ${percentile}%` : "—"}
-              </div>
-              <div className="scorecard-stat__hint">vs challenge pool</div>
-            </div>
-            <div className="scorecard-stat">
-              <div className="scorecard-stat__label">Applied</div>
-              <div className="scorecard-stat__value">{c.appliedDaysAgo}d ago</div>
-              <div className="scorecard-stat__hint">in active pipeline</div>
-            </div>
-            <div className="scorecard-stat">
-              <div className="scorecard-stat__label">Target role</div>
-              <div className="scorecard-stat__value text-[13px] leading-snug">
-                {c.job}
-              </div>
-              <div className="scorecard-stat__hint">ranker calibration</div>
-            </div>
-          </div>
-
-          <div className="scorecard-section">
-            <div className="scorecard-section__label">Pipeline stage</div>
-            <div className="scorecard-pipeline__track">
-              {PIPELINE_STEPS.map((step, i) => (
-                <div
-                  key={step}
-                  className={`scorecard-pipeline__dot${
-                    i < stageIdx ? " is-done" : i === stageIdx ? " is-current" : ""
-                  }`}
-                />
-              ))}
-            </div>
-            <div className="scorecard-pipeline">
-              {PIPELINE_STEPS.map((step, i) => (
-                <span
-                  key={step}
-                  className={`scorecard-pipeline__step${
-                    i < stageIdx ? " is-done" : i === stageIdx ? " is-current" : ""
-                  }`}
-                >
-                  {step}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="scorecard-section">
-            <div className="scorecard-section__label">Fit signals vs pool</div>
-            <div className="scorecard-signals">
-              {signals.map((s) => {
-                const d = deltaLabel(s.value, s.avg);
-                return (
-                  <div key={s.name} className="scorecard-signal">
-                    <div className="scorecard-signal__row">
-                      <span className="scorecard-signal__name">{s.name}</span>
-                      <span className="scorecard-signal__value">{s.value}</span>
-                    </div>
-                    <div
-                      className={`scorecard-signal__delta${d.up ? " is-up" : " is-down"}`}
-                    >
-                      {d.text}
-                    </div>
-                    <div className="meter mt-2">
-                      <div
-                        className="meter__fill"
-                        style={{ width: `${s.value}%`, background: "var(--ink)" }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <p className="text-[11px] text-ink-faint mt-2 inline-flex items-center gap-3 flex-wrap">
-              <span className="inline-flex items-center gap-1">
-                <TrendingUp size={11} /> Trajectory: {c.trajectory}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Target size={11} /> Pool avg: {poolAvgs.match}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Briefcase size={11} /> {c.company}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <Calendar size={11} /> {c.skills.length} skills indexed
-              </span>
-            </p>
-          </div>
-
-          <div className="scorecard-section">
-            <div className="scorecard-section__label">Skills</div>
-            <div className="scorecard-skills">
-              {c.skills.map((s) => (
-                <span key={s} className="badge badge--neutral">
-                  {s}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="scorecard-section">
-            <div className="scorecard-section__label">Why this ranking</div>
-            <div className="scorecard-reasoning">
-              {c.reasons.map((r) => (
-                <div key={r} className="scorecard-reasoning__item">
-                  <Check size={13} className="text-positive shrink-0 mt-0.5" />
-                  <span>{r}</span>
-                </div>
-              ))}
-              {c.concern && (
-                <div className="scorecard-reasoning__concern">
-                  <span className="text-warning font-semibold">Watch: </span>
-                  {c.concern}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="scorecard-drawer__foot">
-          <button
-            type="button"
-            className="btn btn--primary flex-1"
-            disabled={c.stage === "Hired"}
-            onClick={onAdvance}
-          >
-            {advanceLabel}
-          </button>
-          <button
-            type="button"
-            className="btn btn--secondary text-critical"
-            onClick={onReject}
-          >
-            Remove
-          </button>
-        </div>
-      </aside>
-    </div>
-  );
-}

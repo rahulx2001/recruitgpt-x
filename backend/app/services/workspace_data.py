@@ -202,3 +202,198 @@ def top_skills(ctx: WorkspaceContext, limit: int = 8) -> List[str]:
 
 async def jobs_for_owner(session: AsyncSession, owner_id: str) -> list:
     return await list_jobs(session, owner_id)
+
+
+ROLE_CATALOG: List[dict] = [
+    {
+        "slug": "senior-ml-engineer",
+        "title": "Senior ML Engineer",
+        "department": "Engineering",
+        "location": "Pune / Remote",
+        "owner": "Jordan Lee",
+        "owner_color": "#4F46E5",
+        "status": "Interviewing",
+        "keywords": (
+            "machine learning",
+            "ml engineer",
+            "recommendation",
+            "ranking",
+            "retrieval",
+            "pytorch",
+            "tensorflow",
+            "embedding",
+            "recsys",
+            "nlp",
+            "computer vision",
+        ),
+    },
+    {
+        "slug": "data-scientist",
+        "title": "Data Scientist",
+        "department": "Data",
+        "location": "Remote (India)",
+        "owner": "Jordan Lee",
+        "owner_color": "#4F46E5",
+        "status": "Interviewing",
+        "keywords": (
+            "data scientist",
+            "statistician",
+            "experimentation",
+            "causal",
+            "analytics",
+            "ab test",
+            "forecasting",
+        ),
+    },
+    {
+        "slug": "backend-engineer",
+        "title": "Backend Engineer",
+        "department": "Engineering",
+        "location": "Pune / Hybrid",
+        "owner": "Alex Romero",
+        "owner_color": "#2563EB",
+        "status": "Offer stage",
+        "keywords": (
+            "backend",
+            "golang",
+            "java",
+            "node.js",
+            "microservice",
+            "kafka",
+            "postgresql",
+            "distributed systems",
+            "api engineer",
+        ),
+    },
+    {
+        "slug": "product-analyst",
+        "title": "Product Analyst",
+        "department": "Data",
+        "location": "Bengaluru",
+        "owner": "Priya Raman",
+        "owner_color": "#0E9F6E",
+        "status": "Open",
+        "keywords": (
+            "product analyst",
+            "product analytics",
+            "growth analyst",
+            "funnel",
+            "amplitude",
+            "mixpanel",
+            "sql analyst",
+        ),
+    },
+    {
+        "slug": "business-analyst",
+        "title": "Business Analyst",
+        "department": "Operations",
+        "location": "Noida",
+        "owner": "Sam Devi",
+        "owner_color": "#C2780C",
+        "status": "Open",
+        "keywords": (
+            "business analyst",
+            "operations analyst",
+            "stakeholder",
+            "requirements",
+            "process mapping",
+            "excel",
+        ),
+    },
+]
+
+
+def _profile_text(row: CandidateRow) -> str:
+    orm = row.orm
+    skills = " ".join((s.skill_name or "") for s in (orm.skills or []))
+    return " ".join(
+        filter(
+            None,
+            [
+                orm.current_role or "",
+                orm.headline or "",
+                skills,
+                row.ranking.reasoning if row.ranking else "",
+            ],
+        )
+    ).lower()
+
+
+def assign_candidate_role(row: CandidateRow) -> str:
+    text = _profile_text(row)
+    best_title = ROLE_CATALOG[0]["title"]
+    best_score = 0
+    for role in ROLE_CATALOG:
+        score = sum(1 for kw in role["keywords"] if kw in text)
+        if score > best_score:
+            best_score = score
+            best_title = role["title"]
+    if best_score == 0:
+        rid = row.redrob_id
+        idx = sum(ord(ch) for ch in rid) % len(ROLE_CATALOG)
+        best_title = ROLE_CATALOG[idx]["title"]
+    return best_title
+
+
+def role_catalog_by_title() -> Dict[str, dict]:
+    return {r["title"]: r for r in ROLE_CATALOG}
+
+
+def _normalize_title(title: str) -> str:
+    t = title.lower().replace("machine learning", "ml")
+    return re.sub(r"[^a-z0-9]+", "", t)
+
+
+def title_similarity(a: str, b: str) -> int:
+    na = _normalize_title(a)
+    nb = _normalize_title(b)
+    if not na or not nb:
+        return 0
+    if na in nb or nb in na:
+        return max(len(na), len(nb))
+    tokens_a = set(re.findall(r"[a-z]+", a.lower()))
+    tokens_b = set(re.findall(r"[a-z]+", b.lower()))
+    return len(tokens_a & tokens_b)
+
+
+def best_role_for_job(job_title: str) -> str:
+    best_title = ROLE_CATALOG[0]["title"]
+    best_score = 0
+    for role in ROLE_CATALOG:
+        score = title_similarity(job_title, role["title"])
+        if score > best_score:
+            best_score = score
+            best_title = role["title"]
+    return best_title
+
+
+def candidate_matches_job(row: CandidateRow, job_title: str) -> bool:
+    assigned = assign_candidate_role(row)
+    target_role = best_role_for_job(job_title)
+    if assigned == target_role:
+        return True
+    nj = _normalize_title(job_title)
+    na = _normalize_title(assigned)
+    nt = _normalize_title(target_role)
+    return bool(na and (na in nj or nj in na or nt in nj or nj in nt))
+
+
+def job_display_meta(job_title: str, description: str = "") -> dict:
+    dept = ""
+    location = ""
+    for line in description.split("\n")[:6]:
+        line = line.strip()
+        if line.lower().startswith("department:"):
+            dept = line.split(":", 1)[1].strip()
+        if line.lower().startswith("location:"):
+            location = line.split(":", 1)[1].strip()
+
+    catalog = role_catalog_by_title()
+    role = catalog.get(best_role_for_job(job_title), ROLE_CATALOG[0])
+    return {
+        "department": dept or role["department"],
+        "location": location or role["location"],
+        "owner": role["owner"],
+        "owner_color": role["owner_color"],
+        "status": role["status"],
+    }

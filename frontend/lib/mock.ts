@@ -588,7 +588,7 @@ export const suggestedQuestions = [
 ];
 
 export const teamMembers = [
-  { name: "Jordan Lee", role: "Head of Talent", color: AV.indigo },
+  { name: "Priya Sharma", role: "Head of Talent", color: AV.indigo },
   { name: "Priya Raman", role: "Recruiter", color: AV.teal },
   { name: "Alex Romero", role: "Eng Recruiter", color: AV.blue },
   { name: "Sam Devi", role: "Sourcer", color: AV.amber },

@@ -65,6 +65,22 @@ async def list_jobs(session: AsyncSession, owner_id: str) -> List[Job]:
     return [_to_job(r) for r in res.scalars().all()]
 
 
+async def delete_job(
+    session: AsyncSession,
+    job_id: str,
+    *,
+    owner_id: str,
+) -> bool:
+    stmt = select(JobORM).where(JobORM.id == job_id, JobORM.owner_id == owner_id)
+    res = await session.execute(stmt)
+    row = res.scalar_one_or_none()
+    if not row:
+        return False
+    await session.delete(row)
+    await session.flush()
+    return True
+
+
 async def update_blueprint(
     session: AsyncSession,
     job_id: str,

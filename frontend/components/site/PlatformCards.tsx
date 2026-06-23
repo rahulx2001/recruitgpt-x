@@ -33,18 +33,12 @@ export function PlatformCards() {
   return (
     <section className="section section--alt" id="platform">
       <div className="container">
-        <motion.div
-          className="text-center max-w-2xl mx-auto mb-14"
-          initial={reduceMotion ? false : { opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        >
+        <div className="text-center max-w-2xl mx-auto mb-14">
           <span className="h-eyebrow">Platform</span>
           <h2 className="h-display text-[clamp(40px,4.5vw,64px)] text-ink mt-3">
             A new kind of recruiting platform
           </h2>
-        </motion.div>
+        </div>
 
         <div className="grid md:grid-cols-3 gap-5">
           {cards.map((c, i) => {
@@ -53,8 +47,8 @@ export function PlatformCards() {
               <motion.article
                 key={c.title}
                 className={`platform-card ${c.warm ? "platform-card--warm" : ""}`}
-                initial={reduceMotion ? false : { opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={false}
+                whileInView={reduceMotion ? undefined : { y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{
                   duration: 0.75,

@@ -2,73 +2,51 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import { mapApiCandidates } from "@/lib/candidateAdapter";
+import {
+  Plus,
+  Sparkles,
+  ChevronRight,
+  Users,
+} from "lucide-react";
+import { AppShell } from "@/components/app/AppShell";
+import { Avatar, KpiLink, SectionHeader } from "@/components/app/Atoms";
+import {
+  DashboardLoadingShell,
+  KpiGridSkeleton,
+} from "@/components/app/LoadingStates";
+import { RecruitingHealthSummary } from "@/components/app/RecruitingHealthSummary";
+import { AiInsightsCard } from "@/components/app/AiInsightsCard";
+import {
+  AttentionQueue,
+  buildAttentionQueue,
+} from "@/components/app/AttentionQueue";
+import { TopCandidatesTable } from "@/components/app/TopCandidatesTable";
+import { PipelineSnapshot } from "@/components/app/PipelineSnapshot";
+import { TodaySchedule } from "@/components/app/TodaySchedule";
+import { JobPipelineRow } from "@/components/app/JobPipelineRow";
 import { useWorkspaceStats } from "@/lib/useWorkspaceStats";
 import { useWorkspaceInterviews } from "@/lib/useWorkspaceInterviews";
 import { useWorkspaceAnalytics } from "@/lib/useWorkspaceAnalytics";
 import {
   useWorkspaceActivity,
   useWorkspaceJobsOverview,
-  useWorkspaceInsight,
 } from "@/lib/useWorkspaceBundle";
 import {
-  ArrowUpRight,
-  Plus,
-  Sparkles,
-  ChevronRight,
-  Briefcase,
-  Users,
-  CalendarClock,
-  TrendingUp,
-} from "lucide-react";
-import { AppShell } from "@/components/app/AppShell";
-import {
-  Avatar,
-  KpiLink,
-  SectionHeader,
-  FeaturedCandidate,
-  RankedCandidateRow,
-} from "@/components/app/Atoms";
-import { DashboardLoadingShell } from "@/components/app/LoadingStates";
-import type { PipelineStage } from "@/lib/mock";
-import { funnelColor } from "@/lib/funnelColors";
-
-function funnelHref(stage: PipelineStage): string {
-  const params = new URLSearchParams({ stage });
-  return `/candidates?${params.toString()}`;
-}
+  dashboardGreeting,
+  dashboardDateLabel,
+  syncPillLabel,
+  filterDashboardActivity,
+  resolveRecruitingHealth,
+} from "@/lib/dashboardUtils";
 
 export default function DashboardPage() {
-  const router = useRouter();
   const { data: stats, isLoading: statsLoading } = useWorkspaceStats();
-  const { data: analytics } = useWorkspaceAnalytics();
+  const { data: analytics, isLoading: analyticsLoading } = useWorkspaceAnalytics();
   const { data: interviews = [] } = useWorkspaceInterviews();
   const { data: activity = [] } = useWorkspaceActivity();
   const { data: jobs = [] } = useWorkspaceJobsOverview();
-  const { data: insight } = useWorkspaceInsight();
 
-  const { data: apiCandidates } = useQuery({
-    queryKey: ["candidates"],
-    queryFn: () => api.listCandidates(),
-  });
-  const { data: rankings = [] } = useQuery({
-    queryKey: ["challenge-rankings"],
-    queryFn: () => api.challengeRankings(),
-  });
-
-  const topCandidates = React.useMemo(() => {
-    if (!apiCandidates?.length) return [];
-    return mapApiCandidates(apiCandidates, rankings).slice(0, 5);
-  }, [apiCandidates, rankings]);
-
-  const featured = topCandidates[0];
-  const runners = topCandidates.slice(1, 5);
-
-  const funnel = stats?.funnel ?? [];
-  const maxFunnel = Math.max(...funnel.map((s) => s.count), 1);
+  const funnel = stats?.funnel ?? analytics?.conversion_funnel ?? [];
   const hiredCount = funnel.find((s) => s.stage === "Hired")?.count ?? 0;
   const appliedCount = funnel.find((s) => s.stage === "Applied")?.count ?? 0;
   const funnelRate =
@@ -76,63 +54,133 @@ export default function DashboardPage() {
       ? `${((hiredCount / appliedCount) * 100).toFixed(1)}%`
       : "—";
 
-  const offerKpi = analytics?.kpis.find((k) => k.label === "Offer acceptance");
-  const timeToHire = analytics?.time_to_hire ?? [];
-  const maxDays = Math.max(...timeToHire.map((t) => t.days), 1);
-  const currentDays = timeToHire[timeToHire.length - 1]?.days;
+  const topCandidates = React.useMemo(() => {
+    const rows = analytics?.top_candidates ?? [];
+    if (rows.length >= 8) return rows.slice(0, 8);
+    const extra = (analytics?.rank_scatter ?? [])
+      .filter((p) => !rows.some((r) => r.candidate_id === p.candidate_id))
+      .slice(0, 8 - rows.length)
+      .map((p) => ({
+        candidate_id: p.candidate_id,
+        name: p.name,
+        rank: p.rank,
+        score: p.score,
+        stage:
+          p.rank <= 10
+            ? "Interview"
+            : p.rank <= 30
+            ? "Screened"
+            : "Applied",
+        top_signal: "Ranked from challenge pool",
+        concern: "",
+      }));
+    return [...rows, ...extra].slice(0, 8);
+  }, [analytics]);
+
+  const attentionItems = React.useMemo(
+    () => buildAttentionQueue(topCandidates, interviews),
+    [topCandidates, interviews]
+  );
+
   const todayInterviews = interviews.filter((i) => i.when.startsWith("Today"));
+  const awaitingFeedback = interviews.filter(
+    (i) => i.status === "Awaiting feedback"
+  );
+  const filteredActivity = filterDashboardActivity(activity);
+
+  const recruitingHealth = resolveRecruitingHealth(analytics);
+  const sync = analytics?.sync;
+  const matched = sync?.matched_rankings ?? stats?.ranked_count ?? 0;
+  const total = sync?.db_candidates ?? stats?.candidates ?? 0;
+  const syncLabel = syncPillLabel(
+    stats?.synced ?? sync?.ok ?? false,
+    matched,
+    total
+  );
+
+  const sortedJobs = [...jobs].sort(
+    (a, b) => b.stages.interview - a.stages.interview || b.days_open - a.days_open
+  );
+
+  const jobsPipelineMap = new Map(
+    (analytics?.jobs_pipeline ?? []).map((j) => [j.job_id, j])
+  );
+
+  const initialLoad = statsLoading && analyticsLoading && !stats && !analytics;
 
   const subtitle = stats
-    ? `${stats.jobs} roles · ${stats.candidates.toLocaleString()} candidates · ${stats.synced ? "rankings synced" : "import pending"}`
+    ? `${dashboardDateLabel()} · ${stats.jobs} open roles · ${stats.candidates.toLocaleString()} candidates`
     : "Loading workspace…";
 
   return (
     <AppShell
-      title="Dashboard"
+      title={`${dashboardGreeting()}, Jordan`}
       subtitle={subtitle}
       actions={
         <>
+          <Link
+            href="/settings"
+            className={`sync-pill sync-pill--${syncLabel.tone}`}
+          >
+            {syncLabel.text}
+          </Link>
+          <Link href="/candidates" className="btn btn--primary btn--sm">
+            <Users size={15} /> Review top 10
+          </Link>
           <Link href="/ai" className="btn btn--secondary btn--sm">
             <Sparkles size={15} /> Ask RecruitGPT
           </Link>
-          <Link href="/jobs/new" className="btn btn--primary btn--sm">
+          <Link href="/jobs/new" className="btn btn--ghost btn--sm">
             <Plus size={15} /> New job
           </Link>
         </>
       }
     >
-      {statsLoading && !stats ? (
+      {initialLoad ? (
         <DashboardLoadingShell />
       ) : (
-        <div className="bento bento--dash">
-          <div className="bento__span-12 metrics-row">
-            <KpiLink
-              href="/jobs"
-              label="Active jobs"
-              value={stats ? String(stats.jobs) : "—"}
-              hint="open requisitions"
-              icon={Briefcase}
-            />
-            <KpiLink
-              href="/candidates"
-              label="Candidates"
-              value={stats ? stats.candidates.toLocaleString() : "—"}
-              hint={stats?.pool_label ?? "challenge pool"}
-              icon={Users}
-            />
-            <KpiLink
-              href="/interviews"
-              label="Interviews"
-              value={stats ? String(stats.interviews) : "—"}
-              hint="scheduled"
-              icon={CalendarClock}
-            />
-            <KpiLink
-              href="/analytics"
-              label="Offer acceptance"
-              value={offerKpi?.value ?? "—"}
-              delta={offerKpi?.delta}
-              icon={TrendingUp}
+        <div className="bento bento--dash gap-4">
+          {recruitingHealth && (
+            <div className="bento__span-12">
+              <RecruitingHealthSummary health={recruitingHealth} />
+            </div>
+          )}
+
+          <div className="bento__span-12">
+            {analytics?.executive_kpis?.length ? (
+              <div className="metrics-row metrics-row--6">
+                {analytics.executive_kpis.map((kpi) => (
+                  <KpiLink
+                    key={kpi.label}
+                    href={kpi.href || "/analytics"}
+                    label={kpi.label}
+                    value={kpi.value}
+                    delta={kpi.delta}
+                    hint={kpi.hint}
+                    definition={kpi.definition}
+                    positive={kpi.delta_positive ?? true}
+                  />
+                ))}
+              </div>
+            ) : (
+              <KpiGridSkeleton count={6} />
+            )}
+          </div>
+
+          {analytics?.ai_summary && (
+            <div className="bento__span-12">
+              <AiInsightsCard summary={analytics.ai_summary} />
+            </div>
+          )}
+
+          <div className="bento__span-8">
+            <AttentionQueue items={attentionItems} />
+          </div>
+          <div className="bento__span-4">
+            <TodaySchedule
+              todayInterviews={todayInterviews}
+              awaitingFeedback={awaitingFeedback}
+              scorecardsPending={stats?.scorecards_pending ?? awaitingFeedback.length}
             />
           </div>
 
@@ -140,8 +188,8 @@ export default function DashboardPage() {
             <div className="panel panel--flush h-full">
               <div className="panel__head">
                 <SectionHeader
-                  title="Top ranked candidates"
-                  subtitle="Challenge ranker · highest match scores"
+                  title="Top ranked"
+                  subtitle="Challenge ranker · submission.csv"
                   action={
                     <Link href="/candidates" className="text-action">
                       View all <ChevronRight size={13} />
@@ -149,115 +197,23 @@ export default function DashboardPage() {
                   }
                 />
               </div>
-              {featured ? (
-                <>
-                  <FeaturedCandidate
-                    candidate={featured}
-                    href={`/candidates?highlight=${featured.id}`}
-                  />
-                  {runners.map((c, i) => (
-                    <RankedCandidateRow
-                      key={c.id}
-                      rank={i + 2}
-                      candidate={c}
-                      href={`/candidates?highlight=${c.id}`}
-                    />
-                  ))}
-                </>
-              ) : (
-                <p className="panel__body text-[13px] text-ink-muted">
-                  No candidates loaded — run import-challenge-candidates.sh
-                </p>
-              )}
+              <TopCandidatesTable rows={topCandidates} />
             </div>
           </div>
-
-          <div className="bento__span-5 flex flex-col gap-4">
-            <div className="panel">
-              <div className="panel__head panel__head--inline">
-                <SectionHeader
-                  title="Hiring funnel"
-                  subtitle="Stage distribution"
-                  action={
-                    <Link href="/analytics" className="text-action font-semibold text-ink tnum">
-                      {funnelRate}
-                    </Link>
-                  }
-                />
-              </div>
-              <div className="panel__body panel__body--tight">
-                <div className="funnel-compact">
-                  {funnel.map((s, i) => {
-                    const pct = (s.count / maxFunnel) * 100;
-                    return (
-                      <button
-                        key={s.stage}
-                        type="button"
-                        className="funnel-compact__row"
-                        onClick={() =>
-                          router.push(funnelHref(s.stage as PipelineStage))
-                        }
-                      >
-                        <span className="funnel-compact__label">{s.stage}</span>
-                        <div className="funnel-compact__track">
-                          <div
-                            className="funnel-compact__fill"
-                            style={{
-                              width: `${Math.max(pct, 4)}%`,
-                              background: funnelColor(s.stage, i),
-                            }}
-                          />
-                        </div>
-                        <span className="funnel-compact__count">
-                          {s.count.toLocaleString()}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <Link href="/analytics" className="panel block card--hover">
-              <div className="panel__head panel__head--inline">
-                <SectionHeader
-                  title="Time to hire"
-                  subtitle="Monthly trend"
-                  action={
-                    <span className="text-[13px] font-semibold text-ink tnum inline-flex items-center gap-1">
-                      <TrendingUp size={13} className="text-positive" />
-                      {currentDays != null ? `${currentDays}d` : "—"}
-                    </span>
-                  }
-                />
-              </div>
-              <div className="panel__body panel__body--tight">
-                <div className="mini-bars">
-                  {timeToHire.map((t, idx) => (
-                    <div
-                      key={t.month}
-                      className={`mini-bars__col${idx === timeToHire.length - 1 ? " is-current" : ""}`}
-                      title={`${t.month}: ${t.days} days`}
-                    >
-                      <div
-                        className="mini-bars__bar"
-                        style={{
-                          height: `${Math.max((t.days / maxDays) * 100, 8)}%`,
-                        }}
-                      />
-                      <span className="mini-bars__label">{t.month.slice(0, 3)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </Link>
+          <div className="bento__span-5">
+            <PipelineSnapshot
+              funnel={funnel}
+              stageConversion={analytics?.stage_conversion ?? []}
+              hireRate={funnelRate}
+            />
           </div>
 
-          <div className="bento__span-8">
+          <div className="bento__span-12">
             <div className="panel">
               <div className="panel__head">
                 <SectionHeader
                   title="Open requisitions"
+                  subtitle="Sorted by interview activity"
                   action={
                     <Link href="/jobs" className="text-action">
                       All jobs <ChevronRight size={13} />
@@ -266,144 +222,73 @@ export default function DashboardPage() {
                 />
               </div>
               <div className="panel__body panel__body--list">
-                <div className="panel__list">
-                {jobs.slice(0, 5).map((j) => (
-                  <Link key={j.id} href={`/jobs/${j.id}`} className="job-row">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[13px] font-semibold text-ink truncate">
-                        {j.title}
-                      </div>
-                      <div className="text-[12px] text-ink-muted">
-                        {j.candidate_count} candidates · {j.status}
-                      </div>
-                    </div>
-                    <div className="job-row__stat">
-                      <div className="text-[15px] font-semibold text-ink tnum">
-                        {j.stages.interview}
-                      </div>
-                      <div className="text-[11px] text-ink-faint">in interview</div>
-                    </div>
-                    <span className="badge badge--neutral">{j.days_open}d</span>
-                    <ArrowUpRight size={14} className="text-ink-faint shrink-0" />
-                  </Link>
-                ))}
-                </div>
+                {sortedJobs.length > 0 ? (
+                  <div className="panel__list">
+                    {sortedJobs.slice(0, 5).map((j) => {
+                      const pipe = jobsPipelineMap.get(j.id);
+                      return (
+                        <JobPipelineRow
+                          key={j.id}
+                          id={j.id}
+                          title={j.title}
+                          status={j.status}
+                          daysOpen={j.days_open}
+                          stages={j.stages}
+                          candidateCount={j.candidate_count}
+                          strongHires={pipe?.strong_hires}
+                        />
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-10 px-4">
+                    <p className="text-[14px] font-medium text-ink">
+                      No open requisitions yet
+                    </p>
+                    <p className="text-[13px] text-ink-muted mt-1">
+                      Create a job to start ranking candidates and building shortlists.
+                    </p>
+                    <Link href="/jobs/new" className="btn btn--primary btn--sm mt-4">
+                      <Plus size={15} /> Create job
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="bento__span-4 flex flex-col gap-4">
+          <div className="bento__span-12">
             <div className="panel">
               <div className="panel__head">
                 <SectionHeader
                   title="Recent activity"
                   action={
-                    <button
-                      type="button"
-                      className="text-action"
-                      onClick={() => router.push("/candidates")}
-                    >
-                      Pipeline
-                    </button>
-                  }
-                />
-              </div>
-              <div className="panel__body panel__body--list">
-                <div className="panel__list">
-                {activity.slice(0, 5).map((a) => (
-                  <button
-                    key={a.id}
-                    type="button"
-                    className="feed-item"
-                    onClick={() => router.push(a.href)}
-                  >
-                    <Avatar name={a.actor} color={a.actor_color} size={28} />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[12.5px] text-ink-secondary leading-snug">
-                        <span className="font-semibold text-ink">{a.actor}</span>{" "}
-                        {a.action}{" "}
-                        <span className="font-semibold text-ink">{a.target}</span>
-                      </p>
-                      <p className="text-[11.5px] text-ink-faint truncate mt-0.5">
-                        {a.time}
-                      </p>
-                    </div>
-                  </button>
-                ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="panel">
-              <div className="panel__head">
-                <SectionHeader
-                  title="Today's interviews"
-                  action={
-                    <Link href="/interviews" className="text-action">
-                      Calendar
+                    <Link href="/candidates" className="text-action">
+                      View all activity →
                     </Link>
                   }
                 />
               </div>
               <div className="panel__body panel__body--list">
                 <div className="panel__list">
-                {todayInterviews.length > 0 ? (
-                  todayInterviews.slice(0, 4).map((i) => (
-                    <button
-                      key={i.id}
-                      type="button"
-                      className="feed-item"
-                      onClick={() => router.push("/interviews")}
-                    >
-                      <Avatar
-                        name={i.candidate}
-                        color={i.candidate_color}
-                        size={28}
-                      />
+                  {filteredActivity.map((a) => (
+                    <Link key={a.id} href={a.href} className="feed-item">
+                      <Avatar name={a.actor} color={a.actor_color} size={28} />
                       <div className="min-w-0 flex-1">
-                        <div className="text-[12.5px] font-semibold text-ink truncate">
-                          {i.candidate}
-                        </div>
-                        <div className="text-[11.5px] text-ink-muted truncate">
-                          {i.round} · {i.interviewer}
-                        </div>
+                        <p className="text-[12.5px] text-ink-secondary leading-snug">
+                          <span className="font-semibold text-ink">{a.actor}</span>{" "}
+                          {a.action}{" "}
+                          <span className="font-semibold text-ink">{a.target}</span>
+                        </p>
+                        <p className="text-[11.5px] text-ink-faint truncate mt-0.5">
+                          {a.context} · {a.time}
+                        </p>
                       </div>
-                      <span className="text-[11.5px] font-medium text-ink-secondary whitespace-nowrap">
-                        {i.when.replace("Today · ", "")}
-                      </span>
-                    </button>
-                  ))
-                ) : (
-                  <p className="text-[12.5px] text-ink-muted py-2 px-2">
-                    No interviews today.
-                  </p>
-                )}
+                    </Link>
+                  ))}
                 </div>
               </div>
             </div>
-
-            {insight && insight.screened_count > 0 && (
-              <div className="insight-callout">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles size={14} className="text-accent" />
-                  <span className="text-[12px] font-semibold text-ink">
-                    Pipeline insight
-                  </span>
-                </div>
-                <p className="text-[12.5px] text-ink-secondary leading-relaxed">
-                  <span className="font-semibold text-ink">
-                    {insight.screened_count} candidates
-                  </span>{" "}
-                  in Screened — {insight.candidate_names}
-                </p>
-                <Link
-                  href="/candidates?stage=Screened"
-                  className="btn btn--primary btn--sm mt-3 inline-flex"
-                >
-                  Review <ArrowUpRight size={13} />
-                </Link>
-              </div>
-            )}
           </div>
         </div>
       )}

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar } from "./Atoms";
+import { WORKSPACE_USER } from "@/lib/userProfile";
 import { Dropdown, DropdownItem } from "./Dropdown";
 import {
   ShellOverlays,
@@ -117,8 +118,14 @@ export function AppShell({
       />
       <aside className="sidebar">
         <Link href="/" className="sidebar__brand">
-          <span className="sidebar__mark">R</span>
-          RecruitGPT&nbsp;X
+          <img
+            src="/favicon.svg"
+            alt=""
+            width={28}
+            height={28}
+            className="sidebar__avatar"
+          />
+          <span className="sidebar__brand-name">RecruitGPT&nbsp;X</span>
         </Link>
 
         <button
@@ -178,13 +185,18 @@ export function AppShell({
                 aria-label="Open profile menu"
                 aria-haspopup="menu"
               >
-                <Avatar name="Jordan Lee" color="#4F46E5" size={30} />
+                <Avatar
+                  name={WORKSPACE_USER.name}
+                  color={WORKSPACE_USER.color}
+                  src={WORKSPACE_USER.avatarSrc}
+                  size={30}
+                />
                 <div className="min-w-0 flex-1">
                   <div className="text-[13px] font-semibold text-ink truncate">
-                    Jordan Lee
+                    {WORKSPACE_USER.name}
                   </div>
                   <div className="text-2xs text-ink-faint truncate">
-                    Head of Talent
+                    {WORKSPACE_USER.role}
                   </div>
                 </div>
               </button>

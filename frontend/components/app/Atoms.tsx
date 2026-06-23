@@ -22,11 +22,25 @@ export function Avatar({
   name,
   color,
   size = 32,
+  src,
 }: {
   name: string;
   color: string;
   size?: number;
+  src?: string;
 }) {
+  if (src) {
+    return (
+      <img
+        src={src}
+        alt={name}
+        width={size}
+        height={size}
+        className="avatar ring-2 ring-white/80 object-cover"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   return (
     <span
       className="avatar ring-2 ring-white/80"
@@ -230,8 +244,9 @@ export function KpiLink({
   value,
   delta,
   hint,
-  positive = true,
+  positive,
   icon,
+  definition,
 }: {
   href: string;
   label: string;
@@ -240,15 +255,17 @@ export function KpiLink({
   hint?: string;
   positive?: boolean;
   icon?: LucideIcon;
+  definition?: string;
 }) {
+  const trendUp = positive ?? true;
   return (
-    <Link href={href} className="kpi kpi--link">
+    <Link href={href} className="kpi kpi--link kpi--tall" title={definition}>
       <KpiBody
         label={label}
         value={value}
         delta={delta}
         hint={hint}
-        positive={positive}
+        positive={trendUp}
         icon={icon}
       />
     </Link>

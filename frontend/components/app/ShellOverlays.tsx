@@ -189,6 +189,7 @@ export const defaultQuickFindItems: QuickFindItem[] = [
   { group: "Navigate", label: "Jobs", href: "/jobs" },
   { group: "Navigate", label: "Candidates", href: "/candidates" },
   { group: "Navigate", label: "Search", href: "/search" },
+  { group: "Navigate", label: "Shortlists", href: "/shortlists" },
   { group: "Navigate", label: "Interviews", href: "/interviews" },
   { group: "Navigate", label: "AI Recruiter", href: "/ai" },
   { group: "Navigate", label: "Analytics", href: "/analytics" },

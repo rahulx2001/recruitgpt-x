@@ -1,30 +1,205 @@
-import {
-  candidateQuality,
-  conversionFunnel,
-  offerAcceptance,
-  sourceQuality,
-  timeToHire,
-} from "./mock";
+import type { WorkspaceAnalyticsPayload } from "./analyticsTypes";
 
 /** Offline fallback when the analytics API is unreachable. */
-export const analyticsFallback = {
+export const analyticsFallback: WorkspaceAnalyticsPayload = {
   pool_label: "challenge_top_100",
   candidate_count: 100,
   kpis: [
-    { label: "Avg. time to hire", value: "26 days", delta: "15d faster" },
-    { label: "Offer acceptance", value: "73%", delta: "trending up" },
-    { label: "Candidates in pool", value: "100", delta: "100% ranker coverage" },
-    { label: "Candidate quality", value: "84", delta: "+13 pts since Jan" },
+    { label: "Avg match score", value: "72", delta: "ranker mean" },
+    { label: "Strong hire pool", value: "8", delta: "8%" },
+    { label: "Ranker coverage", value: "100%", delta: "synced" },
+    { label: "Hire+ rate (proxy)", value: "34%", delta: "score ≥ 0.75" },
   ],
-  time_to_hire: timeToHire,
-  conversion_funnel: conversionFunnel.map((row, i) => ({
-    ...row,
-    color: ["#5d2a1a", "#6b3826", "#7d4832", "#915640", "#a6654e"][i],
+  time_to_hire: [
+    { month: "Mar", days: 38 },
+    { month: "Apr", days: 35 },
+    { month: "May", days: 32 },
+    { month: "Jun", days: 30 },
+  ],
+  conversion_funnel: [
+    { stage: "Applied", count: 73, color: "#5d2a1a" },
+    { stage: "Screened", count: 17, color: "#6b3826" },
+    { stage: "Interview", count: 10, color: "#7d4832" },
+    { stage: "Offer", count: 0, color: "#915640" },
+    { stage: "Hired", count: 0, color: "#a6654e" },
+  ],
+  source_quality: [
+    { source: "Top 10", quality: 88, hires: 9 },
+    { source: "Rank 11–30", quality: 68, hires: 12 },
+    { source: "Rank 31–60", quality: 52, hires: 8 },
+    { source: "Rank 61–100", quality: 38, hires: 5 },
+  ],
+  trends: [
+    { month: "Mar", rate: 28, score: 68 },
+    { month: "Apr", rate: 31, score: 70 },
+    { month: "May", rate: 33, score: 71 },
+    { month: "Jun", rate: 34, score: 72 },
+  ],
+  executive_kpis: [
+    {
+      label: "Active pipeline",
+      value: "27",
+      delta: "10 in interview",
+      hint: "Screened + Interview + Offer",
+      href: "/candidates",
+      definition: "Active hiring stages from rank-derived funnel",
+    },
+    {
+      label: "Strong hire pool",
+      value: "8",
+      delta: "8% of ranked pool",
+      hint: "score ≥ 88%",
+      href: "/candidates",
+      definition: "submission.csv scores ≥ 0.88",
+    },
+    {
+      label: "Avg match score",
+      value: "72",
+      delta: "8 from last ranking run",
+      href: "/analytics",
+      definition: "Mean submission score × 100",
+      delta_positive: true,
+    },
+    {
+      label: "Pipeline conversion",
+      value: "0%",
+      delta: "Applied → Hired",
+      href: "/candidates",
+      definition: "End-to-end funnel conversion",
+    },
+    {
+      label: "Interviews active",
+      value: "12",
+      delta: "4 awaiting feedback",
+      href: "/interviews?filter=today",
+      definition: "Scheduled + awaiting feedback",
+    },
+    {
+      label: "Ranker coverage",
+      value: "100%",
+      delta: "12% this week",
+      hint: "100/100 matched",
+      href: "/settings",
+      definition: "DB ↔ submission.csv match rate",
+      delta_positive: true,
+    },
+  ],
+  score_histogram: [
+    { bin: "0–60", count: 18 },
+    { bin: "60–70", count: 22 },
+    { bin: "70–80", count: 28 },
+    { bin: "80–90", count: 20 },
+    { bin: "90–100", count: 12 },
+  ],
+  recommendation_mix: [
+    { tier: "Strong Hire", count: 8, pct: 8 },
+    { tier: "Hire", count: 26, pct: 26 },
+    { tier: "Lean Hire", count: 34, pct: 34 },
+    { tier: "Hold", count: 32, pct: 32 },
+  ],
+  stage_conversion: [
+    { from_stage: "Applied", to_stage: "Screened", rate: 23.3 },
+    { from_stage: "Screened", to_stage: "Interview", rate: 58.8 },
+    { from_stage: "Interview", to_stage: "Offer", rate: 0 },
+    { from_stage: "Offer", to_stage: "Hired", rate: 0 },
+  ],
+  rank_buckets: [
+    { bucket: "Top 10", avg_score: 88, count: 10, strong_hire_pct: 40, hires: 9 },
+    { bucket: "Rank 11–30", avg_score: 68, count: 20, strong_hire_pct: 10, hires: 12 },
+    { bucket: "Rank 31–60", avg_score: 52, count: 30, strong_hire_pct: 3, hires: 8 },
+    { bucket: "Rank 61–100", avg_score: 38, count: 40, strong_hire_pct: 0, hires: 5 },
+  ],
+  signal_coverage: [
+    { signal: "IR / retrieval in career", top10_pct: 90, pool_pct: 62, lift: 28 },
+    { signal: "Core IR stack skills", top10_pct: 80, pool_pct: 45, lift: 35 },
+    { signal: "Production shipped language", top10_pct: 70, pool_pct: 38, lift: 32 },
+    { signal: "Availability concern flagged", top10_pct: 30, pool_pct: 24, lift: 6 },
+  ],
+  insights: [
+    {
+      severity: "high",
+      message: "5 Strong Hires still in Applied stage",
+      href: "/candidates",
+    },
+    {
+      severity: "medium",
+      message: "Screened → Interview conversion 58.8% — review pass criteria",
+      href: "/candidates",
+    },
+    {
+      severity: "low",
+      message: "3 candidates in top-20 flagged with notice > 60d",
+      href: "/candidates",
+    },
+  ],
+  jobs_pipeline: [
+    {
+      job_id: "demo-1",
+      title: "Senior Machine Learning Engineer",
+      applied: 73,
+      screened: 17,
+      interview: 10,
+      offer: 0,
+      strong_hires: 8,
+      days_open: 18,
+    },
+  ],
+  rank_scatter: Array.from({ length: 30 }, (_, i) => ({
+    rank: i + 1,
+    score: Math.max(35, 99 - i * 2),
+    candidate_id: `CAND_DEMO_${i}`,
+    name: `Candidate ${i + 1}`,
+    recommendation:
+      i < 8 ? "Strong Hire" : i < 25 ? "Hire" : i < 55 ? "Lean Hire" : "Hold",
   })),
-  source_quality: sourceQuality,
-  trends: offerAcceptance.map((row, i) => ({
-    month: row.month,
-    rate: row.rate,
-    score: candidateQuality[i]?.score ?? 80,
+  stage_velocity: [
+    { stage: "Applied", median_days: 4 },
+    { stage: "Screened", median_days: 8 },
+    { stage: "Interview", median_days: 14 },
+    { stage: "Offer", median_days: 6 },
+    { stage: "Hired", median_days: 3 },
+  ],
+  top_candidates: Array.from({ length: 5 }, (_, i) => ({
+    candidate_id: `CAND_DEMO_${i}`,
+    name: `Top Candidate ${i + 1}`,
+    rank: i + 1,
+    score: 99 - i * 3,
+    stage: "Interview",
+    top_signal: "Semantic search & ranking ownership",
+    concern: i === 0 ? "90-day notice period" : "",
   })),
+  interviews_summary: {
+    scheduled: 8,
+    awaiting_feedback: 4,
+    completed: 3,
+    pass_rate: 67,
+  },
+  sync: {
+    ok: true,
+    db_candidates: 100,
+    submission_rows: 100,
+    matched_rankings: 100,
+    message: "All 100 candidates synced with submission.csv",
+  },
+  score_stats: { median: 71, p90: 91, std_dev: 14.2, mean: 72 },
+  recruiting_health: {
+    title: "Recruiting health",
+    alerts: [
+      { kind: "warn", message: "12 candidates need review", href: "/candidates?stage=Screened" },
+      { kind: "warn", message: "3 scorecards overdue", href: "/interviews?filter=feedback" },
+      { kind: "warn", message: "0 candidates unmatched", href: "/settings" },
+      { kind: "ok", message: "Top candidate score increased 8%", href: "/analytics" },
+      { kind: "ok", message: "12 interviews active today", href: "/interviews?filter=today" },
+    ],
+    cta_label: "Review candidates",
+    cta_href: "/candidates",
+  },
+  ai_summary: {
+    headline: "Your hiring funnel is bottlenecked at screening.",
+    bottleneck:
+      "17 candidates reached screening but only 10 progressed to interviews (58.8% conversion).",
+    risk: "3 high-scoring candidates in top-20 have notice periods above 60 days.",
+    recommendation:
+      "Review top-20 candidates and prioritize those below a 60-day notice period.",
+  },
 };

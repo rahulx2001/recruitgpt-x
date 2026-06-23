@@ -31,12 +31,12 @@ export function SiteNav() {
           </span>
           RecruitGPT X
         </Link>
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="site-nav__links hidden md:flex items-center gap-1">
           {links.map((l) => (
             <a
               key={l.href}
               href={l.href}
-              className="px-3 py-2 text-[15px] font-450 text-ink hover:text-ash transition-colors"
+              className="site-nav__link px-3 py-2 text-[15px] text-ink hover:text-ash transition-colors"
             >
               {l.label}
             </a>

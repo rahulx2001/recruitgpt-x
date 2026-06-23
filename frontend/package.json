@@ -3,8 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "lsof -ti :3000 | xargs kill -9 2>/dev/null; lsof -ti :3001 | xargs kill -9 2>/dev/null || true",
-    "dev": "rm -rf .next && next dev",
+    "dev": "next dev",
     "dev:clean": "lsof -ti :3000 | xargs kill -9 2>/dev/null; lsof -ti :3001 | xargs kill -9 2>/dev/null; rm -rf .next && next dev",
     "dev:stable": "lsof -ti :3000 | xargs kill -9 2>/dev/null; rm -rf .next && next build && next start",
     "preview": "npm run build && next start",

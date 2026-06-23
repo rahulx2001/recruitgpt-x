@@ -110,6 +110,10 @@ export const api = {
     description: string;
     blueprint?: HiringBlueprint;
   }) => http<Job>("/api/jobs", { method: "POST", json: payload }),
+  deleteJob: (id: string) =>
+    http<{ ok: boolean; job_id: string }>(`/api/jobs/${id}`, {
+      method: "DELETE",
+    }),
   listJobs: () => http<Job[]>("/api/jobs"),
   getJob: (id: string) => http<Job>(`/api/jobs/${id}`),
   rankJob: (id: string, refresh = false) =>
@@ -182,15 +186,24 @@ export const api = {
     http<
       Array<{
         id: string;
+        job_id: string;
         name: string;
         job: string;
         owner: string;
         owner_color: string;
+        department: string;
+        location: string;
+        status: string;
+        strong_hire_count: number;
+        interview_count: number;
         members: Array<{
           candidate_id: string;
           name: string;
           avatar_color: string;
           match_score: number;
+          title: string;
+          stage: string;
+          recommendation: string;
         }>;
       }>
     >("/api/workspace/shortlists"),
@@ -231,18 +244,19 @@ export const api = {
         when: string;
         status: "Scheduled" | "Awaiting feedback" | "Completed";
         recommendation: string;
+        rank?: number;
+        match_score?: number;
+        pipeline_stage?: string;
+        concern?: string;
+        starts_in_minutes?: number | null;
+        meeting_url?: string;
+        scorecard_status?: string;
       }>
     >("/api/workspace/interviews"),
   workspaceAnalytics: () =>
-    http<{
-      pool_label: string;
-      candidate_count: number;
-      kpis: Array<{ label: string; value: string; delta: string }>;
-      time_to_hire: Array<{ month: string; days: number }>;
-      conversion_funnel: Array<{ stage: string; count: number; color: string }>;
-      source_quality: Array<{ source: string; quality: number; hires: number }>;
-      trends: Array<{ month: string; rate: number; score: number }>;
-    }>("/api/workspace/analytics"),
+    http<import("./analyticsTypes").WorkspaceAnalyticsPayload>(
+      "/api/workspace/analytics"
+    ),
   challengeRankings: () =>
     http<
       Array<{
@@ -252,6 +266,29 @@ export const api = {
         reasoning: string;
       }>
     >("/api/workspace/challenge-rankings"),
+
+  // Google Calendar (Workspace)
+  calendarStatus: () =>
+    http<{
+      configured: boolean;
+      connected: boolean;
+      provider: string;
+      account_email?: string | null;
+      message: string;
+    }>("/api/calendar/status"),
+  calendarOAuthUrl: () =>
+    http<{ url: string | null; demo: boolean; message?: string }>(
+      "/api/calendar/oauth/url"
+    ),
+  calendarFreeBusy: (interviewer: string, date: string) =>
+    http<{
+      date: string;
+      interviewer: string;
+      blocks: Array<{ start: string; end: string; label: string; source: string }>;
+      synced: boolean;
+    }>(
+      `/api/calendar/freebusy?interviewer=${encodeURIComponent(interviewer)}&date=${date}`
+    ),
 };
 
 export { API_BASE };

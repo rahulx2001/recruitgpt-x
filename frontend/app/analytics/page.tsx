@@ -2,10 +2,17 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { Download, RefreshCw } from "lucide-react";
 import { AppShell } from "@/components/app/AppShell";
+import { RecruitingHealthSummary } from "@/components/app/RecruitingHealthSummary";
+import { InsightsPanel } from "@/components/app/InsightsPanel";
+import { AiInsightsCard } from "@/components/app/AiInsightsCard";
 import { useWorkspaceAnalytics } from "@/lib/useWorkspaceAnalytics";
+import { resolveRecruitingHealth } from "@/lib/dashboardUtils";
 import { analyticsFallback } from "@/lib/analyticsFallback";
+import { filterAnalyticsByPeriod } from "@/lib/analyticsPeriod";
+import type { AnalyticsPeriod } from "@/lib/analyticsTypes";
 
 const AnalyticsCharts = dynamic(
   () =>
@@ -13,22 +20,29 @@ const AnalyticsCharts = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+      <div className="space-y-3.5">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="chart-card h-[300px] animate-pulse bg-subtle/30" />
+          <div key={i} className="chart-card h-[280px] animate-pulse bg-subtle/30" />
         ))}
       </div>
     ),
   }
 );
 
-const PERIODS = ["7d", "30d", "90d", "YTD"] as const;
+const PERIODS: AnalyticsPeriod[] = ["7d", "30d", "90d", "YTD"];
+
+const PERIOD_HINT: Record<AnalyticsPeriod, string> = {
+  "7d": "Top 25 ranks · 1 month trend",
+  "30d": "Top 50 ranks · 2 month trend",
+  "90d": "Top 75 ranks · 4 month trend",
+  YTD: "Full pool · 6 month trend",
+};
 
 export default function AnalyticsPage() {
   const { data, isLoading, isError, isFetching, refetch, error } =
     useWorkspaceAnalytics();
   const [timedOut, setTimedOut] = React.useState(false);
-  const [period, setPeriod] = React.useState<(typeof PERIODS)[number]>("30d");
+  const [period, setPeriod] = React.useState<AnalyticsPeriod>("30d");
 
   React.useEffect(() => {
     if (!isLoading) {
@@ -40,40 +54,23 @@ export default function AnalyticsPage() {
   }, [isLoading]);
 
   const usingFallback = isError || timedOut;
-  const analytics = data ?? (usingFallback ? analyticsFallback : null);
+  const raw = data ?? (usingFallback ? analyticsFallback : null);
+  const analytics = React.useMemo(
+    () => (raw ? filterAnalyticsByPeriod(raw, period) : null),
+    [raw, period]
+  );
+  const recruitingHealth = React.useMemo(
+    () => resolveRecruitingHealth(analytics),
+    [analytics]
+  );
 
   const subtitle = data
-    ? `${data.candidate_count.toLocaleString()} candidates · ranker-derived metrics`
+    ? `${data.candidate_count.toLocaleString()} candidates · ranker intelligence + pipeline health`
     : usingFallback
     ? "Cached demo data — backend unreachable"
     : isLoading
     ? "Loading analytics…"
     : "Analytics unavailable";
-
-  const heroMetrics = analytics
-    ? [
-        {
-          label: "Pool size",
-          value: analytics.candidate_count.toLocaleString(),
-          hint: "challenge candidates",
-        },
-        {
-          label: "Time to hire",
-          value: `${analytics.time_to_hire.at(-1)?.days ?? "—"}d`,
-          hint: "current month",
-        },
-        {
-          label: "Top tier",
-          value: `${Math.max(...analytics.source_quality.map((s) => s.quality), 0)}%`,
-          hint: "best rank bucket",
-        },
-        {
-          label: "Acceptance",
-          value: `${analytics.trends.at(-1)?.rate ?? "—"}%`,
-          hint: "latest month",
-        },
-      ]
-    : [];
 
   return (
     <AppShell
@@ -124,6 +121,12 @@ export default function AnalyticsPage() {
         </div>
       )}
 
+      {recruitingHealth && (
+        <div className="mb-4">
+          <RecruitingHealthSummary health={recruitingHealth} />
+        </div>
+      )}
+
       <div className="analytics-toolbar">
         <div className="seg" role="tablist" aria-label="Time period">
           {PERIODS.map((p) => (
@@ -140,33 +143,60 @@ export default function AnalyticsPage() {
           ))}
         </div>
         <p className="text-[12px] text-ink-faint">
-          Period: <span className="text-ink-secondary font-medium">{period}</span>
+          Window:{" "}
+          <span className="text-ink-secondary font-medium">{PERIOD_HINT[period]}</span>
         </p>
       </div>
 
-      {heroMetrics.length > 0 && (
-        <div className="analytics-hero">
-          {heroMetrics.map((m) => (
-            <div key={m.label} className="analytics-hero__item">
-              <div className="analytics-hero__label">{m.label}</div>
-              <div className="analytics-hero__value">{m.value}</div>
-              <div className="analytics-hero__hint">{m.hint}</div>
-            </div>
-          ))}
+      {analytics && analytics.executive_kpis.length > 0 && (
+        <div className="analytics-hero analytics-hero--6">
+          {analytics.executive_kpis.map((kpi) => {
+            const inner = (
+              <>
+                <div className="analytics-hero__label">{kpi.label}</div>
+                <div className="analytics-hero__value">{kpi.value}</div>
+                <div
+                  className={`analytics-hero__hint ${
+                    kpi.delta_positive === false ? "is-negative" : ""
+                  }`}
+                >
+                  {kpi.delta_positive === false ? "↓" : "↑"} {kpi.delta}
+                </div>
+                {kpi.hint ? (
+                  <div className="analytics-hero__meta">{kpi.hint}</div>
+                ) : null}
+              </>
+            );
+            return kpi.href ? (
+              <Link
+                key={kpi.label}
+                href={kpi.href}
+                className="analytics-hero__item analytics-hero__item--link"
+                title={kpi.definition}
+              >
+                {inner}
+              </Link>
+            ) : (
+              <div
+                key={kpi.label}
+                className="analytics-hero__item"
+                title={kpi.definition}
+              >
+                {inner}
+              </div>
+            );
+          })}
         </div>
       )}
 
       {analytics && (
-        <AnalyticsCharts
-          data={{
-            time_to_hire: analytics.time_to_hire,
-            conversion_funnel: analytics.conversion_funnel,
-            source_quality: analytics.source_quality,
-            trends: analytics.trends,
-            kpis: analytics.kpis,
-          }}
-        />
+        <div className="analytics-priority-row space-y-3.5 mt-3.5">
+          <InsightsPanel insights={analytics.insights} />
+          <AiInsightsCard summary={analytics.ai_summary} />
+        </div>
       )}
+
+      {analytics && <AnalyticsCharts data={analytics} />}
     </AppShell>
   );
 }

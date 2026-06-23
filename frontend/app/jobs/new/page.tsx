@@ -52,6 +52,8 @@ export default function NewJobPage() {
     onSuccess: (job) => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
       queryClient.invalidateQueries({ queryKey: ["workspace-jobs-overview"] });
+      queryClient.invalidateQueries({ queryKey: ["workspace-shortlists"] });
+      queryClient.invalidateQueries({ queryKey: ["workspace-search-meta"] });
       router.push(`/jobs/${job.id}`);
     },
   });

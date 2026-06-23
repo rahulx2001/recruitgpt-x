@@ -6,6 +6,7 @@ import type {
   Trajectory,
 } from "./mock";
 import { resolveCandidateGender } from "./gender";
+import { assignCandidateRole } from "./roleAssignment";
 
 export type ChallengeRanking = {
   candidate_id: string;
@@ -117,7 +118,7 @@ export function apiCandidateToUi(
     recommendation: scoreToRecommendation(score),
     trajectory,
     stage: scoreToStage(rank, score),
-    job: "Senior ML Engineer",
+    job: assignCandidateRole(c, ranking),
     appliedDaysAgo: Math.max(1, 120 - rank),
     reasons: extractReasons(ranking?.reasoning ?? ""),
     concern: ranking?.reasoning.includes("Concerns:")

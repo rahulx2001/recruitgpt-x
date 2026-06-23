@@ -13,6 +13,7 @@ import {
 } from "framer-motion";
 import { ArrowRight, Sparkles, TrendingUp } from "lucide-react";
 import { Avatar, MatchScore } from "@/components/app/Atoms";
+import { useMounted } from "@/lib/useMounted";
 
 const REGIONS = [
   ["Europe", "42"],
@@ -73,14 +74,7 @@ function HeroCard({
   return (
     <motion.div
       className={`hero-card ${className}`}
-      initial={reduceMotion ? false : { opacity: 0, y: 32, scale: 0.94 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{
-        type: "spring",
-        stiffness: 70,
-        damping: 18,
-        delay: 0.15 + index * 0.12,
-      }}
+      initial={false}
       style={{ x, y }}
     >
       <motion.div
@@ -103,10 +97,12 @@ function HeroCard({
 }
 
 export function HeroSection() {
+  const mounted = useMounted();
   const sectionRef = React.useRef<HTMLElement>(null);
   const chartsRef = React.useRef<HTMLDivElement>(null);
   const chartsInView = useInView(chartsRef, { once: true, margin: "-80px" });
   const reduceMotion = useReducedMotion();
+  const motionOn = mounted && !reduceMotion;
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -157,12 +153,7 @@ export function HeroSection() {
         style={{ y: reduceMotion ? 0 : scrollY, opacity: scrollOpacity }}
         ref={chartsRef}
       >
-        <motion.div
-          className="hero__center"
-          initial={reduceMotion ? false : { opacity: 0, y: 28 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-        >
+        <div className="hero__center">
           <h1 className="h-display text-[clamp(44px,6.5vw,80px)] text-ink">
             Hire better candidates in minutes, not weeks
           </h1>
@@ -179,7 +170,7 @@ export function HeroSection() {
               Book a demo
             </Link>
           </div>
-        </motion.div>
+        </div>
 
         <HeroCard
           className="hero-card--tl"
@@ -217,8 +208,8 @@ export function HeroSection() {
               <motion.div
                 key={name}
                 className="flex justify-between text-[12px]"
-                initial={{ opacity: 0, x: -10 }}
-                animate={chartsInView ? { opacity: 1, x: 0 } : {}}
+                initial={false}
+                animate={motionOn && chartsInView ? { x: 0 } : {}}
                 transition={{ delay: 0.5 + i * 0.08 }}
               >
                 <span className="text-graphite">{name}</span>
