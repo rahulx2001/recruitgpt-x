@@ -17,8 +17,10 @@ services:
         value: production
       - key: REQUIRE_AUTH
         value: "false"
-      - key: AUTO_SEED_ON_STARTUP
+      - key: AUTO_IMPORT_CHALLENGE_TOP100
         value: "true"
+      - key: AUTO_SEED_ON_STARTUP
+        value: "false"
       - key: USE_SEMANTIC_RANKING_WEIGHTS
         value: "false"
       - key: EMBEDDING_PROVIDER

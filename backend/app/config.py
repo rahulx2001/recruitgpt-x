@@ -55,6 +55,7 @@ class Settings(BaseSettings):
 
     # Production deploy helpers
     auto_seed_on_startup: bool = False
+    auto_import_challenge_top100: bool = False
 
     @field_validator("cors_origins", mode="before")
     @classmethod

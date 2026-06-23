@@ -138,6 +138,43 @@ def _map_record(raw: Dict[str, Any]) -> CandidateCreate:
     )
 
 
+async def import_top100_if_needed(*, owner_id: str | None = None) -> int:
+    """Load bundled top-100 challenge profiles when the DB still has demo data only."""
+    settings = get_settings()
+    owner = owner_id or settings.default_dev_user_id
+    backend_root = Path(__file__).resolve().parents[2]
+    jsonl = backend_root / "data" / "top100_candidates.jsonl"
+    submission = backend_root / "data" / "submission.csv"
+    if not submission.is_file():
+        submission = ROOT / "submission.csv"
+    if not jsonl.is_file() or not submission.is_file():
+        log.warning("Top-100 bundle missing (jsonl=%s submission=%s)", jsonl, submission)
+        return 0
+
+    session_maker = get_session_maker()
+    async with session_maker() as session:
+        from sqlalchemy import func, select
+
+        count = (
+            await session.execute(
+                select(func.count())
+                .select_from(CandidateORM)
+                .where(CandidateORM.owner_id == owner)
+            )
+        ).scalar_one()
+        if count >= 100:
+            log.info("Skipping top-100 import — already have %d candidates", count)
+            return 0
+
+    ids = _load_ids_from_submission(submission)
+    return await import_candidates(
+        jsonl_path=jsonl,
+        owner_id=owner,
+        candidate_ids=ids,
+        replace=True,
+    )
+
+
 async def import_candidates(
     *,
     jsonl_path: Path,

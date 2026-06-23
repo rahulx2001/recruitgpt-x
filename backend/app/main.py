@@ -82,7 +82,16 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         log.warning("Database init failed (continuing): %s", e)
 
-    if settings.auto_seed_on_startup:
+    if settings.auto_import_challenge_top100:
+        try:
+            from app.data.import_challenge import import_top100_if_needed
+
+            n = await import_top100_if_needed()
+            if n:
+                log.info("Auto-imported %d challenge candidates (top-100 bundle).", n)
+        except Exception as e:
+            log.warning("Challenge top-100 import skipped: %s", e)
+    elif settings.auto_seed_on_startup:
         try:
             from app.data.seed import seed_if_empty
 

@@ -17,7 +17,20 @@ from app.services.job_repo import list_jobs
 from app.utils.pii_crypto import decrypt_pii
 
 _ROOT = Path(__file__).resolve().parents[3]
-_SUBMISSION = _ROOT / "submission.csv"
+_BACKEND_ROOT = Path(__file__).resolve().parents[2]
+
+
+def _submission_path() -> Path:
+    for candidate in (
+        _ROOT / "submission.csv",
+        _BACKEND_ROOT / "data" / "submission.csv",
+    ):
+        if candidate.is_file():
+            return candidate
+    return _ROOT / "submission.csv"
+
+
+_SUBMISSION = _submission_path()
 
 _FUNNEL_COLORS = {
     "Applied": "#5d2a1a",
