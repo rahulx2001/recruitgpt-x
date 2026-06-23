@@ -1,0 +1,36 @@
+# Free-tier backend for RecruitGPT X (no card required on Render free plan).
+# Pair with Vercel Hobby (free) for frontend/.
+#
+# After deploy:
+#   1. Copy the Render URL (e.g. https://recruitgpt-api.onrender.com)
+#   2. Vercel env: NEXT_PUBLIC_API_URL=<that URL>
+#   3. Render env: CORS_ORIGINS=["https://your-app.vercel.app"]
+
+services:
+  - type: web
+    name: recruitgpt-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements-minimal.txt
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: APP_ENV
+        value: production
+      - key: REQUIRE_AUTH
+        value: "false"
+      - key: AUTO_SEED_ON_STARTUP
+        value: "true"
+      - key: USE_SEMANTIC_RANKING_WEIGHTS
+        value: "false"
+      - key: EMBEDDING_PROVIDER
+        value: local
+      - key: DATABASE_URL
+        value: sqlite+aiosqlite:///./recruitgpt.db
+      - key: DEFAULT_DEV_USER_ID
+        value: dev-user
+      - key: CORS_ORIGINS
+        value: '["http://localhost:3000"]'
