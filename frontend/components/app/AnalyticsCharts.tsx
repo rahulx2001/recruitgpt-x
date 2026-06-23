@@ -80,7 +80,9 @@ function ChartCard({
   metricHint,
   badge,
   children,
+  footer,
   tall,
+  compact,
   className = "",
 }: {
   title: string;
@@ -89,9 +91,13 @@ function ChartCard({
   metricHint?: string;
   badge?: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   tall?: boolean;
+  /** Shorter chart area for simple bar charts */
+  compact?: boolean;
   className?: string;
 }) {
+  const chartHeight = tall ? "h-[228px]" : compact ? "h-[172px]" : "h-[208px]";
   return (
     <div className={`chart-card ${className}`}>
       <div className="chart-card__head">
@@ -113,7 +119,8 @@ function ChartCard({
           </div>
         ) : null}
       </div>
-      <div className={`${tall ? "h-[228px]" : "h-[208px]"} mt-3`}>{children}</div>
+      <div className={`${chartHeight} mt-3 shrink-0`}>{children}</div>
+      {footer}
     </div>
   );
 }
@@ -172,11 +179,51 @@ export function AnalyticsCharts({ data }: { data: WorkspaceAnalyticsPayload }) {
           subtitle="Click a bucket to see who’s in it"
           metric={stats.median != null ? `${stats.median}` : "—"}
           metricHint={`median · P90 ${stats.p90 ?? "—"}`}
+          compact
+          footer={
+            selectedBin ? (
+              <div className="histogram-drilldown">
+                <div className="histogram-drilldown__head">
+                  <span className="text-[12px] font-semibold text-ink">
+                    {selectedBin} bucket
+                  </span>
+                  <button
+                    type="button"
+                    className="text-action text-[11.5px]"
+                    onClick={() => setSelectedBin(null)}
+                  >
+                    Clear
+                  </button>
+                </div>
+                {binCandidates.length ? (
+                  <ul className="histogram-drilldown__list">
+                    {binCandidates.map((c) => (
+                      <li key={c.candidate_id}>
+                        <Link
+                          href={`/candidates?highlight=${c.candidate_id}`}
+                          className="histogram-drilldown__row"
+                        >
+                          <span className="font-medium text-ink truncate">{c.name}</span>
+                          <span className="text-[11px] text-ink-muted tnum">
+                            #{c.rank} · {c.score}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[12px] text-ink-muted">
+                    No candidates in this score range.
+                  </p>
+                )}
+              </div>
+            ) : null
+          }
         >
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data.score_histogram}
-              margin={{ left: -8, right: 8, top: 6, bottom: 0 }}
+              margin={{ left: -8, right: 8, top: 4, bottom: 4 }}
               onClick={(state) => {
                 const bin = state?.activeLabel;
                 if (typeof bin === "string") {
@@ -186,7 +233,7 @@ export function AnalyticsCharts({ data }: { data: WorkspaceAnalyticsPayload }) {
               style={{ cursor: "pointer" }}
             >
               <CartesianGrid stroke={grid} vertical={false} strokeDasharray="3 3" />
-              <XAxis dataKey="bin" tick={axis} axisLine={false} tickLine={false} dy={6} />
+              <XAxis dataKey="bin" tick={axis} axisLine={false} tickLine={false} dy={4} />
               <YAxis
                 tick={axis}
                 axisLine={false}
@@ -207,43 +254,6 @@ export function AnalyticsCharts({ data }: { data: WorkspaceAnalyticsPayload }) {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          {selectedBin ? (
-            <div className="histogram-drilldown">
-              <div className="histogram-drilldown__head">
-                <span className="text-[12px] font-semibold text-ink">
-                  {selectedBin} bucket
-                </span>
-                <button
-                  type="button"
-                  className="text-action text-[11.5px]"
-                  onClick={() => setSelectedBin(null)}
-                >
-                  Clear
-                </button>
-              </div>
-              {binCandidates.length ? (
-                <ul className="histogram-drilldown__list">
-                  {binCandidates.map((c) => (
-                    <li key={c.candidate_id}>
-                      <Link
-                        href={`/candidates?highlight=${c.candidate_id}`}
-                        className="histogram-drilldown__row"
-                      >
-                        <span className="font-medium text-ink truncate">{c.name}</span>
-                        <span className="text-[11px] text-ink-muted tnum">
-                          #{c.rank} · {c.score}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-[12px] text-ink-muted">
-                  No candidates in this score range.
-                </p>
-              )}
-            </div>
-          ) : null}
         </ChartCard>
       </div>
 
