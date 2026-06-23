@@ -477,6 +477,29 @@ _JD_TIE_TOP10 = (
     "Role mandate link: ({excerpt})",
 )
 
+_MID_BAND_NOTES = (
+    "Concerns: mid-band gap — IR depth trails top-decile leaders.",
+    "Concerns: availability signal weaker than top-10 retrieval picks.",
+    "Concerns: ranking proof solid but below founding-tier bar.",
+    "Concerns: IR narrative present yet short of top-10 depth.",
+    "Concerns: credible profile with softer retrieval ownership signals.",
+    "Concerns: hybrid-search evidence thinner than leading candidates.",
+    "Concerns: production IR proof lags top-band embedding specialists.",
+    "Concerns: skills align partially; depth trails senior IR leaders.",
+    "Concerns: career arc relevant but not top-decile IR delivery.",
+    "Concerns: vector-retrieval signal moderate versus top-ranked peers.",
+    "Concerns: search-quality ownership less explicit than top picks.",
+    "Concerns: engagement and IR depth trail top-10 benchmark profiles.",
+    "Concerns: acceptable fit with gaps versus highest-scoring IR owners.",
+    "Concerns: ranking-layer experience present but not dominant.",
+    "Concerns: profile competitive mid-pack — IR proof needs validation.",
+    "Concerns: semantic-search delivery cited but below top-tier depth.",
+    "Concerns: founding mandate overlap partial versus rank-1–10 set.",
+    "Concerns: retrieval tooling breadth narrower than leading submissions.",
+    "Concerns: viable backup pick — IR signal trails calibrated leaders.",
+    "Concerns: mid-pack strength with limited top-10 retrieval differentiation.",
+)
+
 _RANK_INTRO = (
     "Ranked #{rank} (score {score:.4f}) — {primary}",
     "At #{rank} with score {score:.4f}: {primary}",
@@ -563,6 +586,22 @@ def _build_reasoning(
         "Career text shows hands-on search/ranking delivery",
         "Profile evidences hybrid retrieval work",
         "Role history aligns with founding IR mandate",
+        "Demonstrated production search and ranking ownership",
+        "Track record includes vector retrieval at scale",
+        "Past roles delivered semantic search pipelines",
+        "Experience backs hybrid IR systems in production",
+        "Narrative shows ranking-layer engineering depth",
+        "Work history reflects founding-team retrieval scope",
+        "Background supports JD hybrid-search requirements",
+        "Applied IR delivery visible across career entries",
+        "Profile substantiates embedding and ranking work",
+        "Employment history cites shipped retrieval stacks",
+        "Candidate demonstrates hands-on ranking infrastructure",
+        "Career arc maps to senior IR engineering mandate",
+        "Prior employers show retrieval quality ownership",
+        "Documented search/ranking milestones in role blurbs",
+        "Production-grade retrieval experience in narrative",
+        "IR mandate alignment via concrete project stories",
     )
     fit = _pick(fit_leads, candidate_id, "fit")
     if career_sem < 0.45:
@@ -574,6 +613,14 @@ def _build_reasoning(
             "Rank {rank}, score {score:.4f}: {title}{co} ({yrs:.1f}y, {loc}) — {fit}; skills: {skills}.",
             "Rank {rank}, score {score:.4f}: {loc}-based {title}{co}, {yrs:.1f}y — {fit}; IR stack: {skills}.",
             "Rank {rank}, score {score:.4f}: {title}{co}, {yrs:.1f} years in {loc}; {fit}; key skills: {skills}.",
+            "Rank {rank}, score {score:.4f} — {title}{co}, {yrs:.1f}y in {loc}; {fit}; IR tools: {skills}.",
+            "Rank {rank} at score {score:.4f}: {title}{co} · {yrs:.1f}y · {loc} — {fit}; stack: {skills}.",
+            "Rank {rank} / score {score:.4f} — {title}{co}, {loc}, {yrs:.1f}y experience; {fit}; skills: {skills}.",
+            "At rank {rank}, score {score:.4f}: {title}{co} from {loc}, {yrs:.1f}y — {fit}; core stack: {skills}.",
+            "Score {score:.4f}, rank {rank}: {title}{co} ({yrs:.1f}y, {loc}); {fit}; IR: {skills}.",
+            "Rank {rank}, calibrated score {score:.4f}: {title}{co} · {loc} · {yrs:.1f}y — {fit}; {skills}.",
+            "Rank {rank} (score {score:.4f}): {title}{co} in {loc}, {yrs:.1f}y tenure — {fit}; tools: {skills}.",
+            "Holds rank {rank} on score {score:.4f}: {title}{co}, {yrs:.1f}y, {loc}; {fit}; IR coverage: {skills}.",
         ),
         candidate_id,
         "s1",
@@ -623,9 +670,7 @@ def _build_reasoning(
         )
         sentence2 = f"JD fit: {excerpt}."
     elif rank > 10:
-        sentence2 = (
-            "Concerns: mid-band gap — IR depth or availability trails top-10 leaders."
-        )
+        sentence2 = _pick(_MID_BAND_NOTES, candidate_id, "mid_band")
     else:
         sentence2 = "Concerns: founding-role scope still needs validation in technical screen."
 
