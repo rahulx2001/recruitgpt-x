@@ -230,6 +230,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     reply: str
     referenced_candidates: List[UUID] = Field(default_factory=list)
+    guardrail_notice: Optional[str] = None
 
 
 class SearchRequest(BaseModel):

@@ -164,6 +164,7 @@ export interface ChatMessage {
 export interface ChatResponse {
   reply: string;
   referenced_candidates: UUID[];
+  guardrail_notice?: string | null;
 }
 
 export interface BiasReport {

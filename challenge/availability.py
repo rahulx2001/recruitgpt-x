@@ -39,7 +39,7 @@ def availability_score(signals: Dict[str, Any]) -> float:
         days_idle = 365
 
     recency = max(0.0, 1.0 - days_idle / 180.0)
-    otw_s = 1.0 if open_to_work else 0.12
+    otw_s = 1.0 if open_to_work else 0.04
     apps_s = min(1.0, apps / 4.0)
     rr_s = min(1.0, rr * 1.15)
     icr_s = min(1.0, icr)
@@ -61,6 +61,17 @@ def availability_score(signals: Dict[str, Any]) -> float:
 def availability_modifier(signals: Dict[str, Any]) -> float:
     """Strong multiplier — availability can swing ranking ±40%."""
     s = availability_score(signals)
+    open_to_work = bool(signals.get("open_to_work_flag", False))
+
+    if not open_to_work:
+        if s < 0.35:
+            return 0.48
+        if s < 0.5:
+            return 0.58
+        if s < 0.65:
+            return 0.68
+        return 0.74
+
     if s < 0.2:
         return 0.42
     if s < 0.35:

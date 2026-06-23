@@ -259,6 +259,55 @@ def test_eval_harness_produces_metrics():
     assert abl["current"]["ndcg_10"] >= 0
 
 
+def test_template_blurb_penalty_demotes_clone():
+    from challenge.career_blurb import build_career_blurb_counts, template_blurb_modifier
+
+    shared = (
+        "Owned the ranking layer for an e-commerce search product, evolving it from "
+        "keyword-based to embedding-based search across a 30M+ candidate corpus."
+    )
+    counts = build_career_blurb_counts(
+        [
+            {
+                "candidate_id": f"CAND_{i:07d}",
+                "career_history": [{"description": shared}],
+            }
+            for i in range(120)
+        ]
+    )
+    assert counts
+    assert template_blurb_modifier([{"description": shared}], counts) < 0.9
+
+
+def test_not_open_to_work_not_in_top10():
+    if not CANDIDATES.exists():
+        return
+    top = rank_candidates(CANDIDATES, top_k=100)
+    need = {r.candidate_id for r in top[:10]}
+    otw: dict[str, bool] = {}
+    with CANDIDATES.open(encoding="utf-8") as f:
+        for line in f:
+            raw = json.loads(line)
+            cid = raw["candidate_id"]
+            if cid in need:
+                otw[cid] = bool(raw["redrob_signals"].get("open_to_work_flag", False))
+            if len(otw) == len(need):
+                break
+    for cid in need:
+        assert otw.get(cid) is True, f"{cid} not open to work in top-10"
+
+
+def test_reasoning_compact_and_unique():
+    if not CANDIDATES.exists():
+        return
+    top = rank_candidates(CANDIDATES, top_k=100)
+    texts = [r.reasoning for r in top]
+    assert len(set(texts)) == len(texts)
+    for row in top:
+        assert len(row.reasoning) <= 420, f"{row.candidate_id} reasoning too long"
+        assert re.search(r"score\s+\d+\.\d{4}|rank\s+\d+", row.reasoning.lower())
+
+
 def test_behavioral_twin_breaks_tie():
     base = json.loads(SAMPLE.read_text(encoding="utf-8"))[0]
     twin_a = json.loads(json.dumps(base))
@@ -349,18 +398,26 @@ def test_no_embeddings_top10_overlap():
     emb_top = rank_candidates(CANDIDATES, top_k=100)
     emb_ids = [r.candidate_id for r in emb_top]
 
+    import os
+
     empty = ROOT / "data" / "_no_emb_dir"
     empty.mkdir(exist_ok=True)
     old_root = emb_mod._DEFAULT_DIR
+    old_req = os.environ.get("RANKER_REQUIRE_EMBEDDINGS")
     emb_mod._DEFAULT_DIR = empty
     import challenge.redrob_ranker as rr
 
     rr._EMBED_STORE = None
+    os.environ["RANKER_REQUIRE_EMBEDDINGS"] = "0"
     try:
         no_top = rank_candidates(CANDIDATES, top_k=100)
     finally:
         emb_mod._DEFAULT_DIR = old_root
         rr._EMBED_STORE = None
+        if old_req is None:
+            os.environ.pop("RANKER_REQUIRE_EMBEDDINGS", None)
+        else:
+            os.environ["RANKER_REQUIRE_EMBEDDINGS"] = old_req
 
     no_ids = [r.candidate_id for r in no_top]
     overlap10 = len(set(emb_ids[:10]) & set(no_ids[:10]))

@@ -8,6 +8,10 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
+from challenge.career_blurb import (
+    build_career_blurb_counts_from_path,
+    template_blurb_modifier,
+)
 from challenge.assessment import (
     _ir_vals_from_signals,
     assessment_boost,
@@ -93,18 +97,18 @@ def _embedding_store() -> EmbeddingStore:
     return _EMBED_STORE
 
 
-# Ablation winner on behavioral proxy (eval_harness): title_heavy beats uniform/current.
+# Balanced for JD fit + traps: career text and availability weighted over title alone.
 DEFAULT_WEIGHTS: Dict[str, float] = {
-    "title": 0.24,
+    "title": 0.20,
     "skills": 0.18,
-    "career_semantic": 0.12,
-    "production": 0.10,
+    "career_semantic": 0.14,
+    "production": 0.12,
     "assessment": 0.08,
-    "availability": 0.10,
+    "availability": 0.12,
     "jd_overlap": 0.06,
     "experience": 0.05,
     "location": 0.03,
-    "engagement": 0.04,
+    "engagement": 0.05,
 }
 
 
@@ -246,6 +250,25 @@ def _consulting_penalty(history: List[Dict[str, Any]]) -> float:
     return 1.0
 
 
+def _consulting_current_penalty(profile: Dict[str, Any]) -> float:
+    co = norm_text(profile.get("current_company", ""))
+    if any(c in co for c in CONSULTING_FIRMS):
+        return 0.70
+    return 1.0
+
+
+def _notice_modifier(notice_days: int) -> float:
+    if notice_days >= 120:
+        return 0.80
+    if notice_days >= 90:
+        return 0.86
+    if notice_days >= 60:
+        return 0.93
+    if notice_days <= 30:
+        return 1.04
+    return 1.0
+
+
 def _location_score(profile: Dict[str, Any]) -> float:
     loc = norm_text(profile.get("location", ""))
     country = norm_text(profile.get("country", ""))
@@ -281,9 +304,11 @@ def _research_penalty(
     research = any(any(r in t for r in RESEARCH_ONLY_TITLES) for t in titles)
     research_lang = count_phrases_fast(_RESEARCH_S, _RESEARCH_M, idx.full_tokens, idx.full_blob, _RESEARCH_P) >= 2
     if (research or research_lang) and prod_s < 0.45:
-        return 0.55
+        return 0.48
+    if research and prod_s < 0.55:
+        return 0.62
     if research and prod_s < 0.65:
-        return 0.78
+        return 0.75
     return 1.0
 
 
@@ -514,6 +539,7 @@ def _build_reasoning(
     components: Dict[str, float],
     calibrated_score: float,
 ) -> str:
+    """Stage-4 reasoning: two crisp sentences — facts, JD link, honest gaps."""
     profile = raw.get("profile", {})
     signals = raw.get("redrob_signals", {})
     history = raw.get("career_history", [])
@@ -527,163 +553,89 @@ def _build_reasoning(
     notice = int(signals.get("notice_period_days", 0) or 0)
     otw = bool(signals.get("open_to_work_flag", False))
 
-    skill_txt = ", ".join(core_names[:3]) if core_names else "no verified core IR stack in skills list"
+    skill_txt = ", ".join(core_names[:3]) if core_names else "limited core IR skills"
     ir_snippet = ir_career_snippet(history)
     career_sem = float(components.get("career_semantic", 0) or 0)
+    co = f" @ {company}" if company else ""
 
-    strengths: List[str] = []
-    strengths.append(_career_strength(candidate_id, ir_snippet, career_sem))
-    strengths.append(_skill_strength(candidate_id, core_ir_n, skill_txt))
+    fit_leads = (
+        "Shipped retrieval/ranking in production",
+        "Career text shows hands-on search/ranking delivery",
+        "Profile evidences hybrid retrieval work",
+        "Role history aligns with founding IR mandate",
+    )
+    fit = _pick(fit_leads, candidate_id, "fit")
+    if career_sem < 0.45:
+        fit = "Partial JD overlap on retrieval themes"
 
-    ir_assess = top_ir_assessments(signals)
-    if ir_assess and components.get("assessment", 0) >= 0.7:
-        assess_txt = ", ".join(f"{k} {v:.0f}" for k, v in ir_assess)
-        assess_variants = (
-            f"Redrob IR assessments: {assess_txt}",
-            f"platform assessments back IR depth ({assess_txt})",
-            f"verified assessment scores — {assess_txt}",
-        )
-        strengths.append(_pick(assess_variants, candidate_id, "assess"))
-
-    if components.get("availability", 0) >= 0.65:
-        avail_variants = (
-            f"actively available (open_to_work={otw}, recruiter response {rr:.0%})",
-            f"strong availability signals (OTW={otw}, response {rr:.0%})",
-            f"recruiter engagement looks active: OTW {otw}, response {rr:.0%}",
-        )
-        strengths.append(_pick(avail_variants, candidate_id, "avail"))
-
-    if any(c in norm_text(loc) for c in PREFERRED_LOCATIONS):
-        loc_variants = (
-            "based in Pune/Noida corridor — location fit",
-            "Pune/Noida location matches hybrid JD preference",
-            "geography aligns with Pune/Noida hiring focus",
-        )
-        strengths.append(_pick(loc_variants, candidate_id, "loc"))
+    sentence1_tpl = _pick(
+        (
+            "Rank {rank}, score {score:.4f}: {title}{co}, {yrs:.1f}y, {loc} — {fit}; core IR: {skills}.",
+            "Rank {rank}, score {score:.4f}: {title}{co} ({yrs:.1f}y, {loc}) — {fit}; skills: {skills}.",
+            "Rank {rank}, score {score:.4f}: {loc}-based {title}{co}, {yrs:.1f}y — {fit}; IR stack: {skills}.",
+            "Rank {rank}, score {score:.4f}: {title}{co}, {yrs:.1f} years in {loc}; {fit}; key skills: {skills}.",
+        ),
+        candidate_id,
+        "s1",
+    )
+    sentence1 = sentence1_tpl.format(
+        rank=rank,
+        score=calibrated_score,
+        title=title,
+        co=co,
+        yrs=yrs,
+        loc=loc,
+        fit=fit,
+        skills=skill_txt,
+    )
 
     concerns: List[str] = []
-    hp_risk = components.get("honeypot_risk", 0)
-    if hp_risk >= 0.35:
-        concerns.append(f"profile consistency risk ({hp_risk:.0%})")
+    if components.get("template_blurb", 1.0) < 0.9:
+        concerns.append("recycled career-template language detected")
     if not otw:
-        concerns.append(_pick(_OTW_CONCERNS, candidate_id, "otw"))
-    if components.get("availability", 0) < 0.4:
-        concerns.append(_pick(_AVAIL_CONCERNS, candidate_id, "avail_low"))
-    if rr < 0.35:
-        concerns.append(
-            _pick(_RESPONSE_CONCERNS, candidate_id, "resp").format(rate=f"{rr:.0%}")
-        )
+        concerns.append("not open to work")
     if notice >= 60:
-        concerns.append(
-            _pick(_NOTICE_CONCERNS, candidate_id, "notice").format(days=notice)
-        )
+        concerns.append(f"{notice}-day notice")
+    if rr < 0.35:
+        concerns.append(f"low recruiter response ({rr:.0%})")
     if core_ir_n < 3:
-        concerns.append(_pick(_THIN_IR_CONCERNS, candidate_id, "thin_ir"))
+        concerns.append("thin IR skill depth")
     if components.get("faang", 1.0) < 1.0:
-        concerns.append(f"currently at {company} — JD flags big-tech ladder seekers")
+        concerns.append(f"big-tech current role ({company})")
     if components.get("research", 1.0) < 0.8:
-        concerns.append("research-heavy without strong production signals")
-    if components.get("cv_penalty", 1.0) < 0.8:
-        concerns.append("CV/speech/robotics focus without sufficient IR depth")
+        concerns.append("research tilt without production proof")
+    if components.get("honeypot_risk", 0) >= 0.35:
+        concerns.append("profile consistency flags")
 
-    co = f" @ {company}" if company else ""
-    lead_variants = (
-        f"{title}{co}, {yrs:.1f}y, {loc}.",
-        f"{title}{co} — {yrs:.1f} years — {loc}.",
-        f"{loc}-based {title}{co} ({yrs:.1f}y experience).",
-        f"{title} at {company}, {yrs:.1f}y, {loc}." if company else f"{title}, {yrs:.1f}y, {loc}.",
-    )
-    lead = _pick(lead_variants, candidate_id, "lead")
-
-    primary = strengths[0]
-    secondary = strengths[1] if len(strengths) > 1 else ""
-    tertiary = strengths[2] if len(strengths) > 2 else ""
-
-    intro_tpl = _pick(_RANK_INTRO, candidate_id, "intro")
-    intro = intro_tpl.format(rank=rank, score=calibrated_score, primary=primary)
-    if secondary:
-        join = _pick(_SECONDARY_JOIN, candidate_id, "join")
-        intro += join + secondary
-    intro += "."
-
-    concern_lead = _pick(_CONCERN_LEADS, candidate_id, "concern_lead")
-    if concerns:
-        ordered = _order_concerns(candidate_id, concerns)
-        concern_txt = f" {concern_lead}: {'; '.join(ordered[:3])}."
-    elif rank <= 10:
-        concern_txt = (
-            f" {concern_lead}: founding-role scope still needs validation in technical screen."
+    if rank >= 85:
+        extra = (
+            "; ".join(_order_concerns(candidate_id, concerns)[:2])
+            if concerns
+            else "limited IR depth versus top-50"
         )
-    elif rank >= 85:
-        concern_txt = (
-            f" {concern_lead}: marginal JD fit — included as lower-band coverage for rank {rank}."
+        sentence2 = f"Marginal JD fit near cutoff — {extra}."
+    elif concerns:
+        concern_txt = "; ".join(_order_concerns(candidate_id, concerns)[:2])
+        sentence2 = f"Concerns: {concern_txt}."
+    elif rank <= 10 and ir_snippet:
+        excerpt = clean_leading_ellipsis_fragment(
+            _truncate_snippet(ir_snippet.split(":", 1)[-1].strip(), 64)
         )
-    elif rank <= 30:
-        concern_txt = (
-            f" {concern_lead}: solid but outside top-10 — IR depth or availability may trail leaders."
-        )
-    elif rank <= 60:
-        concern_txt = (
-            f" {concern_lead}: mid-band fit — weaker retrieval signals than top-30 candidates."
+        sentence2 = f"JD fit: {excerpt}."
+    elif rank > 10:
+        sentence2 = (
+            "Concerns: mid-band gap — IR depth or availability trails top-10 leaders."
         )
     else:
-        concern_txt = (
-            f" {concern_lead}: upper-lower band — included for coverage; gaps versus top-50 picks."
-        )
+        sentence2 = "Concerns: founding-role scope still needs validation in technical screen."
 
-    jd_tie = ""
-    if rank <= 10 and ir_snippet:
-        jd_excerpt = clean_leading_ellipsis_fragment(
-            _truncate_snippet(ir_snippet.split(":", 1)[-1].strip(), 72)
-        )
-        jd_tpl = _pick(_JD_TIE_TOP10, candidate_id, "jd_tie")
-        jd_tie = f" {jd_tpl.format(excerpt=jd_excerpt)}."
-
-    career_extra = ""
-    if ir_snippet:
-        career_labels = ("Career note", "Evidence", "Profile excerpt", "Relevant history")
-        label = _pick(career_labels, candidate_id, "career_label")
-        snippet = _vary_career_snippet(candidate_id, ir_snippet)
-        career_extra = f" {label}: {snippet}."
-    elif history:
-        for role in history[:2]:
-            desc = (role.get("description") or "").strip()
-            if len(desc) > 30:
-                label = _pick(("Career note", "Earlier role", "Background"), candidate_id, "career_alt")
-                career_extra = (
-                    f" {label}: {role.get('title', 'Role')} @ {role.get('company', '?')}: "
-                    f"{_truncate_snippet(desc)}."
-                )
-                break
-
-    layout = _reasoning_variant(candidate_id, "layout", 8)
-    parts: List[str]
-    if layout == 0:
-        parts = [lead, intro, concern_txt, jd_tie, career_extra]
-    elif layout == 1:
-        parts = [lead, intro, career_extra, concern_txt, jd_tie]
-    elif layout == 2:
-        parts = [lead, jd_tie, intro, concern_txt, career_extra]
-    elif layout == 3:
-        parts = [lead, career_extra, intro, concern_txt, jd_tie]
-    elif layout == 4:
-        parts = [intro, lead, concern_txt, jd_tie, career_extra]
-    elif layout == 5:
-        parts = [lead, intro + (f" {tertiary}." if tertiary else ""), concern_txt, career_extra]
-    elif layout == 6:
-        parts = [lead, concern_txt, intro, jd_tie, career_extra]
-    else:
-        parts = [lead, intro, jd_tie, concern_txt, career_extra]
-
-    body = " ".join(p.strip() for p in parts if p and p.strip())
-    if rank >= 90 and "marginal" not in body.lower() and "lower-band" not in body.lower():
-        body += " Included near cutoff given weaker IR depth versus higher ranks."
-    return body
+    return f"{sentence1} {sentence2}"
 
 
 def score_candidate(
     raw: Dict[str, Any],
     weights: Dict[str, float] | None = None,
+    blurb_counts: Dict[str, int] | None = None,
 ) -> ScoredCandidate:
     cid = raw["candidate_id"]
     profile = raw.get("profile", {})
@@ -713,6 +665,9 @@ def score_candidate(
     faang_mod = _faang_current_modifier(profile)
     research_mod = _research_penalty(profile, history, prod_s, idx)
     cv_mod = _cv_speech_penalty(idx, core_ir_n, profile.get("current_title", ""), sem_s)
+    blurb_mod = template_blurb_modifier(history, blurb_counts)
+    notice_mod = _notice_modifier(int(signals.get("notice_period_days", 0) or 0))
+    consulting_current = _consulting_current_penalty(profile)
 
     w = weights or DEFAULT_WEIGHTS
     base = (
@@ -731,7 +686,10 @@ def score_candidate(
     modifiers = (
         hp_pen
         * _consulting_penalty(history)
+        * consulting_current
         * availability_modifier(signals)
+        * notice_mod
+        * blurb_mod
         * assessment_boost(signals, skills, ir_vals)
         * assessment_penalty(signals, skills, ir_vals)
         * faang_mod
@@ -761,6 +719,9 @@ def score_candidate(
         "faang": faang_mod,
         "research": research_mod,
         "cv_penalty": cv_mod,
+        "template_blurb": blurb_mod,
+        "notice": notice_mod,
+        "consulting_current": consulting_current,
     }
 
     return ScoredCandidate(
@@ -812,9 +773,10 @@ def rank_candidates(candidates_path, top_k: int = 100) -> List[ScoredCandidate]:
         )
 
     pool_size = max(top_k, RERANK_POOL_SIZE)
+    blurb_counts = build_career_blurb_counts_from_path(candidates_path)
     heap: list[Tuple[float, str, ScoredCandidate, Dict[str, Any]]] = []
     for raw in load_candidates(candidates_path):
-        sc = score_candidate(raw)
+        sc = score_candidate(raw, blurb_counts=blurb_counts)
         entry = (sc.raw_score, sc.candidate_id, sc, raw)
         if len(heap) < pool_size:
             heapq.heappush(heap, entry)

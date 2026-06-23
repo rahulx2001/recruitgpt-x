@@ -454,7 +454,22 @@ async def chat_endpoint(
     ranked = ranking.ranked_candidates
     history = [m.model_dump() for m in payload.history]
 
-    reply = await chat_about_rankings(job.blueprint, ranked, payload.message, history)
+    from app.utils.ai_guardrails import assess_user_message
+
+    verdict = assess_user_message(payload.message)
+    if not verdict.allowed:
+        return ChatResponse(
+            reply=verdict.block_reply,
+            referenced_candidates=[],
+            guardrail_notice=verdict.code or "blocked",
+        )
+
+    reply = await chat_about_rankings(
+        job.blueprint,
+        ranked,
+        verdict.sanitized_message,
+        history,
+    )
 
     referenced = []
     for rc in ranked:

@@ -42,7 +42,8 @@ export function ChatInterface({ jobId }: { jobId: string }) {
     setLoading(true);
     try {
       const resp = await api.chat(jobId, msg, messages);
-      setMessages([...next, { role: "assistant", content: resp.reply }]);
+      const prefix = resp.guardrail_notice ? "⚠️ Guardrail: " : "";
+      setMessages([...next, { role: "assistant", content: `${prefix}${resp.reply}` }]);
     } catch (e) {
       setMessages([
         ...next,
@@ -65,7 +66,9 @@ export function ChatInterface({ jobId }: { jobId: string }) {
         </div>
         <div>
           <div className="text-sm font-semibold text-ink">AI Recruiter Chat</div>
-          <div className="text-[10px] text-ink-subtle">Ask anything about the shortlist</div>
+          <div className="text-[10px] text-ink-subtle">
+            Recruiting scope only · guardrails on PII &amp; bias
+          </div>
         </div>
       </div>
 

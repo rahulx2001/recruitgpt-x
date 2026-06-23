@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+
 import { PipelineFunnelVertical } from "@/components/app/PipelineFunnelVertical";
 import { RiskBadgeList } from "@/components/app/RiskBadge";
 import { CandidateActionButtons } from "@/components/app/CandidateActionButtons";
@@ -15,9 +15,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-  ScatterChart,
-  Scatter,
-  ZAxis,
   type TooltipProps,
 } from "recharts";
 import type { WorkspaceAnalyticsPayload } from "@/lib/analyticsTypes";
@@ -133,7 +130,6 @@ function scoreBinRange(bin: string): [number, number] {
 }
 
 export function AnalyticsCharts({ data }: { data: WorkspaceAnalyticsPayload }) {
-  const router = useRouter();
   const stats = data.score_stats ?? {};
   const interviews = data.interviews_summary;
   const [selectedBin, setSelectedBin] = React.useState<string | null>(null);
@@ -429,73 +425,6 @@ export function AnalyticsCharts({ data }: { data: WorkspaceAnalyticsPayload }) {
               <Bar dataKey="top10_pct" name="Top-10 %" fill={POSITIVE} radius={[0, 4, 4, 0]} barSize={12} />
               <Bar dataKey="pool_pct" name="Pool %" fill={MUTED} radius={[0, 4, 4, 0]} barSize={12} />
             </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      )}
-
-      {/* Scatter */}
-      {data.rank_scatter.length > 0 && (
-        <ChartCard
-          title="Score vs rank"
-          subtitle="Calibration view — rank position vs match score"
-          metric={`σ ${stats.std_dev ?? "—"}`}
-          metricHint="score spread"
-          tall
-          className="analytics-bento__full"
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <ScatterChart margin={{ left: -4, right: 12, top: 8, bottom: 0 }}>
-              <CartesianGrid stroke={grid} strokeDasharray="3 3" />
-              <XAxis
-                type="number"
-                dataKey="rank"
-                name="Rank"
-                tick={axis}
-                axisLine={false}
-                tickLine={false}
-                domain={[1, "dataMax"]}
-                reversed
-              />
-              <YAxis
-                type="number"
-                dataKey="score"
-                name="Score"
-                tick={axis}
-                axisLine={false}
-                tickLine={false}
-                domain={[0, 100]}
-                width={36}
-              />
-              <ZAxis range={[40, 40]} />
-              <Tooltip
-                cursor={{ strokeDasharray: "3 3" }}
-                content={({ active, payload }) => {
-                  if (!active || !payload?.[0]) return null;
-                  const p = payload[0].payload as (typeof data.rank_scatter)[0];
-                  return (
-                    <div style={tooltipStyle}>
-                      <p className="text-[12px] font-semibold text-ink">{p.name}</p>
-                      <p className="text-[11px] text-ink-muted">
-                        Rank #{p.rank} · {p.score}% · {p.recommendation}
-                      </p>
-                    </div>
-                  );
-                }}
-              />
-              {(["Strong Hire", "Hire", "Lean Hire", "Hold"] as const).map((tier) => (
-                <Scatter
-                  key={tier}
-                  name={tier}
-                  data={data.rank_scatter.filter((p) => p.recommendation === tier)}
-                  fill={REC_COLORS[tier] ?? INK}
-                  onClick={(pt) => {
-                    const p = pt as (typeof data.rank_scatter)[0];
-                    router.push(`/candidates?highlight=${p.candidate_id}`);
-                  }}
-                  style={{ cursor: "pointer" }}
-                />
-              ))}
-            </ScatterChart>
           </ResponsiveContainer>
         </ChartCard>
       )}

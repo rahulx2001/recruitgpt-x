@@ -42,7 +42,8 @@ methodology_summary: |
   SUBMISSION PIPELINE (what produced submission.csv):
   Implemented components only — lexical/title scoring, TF-IDF JD overlap, committed
   MiniLM bi-encoder (embeddings.fp16.npz), honeypot detection, availability signals,
-  title_heavy hybrid weights (title 0.24, skills 0.18), calibrated top-100.
+  hybrid weights v6 (title 0.20, career_semantic 0.14, production 0.12, availability 0.12),
+  template-blurb dedup penalty, notice-period modifier, calibrated top-100.
   Cross-encoder: OFF (RANKER_USE_CROSS_ENCODER=0). No torch, no HF downloads at rank time.
   ~49s on 100K CPU, byte-reproducible via ./scripts/reproduce_ranking.sh.
 

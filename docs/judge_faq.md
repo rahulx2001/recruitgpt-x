@@ -1,8 +1,8 @@
 # Judge FAQ — Evidence-Backed Answers
 
-## 1. Why is title weight high (0.24)?
+## 1. Why is title weight 0.20 (not higher)?
 
-The JD asks for a **Senior AI Engineer** founding role. Title weight captures **role evidence** (e.g., "Recommendation Systems Engineer") — not seniority gaming. Plain-language Tier-5 candidates are caught by `career_semantic` + bi-encoder (`semantic_score` 70% embedding blend). We do **not** claim title alone selects winners. **Evidence:** `challenge/jd_config.py`, `DEFAULT_WEIGHTS`, `docs/evaluation_limitations.md`.
+v6 rebalanced toward `career_semantic` (0.14) and `production` (0.12) so plain-language Tier-5 shippers beat title-only keyword profiles. Title still captures role evidence (e.g., "Recommendation Systems Engineer") without dominating. **Evidence:** `challenge/jd_config.py`, `DEFAULT_WEIGHTS`, `challenge/career_blurb.py`.
 
 ## 2. How do plain-language Tier-5 profiles rank with title-heavy weights?
 

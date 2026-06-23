@@ -12,6 +12,7 @@ import type { ChatMessage } from "@/lib/types";
 type ChatTurn = {
   role: "user" | "assistant";
   text: string;
+  guardrail?: boolean;
   citations?: Array<{ id: string; candidate: string; detail: string }>;
 };
 
@@ -96,6 +97,7 @@ export default function AiRecruiterPage() {
           {
             role: "assistant",
             text: res.reply,
+            guardrail: Boolean(res.guardrail_notice),
             citations:
               cited.length > 0
                 ? cited.map((c) => ({
@@ -196,7 +198,7 @@ export default function AiRecruiterPage() {
           </button>
         </form>
         <p className="text-2xs text-ink-faint text-center mt-2">
-          Answers cite candidates from your pipeline.{" "}
+          Guardrails: recruiting scope only · no PII · no discriminatory filtering.{" "}
           <Link href="/candidates" className="text-accent hover:underline">
             Verify in Candidates
           </Link>
@@ -228,6 +230,11 @@ function Turn({ turn }: { turn: ChatTurn }) {
         <Sparkles size={15} />
       </span>
       <div className="max-w-[85%] space-y-3">
+        {turn.guardrail ? (
+          <span className="inline-block text-[10px] font-medium uppercase tracking-wide text-amber-700 bg-amber-50 border border-amber-200/80 rounded px-2 py-0.5 mb-1">
+            Guardrail
+          </span>
+        ) : null}
         <div className="text-[14px] text-ink-secondary leading-relaxed">
           {turn.text}
         </div>
