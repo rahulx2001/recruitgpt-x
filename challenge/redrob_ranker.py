@@ -339,7 +339,7 @@ def _engagement_score(signals: Dict[str, Any]) -> float:
     return min(1.0, 0.5 * min(1.0, rr * 1.1) + 0.3 * min(1.0, saved / 8) + 0.2 * icr)
 
 
-def _truncate_snippet(text: str, limit: int = 88) -> str:
+def _truncate_snippet(text: str, limit: int = 110) -> str:
     return truncate_at_word_boundary(text, limit)
 
 

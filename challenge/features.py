@@ -15,12 +15,14 @@ from challenge.jd_config import (
 )
 from challenge.semantic import career_semantic_from_blobs
 from challenge.text_match import (
+    align_to_word_end,
     align_to_word_start,
     clean_leading_ellipsis_fragment,
     compile_multi_patterns,
     count_phrases_fast,
     norm_text,
     split_phrases,
+    strip_trailing_partial_token,
     tokenize,
     truncate_at_word_boundary,
 )
@@ -100,18 +102,19 @@ def cv_language_hits(idx: CandidateIndex) -> int:
 
 def _snippet_around_match(text: str, match: re.Match[str], limit: int = 88) -> str:
     start = align_to_word_start(text, max(0, match.start() - 24))
-    end = min(len(text), match.end() + 48)
+    end = align_to_word_end(text, min(len(text), match.end() + 48))
     chunk = text[start:end].strip()
     if start > 0:
         chunk = "…" + chunk
     if end < len(text):
-        chunk = chunk + "…"
+        chunk = strip_trailing_partial_token(chunk + "…")
     if len(chunk) > limit + 4:
         chunk = truncate_at_word_boundary(chunk, limit)
+        chunk = strip_trailing_partial_token(chunk)
     return chunk
 
 
-def ir_career_snippet(history: List[Dict[str, Any]], limit: int = 88) -> str:
+def ir_career_snippet(history: List[Dict[str, Any]], limit: int = 110) -> str:
     for role in history[:3]:
         desc = (role.get("description") or "").strip()
         if len(desc) < 30:

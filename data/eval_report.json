@@ -3,14 +3,14 @@
     "seed": 42,
     "sample_rate": 0.05,
     "n_scored": 5000,
-    "n_relevant_proxy": 68,
+    "n_relevant_proxy": 54,
     "top_k": 100
   },
   "label_method": "independent_jd_rubric",
   "metrics_self_consistency_proxy": {
-    "ndcg_10": 0.863,
-    "ndcg_50": 0.9224,
-    "map": 0.8216,
+    "ndcg_10": 0.8637,
+    "ndcg_50": 0.9214,
+    "map": 0.8336,
     "p_at_10": 0.9
   },
   "metrics_behavioral_independent_proxy": {
@@ -27,29 +27,36 @@
     "eval_pool_size": 250,
     "label_method": "hand_curated_jd_tiers_v2",
     "metrics_at_0.5": {
-      "ndcg_10": 0.7152,
-      "ndcg_50": 0.7924,
+      "ndcg_10": 0.8436,
+      "ndcg_50": 0.86,
       "map": 0.9649,
       "p_at_10": 1.0
     },
     "metrics_at_0.25": {
-      "ndcg_10": 0.7152,
-      "ndcg_50": 0.7924,
+      "ndcg_10": 0.8436,
+      "ndcg_50": 0.86,
       "map": 0.9954,
       "p_at_10": 1.0
     },
     "metrics": {
-      "ndcg_10": 0.7152,
-      "ndcg_50": 0.7924,
+      "ndcg_10": 0.8436,
+      "ndcg_50": 0.86,
       "map": 0.9649,
       "p_at_10": 1.0
     },
-    "note": "Human JD tiers on sample + submission top-100. Sparse positives at 0.5 (88/250 labeled) explain p@10=1.0 with MAP=0.9649 when few tier\u22652 labels exist."
+    "note": "Human JD tiers on sample + submission top-100. Sparse positives at 0.5 (88/250 labeled) explain p@10=1.0 with MAP=0.9649 when few tier\u22652 labels exist.",
+    "best_preset_by_ndcg10": {
+      "name": "current",
+      "ndcg_10": 0.8436,
+      "ndcg_50": 0.86,
+      "map": 0.9649,
+      "p_at_10": 1.0
+    }
   },
   "metrics_current_weights": {
-    "ndcg_10": 0.863,
-    "ndcg_50": 0.9224,
-    "map": 0.8216,
+    "ndcg_10": 0.8637,
+    "ndcg_50": 0.9214,
+    "map": 0.8336,
     "p_at_10": 0.9
   },
   "weight_ablation_on_behavioral_proxy": {
@@ -90,6 +97,44 @@
       "p_at_10": 1.0
     }
   },
+  "weight_ablation_on_hand_labels": {
+    "current": {
+      "ndcg_10": 0.8436,
+      "ndcg_50": 0.86,
+      "map": 0.9649,
+      "p_at_10": 1.0
+    },
+    "semantic_heavy": {
+      "ndcg_10": 0.8241,
+      "ndcg_50": 0.8655,
+      "map": 0.9813,
+      "p_at_10": 1.0
+    },
+    "title_heavy": {
+      "ndcg_10": 0.8436,
+      "ndcg_50": 0.86,
+      "map": 0.9649,
+      "p_at_10": 1.0
+    },
+    "legacy_balanced": {
+      "ndcg_10": 0.8155,
+      "ndcg_50": 0.8523,
+      "map": 0.9681,
+      "p_at_10": 1.0
+    },
+    "availability_heavy": {
+      "ndcg_10": 0.8348,
+      "ndcg_50": 0.8438,
+      "map": 0.9467,
+      "p_at_10": 1.0
+    },
+    "uniform": {
+      "ndcg_10": 0.8373,
+      "ndcg_50": 0.8501,
+      "map": 0.9374,
+      "p_at_10": 1.0
+    }
+  },
   "best_preset_by_ndcg10": {
     "name": "current",
     "ndcg_10": 0.8834,
@@ -109,6 +154,6 @@
     "location": 0.03,
     "engagement": 0.04
   },
-  "note": "JD-rubric proxy is self-consistency only. Behavioral proxy uses education tier + github/search/completeness only (excludes saved_by_recruiters, response_rate, applications \u2014 all ranker inputs). Hand-label eval is the most defensible metric. NOT challenge hidden GT; expect real composite ~0.60\u20130.68.",
-  "runtime_seconds": 19.68
+  "note": "JD-rubric proxy is self-consistency only (no ranker features; excludes open_to_work and recruiter_response_rate). Behavioral proxy uses education tier + github/search/completeness only. Hand labels are JD-tier rubric labels (250 IDs); hand_label ablation is the primary weight-selection evidence. NOT hidden GT; expect real composite ~0.60\u20130.68.",
+  "runtime_seconds": 20.72
 }

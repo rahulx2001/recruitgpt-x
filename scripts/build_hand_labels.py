@@ -118,7 +118,7 @@ def main() -> int:
                 "tier": tier,
                 "relevance": round(tier / 4.0, 2),
                 "rationale": why,
-                "labeler": "team_lead_manual_rubric_v2",
+                "labeler": "jd_tier_rubric_v3",
                 "source": "sample_candidates.json",
             }
 
@@ -140,7 +140,7 @@ def main() -> int:
                 "tier": tier,
                 "relevance": round(tier / 4.0, 2),
                 "rationale": why,
-                "labeler": "team_lead_manual_rubric_v2",
+                "labeler": "jd_tier_rubric_v3",
                 "source": "submission_top100",
             }
 

@@ -11,13 +11,17 @@ STRONG_TITLES = (
     "senior machine learning engineer",
     "staff ml engineer",
     "applied scientist",  # product/applied ML — not in RESEARCH_ONLY_TITLES
+    "senior data scientist",
+    "recommendation systems engineer",
+    "applied ml engineer",
+    "senior nlp engineer",
+    "search engineer",
 )
 
 GOOD_TITLES = (
     "data scientist",
     "ml scientist",
     "nlp engineer",
-    "search engineer",
     "recommendation engineer",
     "software engineer",
     "backend engineer",

@@ -10,7 +10,7 @@ from pathlib import Path
 from challenge.honeypot import honeypot_risk, is_structural_honeypot
 from challenge.jd_config import GENERAL_ML_SKILLS
 from challenge.redrob_ranker import _skill_bucket, rank_candidates, score_candidate
-from challenge.text_match import phrase_in_text
+from challenge.text_match import has_trailing_partial_word_ellipsis, phrase_in_text
 
 ROOT = Path(__file__).resolve().parents[1]
 from challenge.data_paths import challenge_file
@@ -27,6 +27,20 @@ def test_truncate_at_word_boundary():
     assert not out.startswith("…")
     assert out.endswith("…")
     assert " " not in out[-5:] or out[-5:].startswith("…")
+
+
+def test_snippet_avoids_partial_word_ellipsis():
+    from challenge.features import _snippet_around_match
+
+    desc = (
+        "Owned the ranking layer for an e-commerce search product, evolving from "
+        "keyword-based to embedding-based search across a 30M+ candidate corpus."
+    )
+    m = __import__("re").compile(r"ranking").search(desc)
+    assert m is not None
+    snippet = _snippet_around_match(desc, m, limit=72)
+    assert "evolvin…" not in snippet
+    assert snippet.endswith("…")
 
 
 def test_substring_bugs_fixed():
@@ -74,7 +88,7 @@ def test_python_tensorflow_not_core_ir_names():
 
 
 def test_reasoning_no_midword_truncation():
-    """Stage-4 snippets must not start with partial tokens (e.g. '…ed and shipped')."""
+    """Stage-4 snippets must not start/end with partial tokens (e.g. 'evolvin…')."""
     if not CANDIDATES.exists():
         return
     top = rank_candidates(CANDIDATES, top_k=20)
@@ -85,6 +99,10 @@ def test_reasoning_no_midword_truncation():
             if snippet.startswith("…") and bad_prefix.match(snippet[:8]):
                 raise AssertionError(
                     f"mid-word truncation in {row.candidate_id}: {snippet[:80]!r}"
+                )
+            if has_trailing_partial_word_ellipsis(snippet):
+                raise AssertionError(
+                    f"trailing partial word in {row.candidate_id}: {snippet[-40:]!r}"
                 )
 
 
@@ -184,6 +202,18 @@ def test_calibrated_scores_have_floor():
     cal = _calibrate_scores(raw)
     assert all(s >= 0.20 for s in cal)
     assert all(cal[i] >= cal[i + 1] for i in range(len(cal) - 1))
+
+
+def test_proxy_relevance_excludes_ranker_signals():
+    from challenge.eval_harness import proxy_relevance
+
+    base = json.loads(SAMPLE.read_text(encoding="utf-8"))[0]
+    twin = json.loads(json.dumps(base))
+    twin["redrob_signals"]["recruiter_response_rate"] = 0.99
+    twin["redrob_signals"]["open_to_work_flag"] = not base["redrob_signals"].get(
+        "open_to_work_flag", False
+    )
+    assert proxy_relevance(base) == proxy_relevance(twin)
 
 
 def test_behavioral_proxy_excludes_ranker_signals():

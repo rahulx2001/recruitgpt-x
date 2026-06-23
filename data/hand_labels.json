@@ -3,1050 +3,1050 @@
     "tier": 1,
     "relevance": 0.25,
     "rationale": "adjacent ML/data, weak IR depth",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000002": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000003": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000004": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000005": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000006": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000007": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000008": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000009": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000010": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "low JD fit (CAND_0000010)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000011": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000012": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000013": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000014": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "low JD fit (CAND_0000014)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000015": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "low JD fit (CAND_0000015)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000016": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000017": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "structural honeypot / impossible profile",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000018": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "low JD fit (CAND_0000018)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000019": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000020": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000021": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000022": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000023": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "low JD fit (CAND_0000023)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000024": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000025": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "low JD fit (CAND_0000025)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000026": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000027": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "low JD fit (CAND_0000027)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000028": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000029": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000030": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000031": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000032": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "low JD fit (CAND_0000032)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000033": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000034": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000035": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "low JD fit (CAND_0000035)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000036": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000037": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000038": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "low JD fit (CAND_0000038)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000039": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000040": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000041": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000042": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000043": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "low JD fit (CAND_0000043)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000044": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "low JD fit (CAND_0000044)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000045": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000046": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000047": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000048": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "low JD fit (CAND_0000048)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000049": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0000050": {
     "tier": 0,
     "relevance": 0.0,
     "rationale": "non-ML weak title (JD disqualifier)",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "sample_candidates.json"
   },
   "CAND_0005649": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0041669": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0017960": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0077285": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0010685": {
     "tier": 2,
     "relevance": 0.5,
     "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0002025": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0049896": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 3,
+    "relevance": 0.75,
+    "rationale": "strong IR alignment, lighter production proof",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0096142": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0058575": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0061655": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0001610": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0083307": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 3,
+    "relevance": 0.75,
+    "rationale": "strong IR alignment, lighter production proof",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0046525": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0046064": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 3,
+    "relevance": 0.75,
+    "rationale": "strong IR alignment, lighter production proof",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0006567": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0011162": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0075249": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0064904": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0053695": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0070333": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0088025": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0036863": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 3,
+    "relevance": 0.75,
+    "rationale": "strong IR alignment, lighter production proof",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0007412": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0067322": {
     "tier": 2,
     "relevance": 0.5,
     "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0061339": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 3,
+    "relevance": 0.75,
+    "rationale": "strong IR alignment, lighter production proof",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0055905": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0005538": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0031593": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 3,
+    "relevance": 0.75,
+    "rationale": "strong IR alignment, lighter production proof",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0065878": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 3,
+    "relevance": 0.75,
+    "rationale": "strong IR alignment, lighter production proof",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0099751": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0020991": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0081852": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0016659": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0018722": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0008425": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 3,
+    "relevance": 0.75,
+    "rationale": "strong IR alignment, lighter production proof",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0021410": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0057701": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0015065": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0018499": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0051292": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0032089": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0098846": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0011432": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 3,
+    "relevance": 0.75,
+    "rationale": "strong IR alignment, lighter production proof",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0052335": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0064326": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 3,
+    "relevance": 0.75,
+    "rationale": "strong IR alignment, lighter production proof",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0011643": {
     "tier": 1,
     "relevance": 0.25,
     "rationale": "adjacent ML/data, weak IR depth",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0006418": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0060715": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0014858": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0037944": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 3,
+    "relevance": 0.75,
+    "rationale": "strong IR alignment, lighter production proof",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0072660": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0086154": {
     "tier": 1,
     "relevance": 0.25,
     "rationale": "adjacent ML/data, weak IR depth",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0061265": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0054394": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0081053": {
     "tier": 2,
     "relevance": 0.5,
     "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0092706": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0010257": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0098952": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0076831": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0033987": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0074225": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0069248": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0096172": {
     "tier": 2,
     "relevance": 0.5,
     "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0069773": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0077337": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0022023": {
     "tier": 1,
     "relevance": 0.25,
     "rationale": "adjacent ML/data, weak IR depth",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0099269": {
     "tier": 2,
     "relevance": 0.5,
     "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0067866": {
     "tier": 2,
     "relevance": 0.5,
     "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0048558": {
     "tier": 2,
     "relevance": 0.5,
     "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0015760": {
     "tier": 1,
     "relevance": 0.25,
     "rationale": "adjacent ML/data, weak IR depth",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0046132": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0086022": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0080472": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0066791": {
     "tier": 1,
     "relevance": 0.25,
     "rationale": "adjacent ML/data, weak IR depth",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0098454": {
     "tier": 1,
     "relevance": 0.25,
     "rationale": "adjacent ML/data, weak IR depth",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0011327": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0018549": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0013122": {
     "tier": 1,
     "relevance": 0.25,
     "rationale": "adjacent ML/data, weak IR depth",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0003575": {
     "tier": 1,
     "relevance": 0.25,
     "rationale": "adjacent ML/data, weak IR depth",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0087778": {
     "tier": 1,
     "relevance": 0.25,
     "rationale": "adjacent ML/data, weak IR depth",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0027691": {
     "tier": 2,
     "relevance": 0.5,
     "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0030348": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0081846": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0055960": {
     "tier": 1,
     "relevance": 0.25,
     "rationale": "adjacent ML/data, weak IR depth",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0019480": {
     "tier": 2,
     "relevance": 0.5,
     "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0024620": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0011687": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 3,
+    "relevance": 0.75,
+    "rationale": "strong IR alignment, lighter production proof",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0094025": {
     "tier": 1,
     "relevance": 0.25,
     "rationale": "adjacent ML/data, weak IR depth",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0076995": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0022812": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0029367": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 3,
+    "relevance": 0.75,
+    "rationale": "strong IR alignment, lighter production proof",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0063862": {
     "tier": 1,
     "relevance": 0.25,
     "rationale": "adjacent ML/data, weak IR depth",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0068932": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0030468": {
     "tier": 3,
     "relevance": 0.75,
     "rationale": "strong IR alignment, lighter production proof",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0061257": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0010283": {
     "tier": 1,
     "relevance": 0.25,
     "rationale": "adjacent ML/data, weak IR depth",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0058300": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0012957": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 3,
+    "relevance": 0.75,
+    "rationale": "strong IR alignment, lighter production proof",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0053527": {
     "tier": 4,
     "relevance": 1.0,
     "rationale": "strong IR title + shipped retrieval/ranking narrative",
-    "labeler": "team_lead_manual_rubric_v2",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0040677": {
-    "tier": 2,
-    "relevance": 0.5,
-    "rationale": "partial IR career signal",
-    "labeler": "team_lead_manual_rubric_v2",
+    "tier": 4,
+    "relevance": 1.0,
+    "rationale": "strong IR title + shipped retrieval/ranking narrative",
+    "labeler": "jd_tier_rubric_v3",
     "source": "submission_top100"
   },
   "CAND_0000065": {

@@ -68,6 +68,10 @@ def main() -> int:
         )
     if best:
         print(f"Best ablation (behavioral proxy): {best.get('name')} NDCG@10={best.get('ndcg_10')}")
+    ha = report.get("weight_ablation_on_hand_labels") or {}
+    if ha and h.get("best_preset_by_ndcg10"):
+        bh = h["best_preset_by_ndcg10"]
+        print(f"Best ablation (hand labels): {bh.get('name')} NDCG@10={bh.get('ndcg_10')}")
     print(f"Wrote {args.out} in {elapsed:.1f}s")
     return 0
 

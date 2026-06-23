@@ -162,8 +162,6 @@ def proxy_relevance(raw: Dict[str, Any]) -> float:
     core_ir = _independent_ir_skill_count(skills)
     jd_sig, prod_sig = _independent_career_signals(career)
     yrs = float(profile.get("years_of_experience", 0) or 0)
-    rr = float(signals.get("recruiter_response_rate", 0) or 0)
-    otw = bool(signals.get("open_to_work_flag", False))
 
     cv_hits = len(_CV_S & tokenize(career))
     cv_hits += sum(1 for m in _CV_M if m in career)
@@ -181,11 +179,6 @@ def proxy_relevance(raw: Dict[str, Any]) -> float:
         grade += 0.12
     else:
         grade *= 0.55
-
-    if otw:
-        grade += 0.1
-    if rr >= 0.5:
-        grade += 0.06
 
     if cv_hits >= 2 and core_ir <= 2:
         grade *= 0.22
@@ -392,12 +385,34 @@ def run_holdout_eval(
 
     best = max(ablation.items(), key=lambda x: x[1]["ndcg_10"])
     hand_block: Dict[str, Any] = {}
+    hand_ablation: Dict[str, Dict[str, float]] = {}
     hand_path = candidates_path.parent / "hand_labels.json"
+    if not hand_path.exists():
+        hand_path = Path(__file__).resolve().parents[1] / "data" / "hand_labels.json"
     if hand_path.exists():
         labels = json.loads(hand_path.read_text(encoding="utf-8"))
         pool_rows = _load_labeled_rows(candidates_path, labels)
         if pool_rows:
             hand_block = run_hand_label_eval(pool_rows, labels)
+            hand_rel = {
+                r["candidate_id"]: float(labels[r["candidate_id"]]["relevance"])
+                for r in pool_rows
+            }
+            for name, preset in WEIGHT_PRESETS.items():
+                ids = [cid for cid, _ in rank_pool(pool_rows, weights=preset)]
+                m = evaluate_ranking(ids, hand_rel, relevant_threshold=0.5)
+                hand_ablation[name] = {
+                    "ndcg_10": m.ndcg_10,
+                    "ndcg_50": m.ndcg_50,
+                    "map": m.map_score,
+                    "p_at_10": m.precision_10,
+                }
+            if hand_ablation:
+                best_hand = max(hand_ablation.items(), key=lambda x: x[1]["ndcg_10"])
+                hand_block["best_preset_by_ndcg10"] = {
+                    "name": best_hand[0],
+                    **best_hand[1],
+                }
 
     return {
         "holdout": {
@@ -428,13 +443,15 @@ def run_holdout_eval(
             "p_at_10": metrics.precision_10,
         },
         "weight_ablation_on_behavioral_proxy": ablation,
+        "weight_ablation_on_hand_labels": hand_ablation,
         "best_preset_by_ndcg10": {"name": best[0], **best[1]},
         "weights_current": DEFAULT_WEIGHTS,
         "note": (
-            "JD-rubric proxy is self-consistency only. Behavioral proxy uses education tier + "
-            "github/search/completeness only (excludes saved_by_recruiters, response_rate, "
-            "applications — all ranker inputs). Hand-label eval is the most defensible metric. "
-            "NOT challenge hidden GT; expect real composite ~0.60–0.68."
+            "JD-rubric proxy is self-consistency only (no ranker features; excludes "
+            "open_to_work and recruiter_response_rate). Behavioral proxy uses education tier + "
+            "github/search/completeness only. Hand labels are JD-tier rubric labels (250 IDs); "
+            "hand_label ablation is the primary weight-selection evidence. NOT hidden GT; "
+            "expect real composite ~0.60–0.68."
         ),
     }
 
