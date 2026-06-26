@@ -49,7 +49,3 @@ HuggingFace Space (sample ranking): see `submission_metadata.yaml` → `sandbox_
 | `docs/evaluation_honesty_statement.md` | What we do/don't measure |
 | `submission_metadata.yaml` | Team metadata for portal |
 | `docs/ARCHITECTURE.md` | System overview |
-
-## AI disclosure
-
-Grok + Cursor used for engineering assistance. **No candidate rows sent to LLMs during ranking.** See `submission_metadata.yaml`.
