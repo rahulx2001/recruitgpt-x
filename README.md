@@ -6,6 +6,7 @@ RecruitGPT X answers a single hiring question with evidence, not keywords: *who 
 
 | | |
 |---|---|
+| **Live demo** | **[recruitgpt-x.vercel.app](https://recruitgpt-x.vercel.app)** — recruiter dashboard, analytics, AI chat |
 | **Repository** | [github.com/rahulx2001/recruitgpt-x](https://github.com/rahulx2001/recruitgpt-x) |
 | **Sandbox** | [HuggingFace Space — sample ranker](https://huggingface.co/spaces/rahulsinghx2001/recruitgpt-ranker) |
 | **Demo video** | [Walkthrough below](#demo-walkthrough) · [Google Drive](https://drive.google.com/file/d/1A_lDtpB1oP5CiYhAGqskR54T6SUcgtNk/view?usp=sharing) |
@@ -147,6 +148,8 @@ Offline metrics in `data/eval_report.json` are **diagnostics only** — not hidd
 ---
 
 ## Demo platform (optional)
+
+**Try it live:** [https://recruitgpt-x.vercel.app](https://recruitgpt-x.vercel.app)
 
 The web stack is a **recruiter command center** for exploring rankings, shortlists, interviews, and AI-assisted explanations. It is designed for demos, interviews, and product narrative — not for producing the graded CSV.
 
