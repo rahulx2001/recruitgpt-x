@@ -92,9 +92,9 @@ def slide_cover(prs: Presentation):
     _textbox(slide, Inches(4.2), Inches(3.5), Inches(4.8), Inches(0.7),
              "Team Leader\nRahul Kumar Singh", size=14, bold=True, color=WHITE)
     _textbox(slide, Inches(0.7), Inches(4.72), Inches(8.6), Inches(0.45),
-             "Problem Statement: Build an AI system that ranks 100K candidates the way a recruiter would —\n"
-             "understanding role fit from career context, skills, and behavioral signals, not keyword matching.",
-             size=11, color=WHITE)
+             "Official bundle: candidates.jsonl (100K) · job_description.docx · redrob_signals_doc.docx · submission_spec v4\n"
+             "Problem: Intelligent Candidate Discovery & Ranking — top-100 shortlist for Senior AI Engineer @ Redrob AI.",
+             size=10, color=WHITE)
 
 
 def slide_solution(prs: Presentation):
@@ -102,52 +102,60 @@ def slide_solution(prs: Presentation):
     _header_bar(slide, "Solution Overview", "What we built and why it beats keyword ATS")
     _rect(slide, Inches(0.55), Inches(1.15), Inches(4.35), Inches(4.1), LIGHT)
     _bullets(slide, Inches(0.75), Inches(1.3), Inches(4.0), Inches(3.8), "Proposed Solution", [
-        "RecruitGPT X offline ranker: scores 100,000 candidates on CPU in ~49–60 seconds.",
-        "Acts as an AI recruiter — reads title, career narrative, IR skills, availability, and engagement.",
-        "Outputs a top-100 shortlist with calibrated scores and 2-sentence grounded reasoning per row.",
-        "Pre-computed MiniLM bi-encoder + hybrid heuristics — no LLM calls at rank time.",
-    ])
+        "Rank top 100 from official candidates.jsonl per submission_spec v4 (CSV: candidate_id,rank,score,reasoning).",
+        "Reads full candidate_schema: profile, career_history, skills, redrob_signals (23 fields).",
+        "Hybrid offline ranker on CPU in ~49–60s — meets 5 min / 16GB / no-network constraints.",
+        "Grounded 2-sentence reasoning per row — matches Stage 4 review criteria in submission_spec.",
+    ], body_size=12)
     _rect(slide, Inches(5.1), Inches(1.15), Inches(4.35), Inches(4.1), ACCENT_BG)
-    _bullets(slide, Inches(5.3), Inches(1.3), Inches(4.0), Inches(3.8), "Differentiation vs Traditional ATS", [
-        "Keyword ATS: string match → misses semantic fit, ranks honeypot profiles high.",
-        "Our ranker: career semantics + structural honeypot traps + template-blurb dedup.",
-        "Availability gate: not open-to-work cannot reach top-10.",
-        "Explainable: every rank cites real profile facts — no hallucinated employers or skills.",
-        "Production constraint: CPU-only, offline — scales to 200K+ without per-candidate API cost.",
-    ])
+    _bullets(slide, Inches(5.3), Inches(1.3), Inches(4.0), Inches(3.8), "Differentiation vs Keyword Matching", [
+        "Bundle README warns: keyword stuffers, behavioral twins, ~80 honeypots — we defend all three.",
+        "Beyond keywords: career semantics + IR skill trust + Redrob behavioral modifier.",
+        "Mirrors JD disqualifiers: research-only, consulting-only, CV/speech-only, framework-noise profiles.",
+        "open_to_work_flag=false cannot reach top-10 (per redrob_signals_doc availability logic).",
+        "Shipper-first: production-scale CPU ranker, not per-candidate LLM API calls.",
+    ], body_size=12)
 
 
 def slide_jd(prs: Presentation):
     slide = _blank_slide(prs)
-    _header_bar(slide, "JD Understanding & Candidate Signals", "Parsed from job_description.docx → jd_config.py")
-    _bullets(slide, Inches(0.55), Inches(1.15), Inches(4.5), Inches(4.2), "Key JD Requirements", [
-        "Role: Senior AI Engineer — retrieval, ranking, embeddings, vector DBs in production.",
-        "Experience: 5–9 years ideal; penalize thin tenure and over-senior outliers.",
-        "Location: India-based; Pune/Noida preferred in scoring.",
-        "Production language: shipped systems, not research-only or framework demos.",
-        "Behavioral modifier from redrob_signals_doc: response rate, recruiter saves, engagement.",
-    ])
-    _bullets(slide, Inches(5.2), Inches(1.15), Inches(4.3), Inches(4.2), "Candidate Signals We Evaluate", [
-        "Title alignment: Rec Sys Engineer, Search Engineer, Senior ML/NLP Engineer.",
-        "Core IR skills: FAISS, Pinecone, Elasticsearch, OpenSearch, Weaviate, retrieval pipelines.",
-        "Career semantic text: production stories in role descriptions (not keyword stuffing).",
-        "Skill trust: endorsements, months-used, verified badges — noise skills penalized.",
-        "Availability: open_to_work, notice period (≤30d boosted, 90–120d penalized).",
-        "Engagement: profile views, recruiter saves, interview completion rate.",
-        "Trap signals: weak title + inflated AI skills, impossible tenure, recycled blurbs.",
-    ])
+    _header_bar(slide, "JD Understanding & Candidate Signals",
+                "Official: job_description.docx + candidate_schema.json + redrob_signals_doc.docx")
+    _bullets(slide, Inches(0.55), Inches(1.12), Inches(4.5), Inches(2.05), "From job_description.docx", [
+        "Role: Senior AI Engineer — Founding Team @ Redrob AI (Series A talent intelligence).",
+        "Location: Pune/Noida preferred; India Tier-1 cities; hybrid work mode.",
+        "Experience: 5–9 years band (flexible if other signals strong).",
+        "Must-have: production embeddings retrieval, vector DB/hybrid search, Python, ranking eval (NDCG/MRR/MAP).",
+        "JD rejects: pure research-only, LangChain-only AI, consulting-only careers, CV/speech/robotics without IR.",
+    ], body_size=10)
+    _bullets(slide, Inches(0.55), Inches(3.25), Inches(4.5), Inches(2.0), "candidate_schema.json fields", [
+        "profile: title, headline, summary, location, years_of_experience, company.",
+        "career_history: role descriptions with production IR evidence.",
+        "skills: proficiency, endorsements, duration_months (trust signal).",
+        "redrob_signals: 23 behavioral fields — modifier on top of skill-match score.",
+    ], body_size=10)
+    _bullets(slide, Inches(5.15), Inches(1.12), Inches(4.35), Inches(4.15),
+             "23 Redrob signals we weight (redrob_signals_doc.docx)", [
+        "Availability: open_to_work_flag, last_active_date, notice_period_days.",
+        "Responsiveness: recruiter_response_rate, avg_response_time_hours.",
+        "Engagement: profile_views_received_30d, saved_by_recruiters_30d, search_appearance_30d.",
+        "Assessments: skill_assessment_scores (platform IR tests).",
+        "Activity: github_activity_score, interview_completion_rate, applications_submitted_30d.",
+        "Trust: verified_email, verified_phone, linkedin_connected, profile_completeness_score.",
+        "Plus: willing_to_relocate, preferred_work_mode, expected_salary_range_inr_lpa.",
+    ], body_size=9.5)
 
 
 def slide_methodology(prs: Presentation):
     slide = _blank_slide(prs)
     _header_bar(slide, "Ranking Methodology", "Hybrid v6 scorer — retrieve, score, rank, explain")
     _bullets(slide, Inches(0.55), Inches(1.1), Inches(4.4), Inches(2.0), "Pipeline Steps", [
-        "1. Load candidates.jsonl → build CandidateIndex (title, skills, career, signals).",
-        "2. Score each candidate with weighted hybrid components + modifiers.",
-        "3. Apply honeypot penalty, availability gate, notice modifier, blurb dedup.",
-        "4. Calibrate raw scores → sort descending → assign ranks 1–100.",
-        "5. Generate grounded 2-sentence reasoning from score components (no LLM).",
-    ], body_size=12)
+        "1. Parse official job_description.docx → jd_config.py + JD embedding.",
+        "2. Load candidates.jsonl (100K) per bundle README → CandidateIndex.",
+        "3. Score with hybrid v6 + redrob_signals modifier + honeypot traps.",
+        "4. Calibrate → sort → ranks 1–100; tie-break candidate_id ascending (spec §3).",
+        "5. Write submission.csv per submission_spec v4 — UTF-8, monotonic scores.",
+    ], body_size=11)
     _rect(slide, Inches(0.55), Inches(3.2), Inches(4.4), Inches(2.0), LIGHT)
     _bullets(slide, Inches(0.7), Inches(3.35), Inches(4.1), Inches(1.8), "Models & Algorithms", [
         "Bi-encoder: all-MiniLM-L6-v2 (committed embeddings.fp16.npz, 100K vectors).",
@@ -183,22 +191,21 @@ def slide_methodology(prs: Presentation):
 def slide_explainability(prs: Presentation):
     slide = _blank_slide(prs)
     _header_bar(slide, "Explainability & Data Validation", "Grounded reasoning + trap defense")
-    _bullets(slide, Inches(0.55), Inches(1.15), Inches(4.4), Inches(4.0), "How Rankings Are Explained", [
-        "reasoning column: 2 sentences per candidate in submission.csv.",
-        "Sentence 1: specific facts — title, employer, years, location, named IR skills.",
-        "Sentence 2: JD connection + honest concerns (notice period, thin IR depth, big-tech risk).",
-        "Built from score components — never from an LLM → no hallucinated skills or employers.",
-        "Stage 4 mock review: 10/10 sampled rows pass all 6 quality checks.",
-        "100% unique reasoning strings; no empty or copy-paste templates.",
-    ], body_size=12)
-    _bullets(slide, Inches(5.1), Inches(1.15), Inches(4.35), Inches(4.0), "Handling Bad or Suspicious Profiles", [
-        "Structural honeypots: impossible tenure vs company founding date, expert skills at 0 months.",
-        "Title-skill mismatch: HR Manager / Accountant with inflated AI skill lists → heavy demotion.",
-        "Template-blurb penalty: recycled career descriptions shared across thousands of profiles.",
-        "Noise skills penalized: HTML, Tailwind, generic frameworks without IR depth.",
-        "Availability hard gate: open_to_work=false capped out of top-10.",
-        "Result: 0 structural honeypots in our top-100 submission (0% vs 10% disqualify threshold).",
-    ], body_size=12)
+    _bullets(slide, Inches(0.55), Inches(1.15), Inches(4.4), Inches(4.0), "Reasoning (submission_spec §3 Stage 4)", [
+        "Format matches spec example: specific facts + JD connection + honest concerns.",
+        "Cites only fields present in candidate profile — no hallucinated employers/skills.",
+        "Penalties avoided: empty reasoning, identical strings, templated name-swaps.",
+        "Rank tone matches position: strong language at rank 5, honest gaps at rank 95.",
+        "Validated: mock_stage4_review.py — 10/10 sampled rows pass 6/6 checks.",
+    ], body_size=11)
+    _bullets(slide, Inches(5.1), Inches(1.15), Inches(4.35), Inches(4.0), "Dataset Traps (bundle README + signals doc)", [
+        "~80 honeypots: impossible tenure, expert skills at 0 months (tier-0 in ground truth).",
+        "Keyword stuffers: weak titles (HR Manager, Accountant) + inflated AI skill lists.",
+        "Behavioral twins: same profile, different redrob_signals — availability wins.",
+        "Template blurbs: recycled career descriptions across thousands of profiles.",
+        "sample_submission.csv is format-only (ranks honeypots) — not quality reference.",
+        "Our result: 0 structural honeypots in top-100 (spec disqualifies >10%).",
+    ], body_size=10)
 
 
 def slide_workflow(prs: Presentation):
@@ -316,12 +323,12 @@ def slide_assets(prs: Presentation):
     slide = _blank_slide(prs)
     _header_bar(slide, "Submission Assets", "Everything judges need to reproduce and review")
     assets = [
-        ("GitHub Repository", "https://github.com/rahulx2001/recruitgpt-x", "Full source + README + reproduce script"),
-        ("Ranked CSV", "submission.csv (top-100)", "candidate_id, rank, score, reasoning"),
-        ("HF Sandbox", "huggingface.co/spaces/rahulsinghx2001/recruitgpt-ranker", "Sample ranking on ≤100 candidates, CPU"),
-        ("Live Demo", "recruitgpt-x.vercel.app", "Recruiter UI — dashboard, analytics, AI chat"),
-        ("Reproduce", "./scripts/reproduce_ranking.sh", "Single command → byte-verified submission.csv"),
-        ("Metadata", "submission_metadata.yaml", "Team Schadn · Rahul Kumar Singh · compute + AI declaration"),
+        ("GitHub Repository", "github.com/rahulx2001/recruitgpt-x", "rank.py + challenge/ + validate_submission.py from bundle"),
+        ("Ranked CSV", "submission.csv (top-100)", "submission_spec v4: UTF-8, 100 rows, monotonic scores"),
+        ("HF Sandbox", "huggingface.co/spaces/rahulsinghx2001/recruitgpt-ranker", "§10.5 — sample_candidates.json end-to-end"),
+        ("Official data", "candidates.jsonl (100K) + job_description.docx", "Synced via scripts/sync_challenge_data.sh"),
+        ("Reproduce", "./scripts/reproduce_ranking.sh", "CPU ≤5min · 16GB · no network · byte-verified artifact"),
+        ("Metadata", "submission_metadata.yaml", "Team Schadn · Rahul Kumar Singh · AI tools declared"),
     ]
     y = 1.2
     for title, url, note in assets:
