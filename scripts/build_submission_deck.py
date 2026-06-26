@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build Redrob Idea Submission deck (11 slides) for team Schadn."""
+"""Build Redrob Idea Submission deck — consultant-grade light green theme."""
 
 from __future__ import annotations
 
@@ -7,357 +7,452 @@ from pathlib import Path
 
 from pptx import Presentation
 from pptx.dml.color import RGBColor
+from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Inches, Pt
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT_PPTX = ROOT / "docs" / "Schadn_Redrob_Submission.pptx"
 
-# Teal Trust palette
-NAVY = RGBColor(0x06, 0x5A, 0x82)
-TEAL = RGBColor(0x02, 0x80, 0x90)
-MINT = RGBColor(0x02, 0xC3, 0x9A)
-SLATE = RGBColor(0x36, 0x45, 0x4F)
-INK = RGBColor(0x21, 0x21, 0x21)
-MUTED = RGBColor(0x5A, 0x5A, 0x5A)
+# Light green consultant palette
+FOREST = RGBColor(0x1B, 0x43, 0x32)
+SAGE = RGBColor(0x2D, 0x6A, 0x4F)
+LEAF = RGBColor(0x40, 0x91, 0x6C)
+MINT = RGBColor(0x74, 0xC6, 0x9D)
+MINT_PALE = RGBColor(0xB7, 0xE4, 0xC7)
+CREAM = RGBColor(0xF7, 0xFB, 0xF8)
+CARD = RGBColor(0xFF, 0xFF, 0xFF)
+CARD_TINT = RGBColor(0xED, 0xF7, 0xF0)
+INK = RGBColor(0x1A, 0x2E, 0x22)
+MUTED = RGBColor(0x5C, 0x6F, 0x62)
 WHITE = RGBColor(0xFF, 0xFF, 0xFF)
-LIGHT = RGBColor(0xF4, 0xF7, 0xFA)
-ACCENT_BG = RGBColor(0xE8, 0xF4, 0xF8)
+GOLD_LINE = RGBColor(0x95, 0xD5, 0xB2)
+
+FONT = "Calibri"
+SLIDE_H = Inches(5.625)
+SLIDE_W = Inches(10)
+_slide_no = 0
 
 
-def _blank_slide(prs: Presentation):
-    layout = prs.slide_layouts[6]  # blank
-    return prs.slides.add_slide(layout)
+def _blank(prs: Presentation):
+    global _slide_no
+    _slide_no += 1
+    return prs.slides.add_slide(prs.slide_layouts[6])
 
 
-def _rect(slide, left, top, width, height, fill: RGBColor):
-    shape = slide.shapes.add_shape(1, left, top, width, height)
-    shape.fill.solid()
-    shape.fill.fore_color.rgb = fill
-    shape.line.fill.background()
-    return shape
+def _shape(slide, kind, left, top, w, h, fill: RGBColor, *, line=None, line_w=0.75):
+    s = slide.shapes.add_shape(kind, left, top, w, h)
+    s.fill.solid()
+    s.fill.fore_color.rgb = fill
+    if line:
+        s.line.color.rgb = line
+        s.line.width = Pt(line_w)
+    else:
+        s.line.fill.background()
+    return s
 
 
-def _textbox(slide, left, top, width, height, text, *, size=14, bold=False, color=INK, align=PP_ALIGN.LEFT):
-    box = slide.shapes.add_textbox(left, top, width, height)
+def _rect(slide, left, top, w, h, fill, **kw):
+    return _shape(slide, MSO_SHAPE.RECTANGLE, left, top, w, h, fill, **kw)
+
+
+def _round_rect(slide, left, top, w, h, fill, **kw):
+    return _shape(slide, MSO_SHAPE.ROUNDED_RECTANGLE, left, top, w, h, fill, **kw)
+
+
+def _text(slide, left, top, w, h, text, *, size=14, bold=False, color=INK, align=PP_ALIGN.LEFT, font=FONT):
+    box = slide.shapes.add_textbox(left, top, w, h)
     tf = box.text_frame
     tf.word_wrap = True
     tf.vertical_anchor = MSO_ANCHOR.TOP
+    tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = Pt(0)
     p = tf.paragraphs[0]
     p.text = text
     p.font.size = Pt(size)
     p.font.bold = bold
+    p.font.name = font
     p.font.color.rgb = color
     p.alignment = align
     return box
 
 
-def _bullets(slide, left, top, width, height, title, items, *, title_size=20, body_size=13, title_color=NAVY):
-    box = slide.shapes.add_textbox(left, top, width, height)
+def _rich_bullets(slide, left, top, w, h, title, items, *, title_size=17, body_size=11.5, accent=FOREST):
+    box = slide.shapes.add_textbox(left, top, w, h)
     tf = box.text_frame
     tf.word_wrap = True
+    tf.margin_left = Pt(2)
     p = tf.paragraphs[0]
     p.text = title
     p.font.size = Pt(title_size)
     p.font.bold = True
-    p.font.color.rgb = title_color
-    p.space_after = Pt(10)
+    p.font.name = FONT
+    p.font.color.rgb = accent
+    p.space_after = Pt(8)
     for item in items:
         bp = tf.add_paragraph()
         bp.text = item
         bp.level = 0
         bp.font.size = Pt(body_size)
+        bp.font.name = FONT
         bp.font.color.rgb = INK
-        bp.space_after = Pt(6)
+        bp.space_after = Pt(5)
+        bp.line_spacing = 1.15
     return box
 
 
-def _header_bar(slide, title: str, subtitle: str = ""):
-    _rect(slide, Inches(0), Inches(0), Inches(10), Inches(0.95), NAVY)
-    _textbox(slide, Inches(0.55), Inches(0.18), Inches(8.8), Inches(0.45), title, size=26, bold=True, color=WHITE)
+def _slide_canvas(slide, section: str, n: int):
+    """Consultant base: cream bg, left accent rail, footer."""
+    _rect(slide, Inches(0), Inches(0), SLIDE_W, SLIDE_H, CREAM)
+    _rect(slide, Inches(0), Inches(0), Inches(0.14), SLIDE_H, SAGE)
+    _rect(slide, Inches(0.14), Inches(0), Inches(0.06), SLIDE_H, MINT_PALE)
+    _rect(slide, Inches(0), Inches(5.2), SLIDE_W, Inches(0.425), FOREST)
+    _text(slide, Inches(0.55), Inches(5.28), Inches(5), Inches(0.28),
+          "Schadn  ·  Rahul Kumar Singh  ·  India Runs Data & AI Challenge", size=8.5, color=MINT_PALE)
+    _text(slide, Inches(8.6), Inches(5.28), Inches(1.2), Inches(0.28), f"{n:02d}", size=9, color=MINT, align=PP_ALIGN.RIGHT)
+    if section:
+        _text(slide, Inches(0.55), Inches(0.32), Inches(3), Inches(0.22), section.upper(), size=8, bold=True, color=LEAF)
+
+
+def _slide_title(slide, title: str, subtitle: str = ""):
+    _text(slide, Inches(0.55), Inches(0.52), Inches(8.8), Inches(0.55), title, size=28, bold=True, color=FOREST)
     if subtitle:
-        _textbox(slide, Inches(0.55), Inches(0.58), Inches(8.8), Inches(0.3), subtitle, size=11, color=RGBColor(0xCA, 0xDC, 0xFC))
+        _text(slide, Inches(0.55), Inches(1.02), Inches(8.8), Inches(0.32), subtitle, size=12, color=MUTED)
+
+
+def _card(slide, left, top, w, h, *, tint=False):
+    return _round_rect(slide, left, top, w, h, CARD_TINT if tint else CARD, line=MINT_PALE, line_w=1)
+
+
+def _stat_tile(slide, left, top, value, label, sub=""):
+    _round_rect(slide, left, top, Inches(2.55), Inches(1.05), CARD, line=MINT, line_w=1.2)
+    _rect(slide, left, top, Inches(2.55), Inches(0.06), LEAF)
+    _text(slide, left + Inches(0.18), top + Inches(0.14), Inches(2.2), Inches(0.45), value, size=26, bold=True, color=FOREST)
+    _text(slide, left + Inches(0.18), top + Inches(0.58), Inches(2.2), Inches(0.22), label, size=10, color=MUTED)
+    if sub:
+        _text(slide, left + Inches(0.18), top + Inches(0.78), Inches(2.2), Inches(0.18), sub, size=8.5, color=LEAF)
 
 
 def slide_cover(prs: Presentation):
-    slide = _blank_slide(prs)
-    _rect(slide, Inches(0), Inches(0), Inches(10), Inches(5.625), NAVY)
-    _rect(slide, Inches(0), Inches(4.55), Inches(10), Inches(1.075), TEAL)
-    _textbox(slide, Inches(0.7), Inches(0.9), Inches(8.6), Inches(0.5), "INDIA RUNS · DATA & AI CHALLENGE", size=14, color=MINT)
-    _textbox(slide, Inches(0.7), Inches(1.45), Inches(8.6), Inches(1.0), "Intelligent Candidate Discovery\n& Ranking", size=36, bold=True, color=WHITE)
-    _textbox(slide, Inches(0.7), Inches(2.65), Inches(8.6), Inches(0.5), "Hybrid offline ranker — semantic fit, trap-aware, production-scale", size=15, color=RGBColor(0xCA, 0xDC, 0xFC))
-    _rect(slide, Inches(0.7), Inches(3.35), Inches(8.6), Inches(0.95), RGBColor(0x04, 0x6B, 0x8A))
-    _textbox(slide, Inches(0.95), Inches(3.5), Inches(3.8), Inches(0.7),
-             "Team Name\nSchadn", size=14, bold=True, color=WHITE)
-    _textbox(slide, Inches(4.2), Inches(3.5), Inches(4.8), Inches(0.7),
-             "Team Leader\nRahul Kumar Singh", size=14, bold=True, color=WHITE)
-    _textbox(slide, Inches(0.7), Inches(4.72), Inches(8.6), Inches(0.45),
-             "Official bundle: candidates.jsonl (100K) · job_description.docx · redrob_signals_doc.docx · submission_spec v4\n"
-             "Problem: Intelligent Candidate Discovery & Ranking — top-100 shortlist for Senior AI Engineer @ Redrob AI.",
-             size=10, color=WHITE)
+    slide = _blank(prs)
+    _rect(slide, Inches(0), Inches(0), Inches(3.65), SLIDE_H, FOREST)
+    _rect(slide, Inches(3.65), Inches(0), Inches(6.35), SLIDE_H, CREAM)
+    _rect(slide, Inches(3.65), Inches(0), Inches(0.08), SLIDE_H, LEAF)
+    # decorative circles
+    _shape(slide, MSO_SHAPE.OVAL, Inches(0.35), Inches(4.1), Inches(2.8), Inches(2.8), RGBColor(0x23, 0x5C, 0x45))
+    _shape(slide, MSO_SHAPE.OVAL, Inches(1.1), Inches(0.2), Inches(1.4), Inches(1.4), RGBColor(0x2D, 0x6A, 0x4F))
+
+    _text(slide, Inches(0.45), Inches(0.55), Inches(3.0), Inches(0.35), "SCHADN", size=13, bold=True, color=MINT)
+    _text(slide, Inches(0.45), Inches(1.0), Inches(3.0), Inches(1.4),
+          "Intelligent\nCandidate\nDiscovery", size=30, bold=True, color=WHITE)
+    _text(slide, Inches(0.45), Inches(2.55), Inches(3.0), Inches(0.5), "& Ranking System", size=16, color=MINT_PALE)
+    _text(slide, Inches(0.45), Inches(3.35), Inches(3.0), Inches(0.7),
+          "India Runs\nData & AI Challenge", size=11, color=RGBColor(0xD8, 0xF3, 0xDC))
+
+    _text(slide, Inches(4.0), Inches(0.75), Inches(5.7), Inches(0.3), "EXECUTIVE SUBMISSION", size=9, bold=True, color=LEAF)
+    _text(slide, Inches(4.0), Inches(1.05), Inches(5.7), Inches(0.9),
+          "Hybrid Offline Ranker\nfor Redrob AI", size=34, bold=True, color=FOREST)
+    _text(slide, Inches(4.0), Inches(2.05), Inches(5.7), Inches(0.55),
+          "Semantic fit over keywords · Trap-aware · Production-scale CPU ranking", size=13, color=MUTED)
+
+    _round_rect(slide, Inches(4.0), Inches(2.85), Inches(5.55), Inches(1.15), CARD, line=MINT_PALE)
+    _text(slide, Inches(4.25), Inches(3.0), Inches(2.4), Inches(0.85), "Team\nSchadn", size=14, bold=True, color=FOREST)
+    _text(slide, Inches(6.55), Inches(3.0), Inches(2.8), Inches(0.85), "Team Leader\nRahul Kumar Singh", size=14, bold=True, color=FOREST)
+
+    _text(slide, Inches(4.0), Inches(4.2), Inches(5.55), Inches(0.75),
+          "Official bundle: candidates.jsonl (100K) · job_description.docx ·\n"
+          "redrob_signals_doc.docx · submission_spec v4",
+          size=9.5, color=MUTED)
+    _rect(slide, Inches(4.0), Inches(5.05), Inches(2.2), Inches(0.04), LEAF)
 
 
 def slide_solution(prs: Presentation):
-    slide = _blank_slide(prs)
-    _header_bar(slide, "Solution Overview", "What we built and why it beats keyword ATS")
-    _rect(slide, Inches(0.55), Inches(1.15), Inches(4.35), Inches(4.1), LIGHT)
-    _bullets(slide, Inches(0.75), Inches(1.3), Inches(4.0), Inches(3.8), "Proposed Solution", [
-        "Rank top 100 from official candidates.jsonl per submission_spec v4 (CSV: candidate_id,rank,score,reasoning).",
-        "Reads full candidate_schema: profile, career_history, skills, redrob_signals (23 fields).",
-        "Hybrid offline ranker on CPU in ~49–60s — meets 5 min / 16GB / no-network constraints.",
-        "Grounded 2-sentence reasoning per row — matches Stage 4 review criteria in submission_spec.",
-    ], body_size=12)
-    _rect(slide, Inches(5.1), Inches(1.15), Inches(4.35), Inches(4.1), ACCENT_BG)
-    _bullets(slide, Inches(5.3), Inches(1.3), Inches(4.0), Inches(3.8), "Differentiation vs Keyword Matching", [
-        "Bundle README warns: keyword stuffers, behavioral twins, ~80 honeypots — we defend all three.",
-        "Beyond keywords: career semantics + IR skill trust + Redrob behavioral modifier.",
-        "Mirrors JD disqualifiers: research-only, consulting-only, CV/speech-only, framework-noise profiles.",
-        "open_to_work_flag=false cannot reach top-10 (per redrob_signals_doc availability logic).",
-        "Shipper-first: production-scale CPU ranker, not per-candidate LLM API calls.",
-    ], body_size=12)
+    slide = _blank(prs)
+    _slide_canvas(slide, "Solution", 2)
+    _slide_title(slide, "Solution Overview", "A consultant-grade ranking engine built for real recruiting constraints")
+
+    _card(slide, Inches(0.55), Inches(1.35), Inches(4.35), Inches(3.65))
+    _rect(slide, Inches(0.55), Inches(1.35), Inches(4.35), Inches(0.42), CARD_TINT)
+    _text(slide, Inches(0.75), Inches(1.42), Inches(3.9), Inches(0.3), "Proposed Solution", size=15, bold=True, color=FOREST)
+    _rich_bullets(slide, Inches(0.75), Inches(1.9), Inches(3.95), Inches(2.9), "", [
+        "Rank top 100 from official candidates.jsonl per submission_spec v4.",
+        "Reads candidate_schema: profile, career_history, skills, redrob_signals (23 fields).",
+        "Hybrid offline ranker: ~49–60s on CPU — within 5 min / 16GB / no-network limits.",
+        "Grounded 2-sentence reasoning per row aligned to Stage 4 review criteria.",
+    ], title_size=1, body_size=11)
+
+    _card(slide, Inches(5.1), Inches(1.35), Inches(4.35), Inches(3.65), tint=True)
+    _rect(slide, Inches(5.1), Inches(1.35), Inches(4.35), Inches(0.42), MINT_PALE)
+    _text(slide, Inches(5.3), Inches(1.42), Inches(3.9), Inches(0.3), "Strategic Differentiation", size=15, bold=True, color=FOREST)
+    _rich_bullets(slide, Inches(5.3), Inches(1.9), Inches(3.95), Inches(2.9), "", [
+        "Defends bundle traps: keyword stuffers, behavioral twins, ~80 honeypots.",
+        "Career semantics + IR skill trust + Redrob behavioral modifier.",
+        "Mirrors JD disqualifiers: research-only, consulting-only, CV/speech-only.",
+        "open_to_work_flag=false cannot reach top-10.",
+        "Shipper-first: scales to 200K+ without per-candidate LLM cost.",
+    ], title_size=1, body_size=10.5)
 
 
 def slide_jd(prs: Presentation):
-    slide = _blank_slide(prs)
-    _header_bar(slide, "JD Understanding & Candidate Signals",
-                "Official: job_description.docx + candidate_schema.json + redrob_signals_doc.docx")
-    _bullets(slide, Inches(0.55), Inches(1.12), Inches(4.5), Inches(2.05), "From job_description.docx", [
-        "Role: Senior AI Engineer — Founding Team @ Redrob AI (Series A talent intelligence).",
-        "Location: Pune/Noida preferred; India Tier-1 cities; hybrid work mode.",
-        "Experience: 5–9 years band (flexible if other signals strong).",
-        "Must-have: production embeddings retrieval, vector DB/hybrid search, Python, ranking eval (NDCG/MRR/MAP).",
-        "JD rejects: pure research-only, LangChain-only AI, consulting-only careers, CV/speech/robotics without IR.",
+    slide = _blank(prs)
+    _slide_canvas(slide, "JD & Signals", 3)
+    _slide_title(slide, "JD Understanding & Candidate Signals",
+                 "Grounded in job_description.docx · candidate_schema.json · redrob_signals_doc.docx")
+
+    _card(slide, Inches(0.55), Inches(1.28), Inches(4.4), Inches(1.95))
+    _rich_bullets(slide, Inches(0.75), Inches(1.4), Inches(4.0), Inches(1.75), "From job_description.docx", [
+        "Senior AI Engineer — Founding Team @ Redrob AI (Series A).",
+        "Pune/Noida preferred · 5–9 years · production IR over research.",
+        "Must-have: embeddings retrieval, vector DB, Python, NDCG/MRR/MAP eval.",
+        "Rejects: research-only, LangChain-only, consulting-only, CV without IR.",
     ], body_size=10)
-    _bullets(slide, Inches(0.55), Inches(3.25), Inches(4.5), Inches(2.0), "candidate_schema.json fields", [
-        "profile: title, headline, summary, location, years_of_experience, company.",
-        "career_history: role descriptions with production IR evidence.",
-        "skills: proficiency, endorsements, duration_months (trust signal).",
-        "redrob_signals: 23 behavioral fields — modifier on top of skill-match score.",
+
+    _card(slide, Inches(0.55), Inches(3.38), Inches(4.4), Inches(1.72), tint=True)
+    _rich_bullets(slide, Inches(0.75), Inches(3.5), Inches(4.0), Inches(1.5), "candidate_schema.json", [
+        "profile · career_history · skills · redrob_signals (23 fields).",
+        "Skills carry proficiency, endorsements, duration_months as trust signals.",
     ], body_size=10)
-    _bullets(slide, Inches(5.15), Inches(1.12), Inches(4.35), Inches(4.15),
-             "23 Redrob signals we weight (redrob_signals_doc.docx)", [
-        "Availability: open_to_work_flag, last_active_date, notice_period_days.",
-        "Responsiveness: recruiter_response_rate, avg_response_time_hours.",
-        "Engagement: profile_views_received_30d, saved_by_recruiters_30d, search_appearance_30d.",
-        "Assessments: skill_assessment_scores (platform IR tests).",
-        "Activity: github_activity_score, interview_completion_rate, applications_submitted_30d.",
-        "Trust: verified_email, verified_phone, linkedin_connected, profile_completeness_score.",
-        "Plus: willing_to_relocate, preferred_work_mode, expected_salary_range_inr_lpa.",
+
+    _card(slide, Inches(5.1), Inches(1.28), Inches(4.35), Inches(3.82))
+    _rich_bullets(slide, Inches(5.3), Inches(1.4), Inches(3.95), Inches(3.55),
+                  "23 Redrob Signals (weighted)", [
+        "Availability: open_to_work_flag, last_active_date, notice_period_days",
+        "Responsiveness: recruiter_response_rate, avg_response_time_hours",
+        "Engagement: profile_views, saved_by_recruiters, search_appearance",
+        "Quality: skill_assessment_scores, github_activity_score",
+        "Trust: verified_email, verified_phone, linkedin_connected",
+        "Intent: willing_to_relocate, preferred_work_mode, salary range",
     ], body_size=9.5)
 
 
 def slide_methodology(prs: Presentation):
-    slide = _blank_slide(prs)
-    _header_bar(slide, "Ranking Methodology", "Hybrid v6 scorer — retrieve, score, rank, explain")
-    _bullets(slide, Inches(0.55), Inches(1.1), Inches(4.4), Inches(2.0), "Pipeline Steps", [
-        "1. Parse official job_description.docx → jd_config.py + JD embedding.",
-        "2. Load candidates.jsonl (100K) per bundle README → CandidateIndex.",
-        "3. Score with hybrid v6 + redrob_signals modifier + honeypot traps.",
-        "4. Calibrate → sort → ranks 1–100; tie-break candidate_id ascending (spec §3).",
-        "5. Write submission.csv per submission_spec v4 — UTF-8, monotonic scores.",
-    ], body_size=11)
-    _rect(slide, Inches(0.55), Inches(3.2), Inches(4.4), Inches(2.0), LIGHT)
-    _bullets(slide, Inches(0.7), Inches(3.35), Inches(4.1), Inches(1.8), "Models & Algorithms", [
-        "Bi-encoder: all-MiniLM-L6-v2 (committed embeddings.fp16.npz, 100K vectors).",
-        "TF-IDF JD overlap for lexical alignment with parsed JD.",
-        "Heuristic modifiers: consulting penalty, research-only cap, FAANG-current note.",
-        "Cross-encoder: OFF (RANKER_USE_CROSS_ENCODER=0) for reproducibility.",
-    ], title_size=16, body_size=11)
-    _rect(slide, Inches(5.1), Inches(1.1), Inches(4.35), Inches(4.1), ACCENT_BG)
-    _textbox(slide, Inches(5.3), Inches(1.25), Inches(4.0), Inches(0.35), "v6 Signal Weights (DEFAULT_WEIGHTS)", size=16, bold=True, color=NAVY)
+    slide = _blank(prs)
+    _slide_canvas(slide, "Methodology", 4)
+    _slide_title(slide, "Ranking Methodology", "Hybrid v6 — retrieve, score, rank, explain")
+
+    _card(slide, Inches(0.55), Inches(1.28), Inches(4.4), Inches(2.05))
+    _rich_bullets(slide, Inches(0.75), Inches(1.4), Inches(4.0), Inches(1.85), "Pipeline", [
+        "1  Parse job_description.docx → jd_config.py + JD embedding",
+        "2  Load candidates.jsonl (100K) → CandidateIndex",
+        "3  Score: hybrid v6 + redrob_signals + honeypot traps",
+        "4  Sort ranks 1–100; tie-break candidate_id ascending",
+        "5  Export submission.csv — UTF-8, monotonic scores",
+    ], body_size=10.5)
+
+    _card(slide, Inches(0.55), Inches(3.48), Inches(4.4), Inches(1.62), tint=True)
+    _rich_bullets(slide, Inches(0.75), Inches(3.6), Inches(4.0), Inches(1.4), "Models", [
+        "MiniLM-L6-v2 bi-encoder (embeddings.fp16.npz, 100K vectors)",
+        "TF-IDF JD overlap · heuristic modifiers · CE OFF",
+    ], body_size=10.5)
+
+    _card(slide, Inches(5.1), Inches(1.28), Inches(4.35), Inches(3.82))
+    _text(slide, Inches(5.3), Inches(1.42), Inches(3.9), Inches(0.3), "v6 Signal Weights", size=15, bold=True, color=FOREST)
     weights = [
-        ("Title alignment", "20%"),
-        ("Core IR skills", "18%"),
-        ("Career semantic", "14%"),
-        ("Production pedigree", "12%"),
-        ("Availability", "12%"),
-        ("Redrob assessments", "8%"),
-        ("JD TF-IDF overlap", "6%"),
-        ("Experience band", "5%"),
-        ("Engagement signals", "5%"),
-        ("Location fit", "3%"),
+        ("Title alignment", 20), ("Core IR skills", 18), ("Career semantic", 14),
+        ("Production pedigree", 12), ("Availability", 12), ("Assessments", 8),
+        ("JD overlap", 6), ("Experience", 5), ("Engagement", 5), ("Location", 3),
     ]
-    y = 1.65
+    y = 1.78
     for label, pct in weights:
-        _textbox(slide, Inches(5.35), Inches(y), Inches(2.8), Inches(0.22), label, size=11, color=INK)
-        _textbox(slide, Inches(8.2), Inches(y), Inches(0.9), Inches(0.22), pct, size=11, bold=True, color=TEAL, align=PP_ALIGN.RIGHT)
-        _rect(slide, Inches(5.35), Inches(y + 0.2), Inches(3.75), Inches(0.06), RGBColor(0xD0, 0xE8, 0xEE))
-        bar_w = float(pct.strip("%")) / 20.0 * 3.75
-        if bar_w > 0:
-            _rect(slide, Inches(5.35), Inches(y + 0.2), Inches(bar_w), Inches(0.06), TEAL)
-        y += 0.36
+        _text(slide, Inches(5.35), Inches(y), Inches(2.5), Inches(0.2), label, size=10, color=INK)
+        _text(slide, Inches(8.05), Inches(y), Inches(0.55), Inches(0.2), f"{pct}%", size=10, bold=True, color=SAGE, align=PP_ALIGN.RIGHT)
+        _round_rect(slide, Inches(5.35), Inches(y + 0.2), Inches(3.25), Inches(0.1), CARD_TINT, line=MINT_PALE)
+        bar = pct / 20.0 * 3.25
+        if bar > 0:
+            _round_rect(slide, Inches(5.35), Inches(y + 0.2), Inches(bar), Inches(0.1), LEAF)
+        y += 0.34
 
 
 def slide_explainability(prs: Presentation):
-    slide = _blank_slide(prs)
-    _header_bar(slide, "Explainability & Data Validation", "Grounded reasoning + trap defense")
-    _bullets(slide, Inches(0.55), Inches(1.15), Inches(4.4), Inches(4.0), "Reasoning (submission_spec §3 Stage 4)", [
-        "Format matches spec example: specific facts + JD connection + honest concerns.",
-        "Cites only fields present in candidate profile — no hallucinated employers/skills.",
-        "Penalties avoided: empty reasoning, identical strings, templated name-swaps.",
-        "Rank tone matches position: strong language at rank 5, honest gaps at rank 95.",
-        "Validated: mock_stage4_review.py — 10/10 sampled rows pass 6/6 checks.",
-    ], body_size=11)
-    _bullets(slide, Inches(5.1), Inches(1.15), Inches(4.35), Inches(4.0), "Dataset Traps (bundle README + signals doc)", [
-        "~80 honeypots: impossible tenure, expert skills at 0 months (tier-0 in ground truth).",
-        "Keyword stuffers: weak titles (HR Manager, Accountant) + inflated AI skill lists.",
-        "Behavioral twins: same profile, different redrob_signals — availability wins.",
-        "Template blurbs: recycled career descriptions across thousands of profiles.",
-        "sample_submission.csv is format-only (ranks honeypots) — not quality reference.",
-        "Our result: 0 structural honeypots in top-100 (spec disqualifies >10%).",
+    slide = _blank(prs)
+    _slide_canvas(slide, "Explainability", 5)
+    _slide_title(slide, "Explainability & Data Validation", "Transparent decisions judges can audit")
+
+    _card(slide, Inches(0.55), Inches(1.28), Inches(4.4), Inches(3.82))
+    _rich_bullets(slide, Inches(0.75), Inches(1.4), Inches(4.0), Inches(3.55), "Reasoning Quality", [
+        "2 sentences: specific facts + JD link + honest concerns.",
+        "Only cites fields present in profile — zero hallucination.",
+        "Avoids: empty, identical, or templated reasoning strings.",
+        "Rank tone matches position (strong at #5, candid at #95).",
+        "Validated: mock_stage4_review — 10/10 rows, 6/6 checks each.",
+    ], body_size=10.5)
+
+    _card(slide, Inches(5.1), Inches(1.28), Inches(4.35), Inches(3.82), tint=True)
+    _rich_bullets(slide, Inches(5.3), Inches(1.4), Inches(3.95), Inches(3.55), "Trap Defense", [
+        "~80 honeypots: impossible tenure, expert skills at 0 months.",
+        "Keyword stuffers: weak titles + inflated AI skill lists.",
+        "Behavioral twins: same profile, different signals — availability wins.",
+        "Template blurbs: recycled descriptions demoted.",
+        "sample_submission.csv = format only (ranks honeypots by design).",
+        "Our result: 0 honeypots in top-100 (limit: 10%).",
     ], body_size=10)
 
 
 def slide_workflow(prs: Presentation):
-    slide = _blank_slide(prs)
-    _header_bar(slide, "End-to-End Workflow", "JD input → ranked CSV output")
+    slide = _blank(prs)
+    _slide_canvas(slide, "Workflow", 6)
+    _slide_title(slide, "End-to-End Workflow", "From official JD to submission-ready CSV")
+
     steps = [
-        ("1", "JD Parse", "job_description.docx\n→ jd_config.py + jd_embedding"),
-        ("2", "Index", "candidates.jsonl (100K)\n→ CandidateIndex"),
-        ("3", "Embed", "Precomputed MiniLM\nembeddings.fp16.npz"),
-        ("4", "Score", "Hybrid v6 + modifiers\nper candidate"),
-        ("5", "Rank", "Sort + tie-break\n(candidate_id asc)"),
-        ("6", "Export", "submission.csv\ntop-100 + reasoning"),
+        ("01", "JD Parse", "job_description.docx"),
+        ("02", "Index", "candidates.jsonl"),
+        ("03", "Embed", "MiniLM .npz"),
+        ("04", "Score", "Hybrid v6"),
+        ("05", "Rank", "Top 100"),
+        ("06", "Export", "submission.csv"),
     ]
-    x = 0.45
+    x = 0.48
     for num, title, body in steps:
-        _rect(slide, Inches(x), Inches(1.35), Inches(1.45), Inches(2.6), LIGHT)
-        _rect(slide, Inches(x), Inches(1.35), Inches(1.45), Inches(0.55), TEAL)
-        _textbox(slide, Inches(x), Inches(1.42), Inches(1.45), Inches(0.4), f"Step {num}", size=12, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
-        _textbox(slide, Inches(x + 0.1), Inches(2.0), Inches(1.25), Inches(0.4), title, size=13, bold=True, color=NAVY, align=PP_ALIGN.CENTER)
-        _textbox(slide, Inches(x + 0.08), Inches(2.45), Inches(1.3), Inches(1.3), body, size=10, color=MUTED, align=PP_ALIGN.CENTER)
-        if x < 8.0:
-            _textbox(slide, Inches(x + 1.48), Inches(2.35), Inches(0.25), Inches(0.3), "→", size=18, bold=True, color=TEAL, align=PP_ALIGN.CENTER)
-        x += 1.58
-    _rect(slide, Inches(0.55), Inches(4.35), Inches(8.9), Inches(0.85), ACCENT_BG)
-    _textbox(slide, Inches(0.75), Inches(4.5), Inches(8.5), Inches(0.6),
-             "Reproduce: ./scripts/reproduce_ranking.sh  ·  python rank.py --candidates ./data/candidates.jsonl --out ./submission.csv\n"
-             "Byte-verified: scripts/verify_submission_artifact.py confirms submission.csv matches fresh rank.py output.",
-             size=11, color=INK)
+        _round_rect(slide, Inches(x), Inches(1.45), Inches(1.42), Inches(2.35), CARD, line=MINT_PALE)
+        _shape(slide, MSO_SHAPE.OVAL, Inches(x + 0.48), Inches(1.58), Inches(0.46), Inches(0.46), SAGE)
+        _text(slide, Inches(x + 0.48), Inches(1.63), Inches(0.46), Inches(0.35), num, size=9, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+        _text(slide, Inches(x + 0.08), Inches(2.2), Inches(1.26), Inches(0.35), title, size=12, bold=True, color=FOREST, align=PP_ALIGN.CENTER)
+        _text(slide, Inches(x + 0.06), Inches(2.6), Inches(1.3), Inches(1.0), body, size=9, color=MUTED, align=PP_ALIGN.CENTER)
+        if x < 7.8:
+            _text(slide, Inches(x + 1.44), Inches(2.15), Inches(0.2), Inches(0.3), "›", size=20, bold=True, color=LEAF, align=PP_ALIGN.CENTER)
+        x += 1.56
+
+    _round_rect(slide, Inches(0.55), Inches(4.15), Inches(8.9), Inches(0.88), CARD_TINT, line=MINT)
+    _text(slide, Inches(0.8), Inches(4.32), Inches(8.4), Inches(0.55),
+          "Reproduce: ./scripts/reproduce_ranking.sh  ·  Byte-verified via verify_submission_artifact.py",
+          size=10.5, color=INK)
 
 
 def slide_architecture(prs: Presentation):
-    slide = _blank_slide(prs)
-    _header_bar(slide, "System Architecture", "Submission ranker (graded) vs demo platform (optional)")
-    _rect(slide, Inches(0.55), Inches(1.15), Inches(8.9), Inches(2.35), LIGHT)
-    _textbox(slide, Inches(0.75), Inches(1.25), Inches(8.5), Inches(0.3), "GRADED PATH — produces submission.csv", size=14, bold=True, color=NAVY)
-    layers = [
-        ("rank.py", 0.75),
-        ("redrob_ranker.py", 2.1),
-        ("features.py", 3.85),
-        ("embeddings.py", 5.35),
-        ("honeypot.py", 6.7),
-        ("availability.py", 7.95),
-    ]
-    for name, x in layers:
-        _rect(slide, Inches(x), Inches(1.75), Inches(1.15), Inches(0.55), TEAL)
-        _textbox(slide, Inches(x), Inches(1.85), Inches(1.15), Inches(0.4), name, size=9, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
-    _textbox(slide, Inches(0.75), Inches(2.45), Inches(8.5), Inches(0.9),
-             "+ career_blurb.py (template dedup)  ·  assessment.py (IR skill tests)  ·  rerank.py (CE off)\n"
-             "Input: candidates.jsonl + embeddings.fp16.npz  →  Output: submission.csv (100 rows)",
-             size=10, color=MUTED)
-    _rect(slide, Inches(0.55), Inches(3.7), Inches(8.9), Inches(1.55), ACCENT_BG)
-    _textbox(slide, Inches(0.75), Inches(3.82), Inches(8.5), Inches(0.3), "DEMO PATH — recruiter UI (not graded)", size=14, bold=True, color=NAVY)
-    _textbox(slide, Inches(0.75), Inches(4.2), Inches(8.5), Inches(0.9),
-             "frontend/ (Next.js 14)  →  backend/ (FastAPI + LangGraph 7-agent pipeline)  →  explainability, chat, analytics\n"
-             "Uses top-100 import from submission.csv for dashboard — does NOT produce the graded artifact.",
-             size=11, color=INK)
+    slide = _blank(prs)
+    _slide_canvas(slide, "Architecture", 7)
+    _slide_title(slide, "System Architecture", "Graded submission path vs optional demo platform")
+
+    _card(slide, Inches(0.55), Inches(1.28), Inches(8.9), Inches(2.15))
+    _text(slide, Inches(0.8), Inches(1.42), Inches(8.4), Inches(0.28), "GRADED PATH", size=11, bold=True, color=LEAF)
+    modules = ["rank.py", "redrob_ranker", "features", "embeddings", "honeypot", "availability"]
+    x = 0.75
+    for i, name in enumerate(modules):
+        fill = SAGE if i % 2 == 0 else LEAF
+        _round_rect(slide, Inches(x), Inches(1.82), Inches(1.35), Inches(0.52), fill)
+        _text(slide, Inches(x), Inches(1.94), Inches(1.35), Inches(0.35), name, size=9, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
+        if i < len(modules) - 1:
+            _text(slide, Inches(x + 1.36), Inches(1.92), Inches(0.2), Inches(0.3), "→", size=14, color=LEAF, align=PP_ALIGN.CENTER)
+        x += 1.48
+    _text(slide, Inches(0.8), Inches(2.55), Inches(8.4), Inches(0.7),
+          "Input: candidates.jsonl + embeddings.fp16.npz  →  Output: submission.csv (100 rows)\n"
+          "+ career_blurb.py · assessment.py · rerank.py (cross-encoder OFF)",
+          size=9.5, color=MUTED)
+
+    _card(slide, Inches(0.55), Inches(3.62), Inches(8.9), Inches(1.45), tint=True)
+    _text(slide, Inches(0.8), Inches(3.76), Inches(8.4), Inches(0.28), "DEMO PATH (not graded)", size=11, bold=True, color=LEAF)
+    _text(slide, Inches(0.8), Inches(4.12), Inches(8.4), Inches(0.75),
+          "Next.js 14 frontend  →  FastAPI + LangGraph backend  →  dashboard, analytics, AI chat\n"
+          "Imports top-100 from submission.csv — does not produce the graded artifact.",
+          size=10.5, color=INK)
 
 
 def slide_results(prs: Presentation):
-    slide = _blank_slide(prs)
-    _header_bar(slide, "Results & Performance", "Top picks, validation, compute compliance")
+    slide = _blank(prs)
+    _slide_canvas(slide, "Results", 8)
+    _slide_title(slide, "Results & Performance", "Evidence-backed outcomes and spec compliance")
+
+    _card(slide, Inches(0.55), Inches(1.28), Inches(4.4), Inches(2.55))
+    _text(slide, Inches(0.75), Inches(1.4), Inches(4.0), Inches(0.28), "Top-5 Finalists", size=14, bold=True, color=FOREST)
     tops = [
-        ("#1", "CAND_0002025", "0.9900", "Senior AI Engineer @ Apple"),
-        ("#2", "CAND_0046064", "0.9324", "Senior NLP Engineer @ Salesforce"),
+        ("#1", "CAND_0002025", "0.9900", "Sr AI Engineer @ Apple"),
+        ("#2", "CAND_0046064", "0.9324", "Sr NLP Engineer @ Salesforce"),
         ("#3", "CAND_0010685", "0.8659", "NLP Engineer @ Rephrase.ai"),
         ("#4", "CAND_0055905", "0.8510", "Sr ML Engineer @ Flipkart"),
         ("#5", "CAND_0018499", "0.8041", "Sr ML Engineer @ Zomato"),
     ]
-    _rect(slide, Inches(0.55), Inches(1.15), Inches(4.5), Inches(2.5), LIGHT)
-    _textbox(slide, Inches(0.75), Inches(1.25), Inches(4.2), Inches(0.3), "Top-5 Ranked Candidates", size=15, bold=True, color=NAVY)
-    y = 1.6
-    for rank, cid, score, role in tops:
-        _textbox(slide, Inches(0.75), Inches(y), Inches(0.45), Inches(0.25), rank, size=11, bold=True, color=TEAL)
-        _textbox(slide, Inches(1.15), Inches(y), Inches(3.8), Inches(0.25), f"{cid}  ·  {score}  ·  {role}", size=10, color=INK)
+    y = 1.75
+    for i, (rank, cid, score, role) in enumerate(tops):
+        bg = CARD_TINT if i % 2 == 0 else CARD
+        _round_rect(slide, Inches(0.75), Inches(y), Inches(4.0), Inches(0.34), bg, line=MINT_PALE)
+        _text(slide, Inches(0.88), Inches(y + 0.05), Inches(0.4), Inches(0.22), rank, size=10, bold=True, color=SAGE)
+        _text(slide, Inches(1.25), Inches(y + 0.05), Inches(3.35), Inches(0.22), f"{cid}  ·  {score}  ·  {role}", size=9, color=INK)
         y += 0.38
-    _bullets(slide, Inches(5.1), Inches(1.15), Inches(4.35), Inches(2.5), "Validation Results", [
-        "100 rows · ranks 1–100 unique · scores monotonic · 0 honeypots.",
-        "All 100 candidate_ids verified in official candidates.jsonl.",
-        "Byte-reproducible artifact (verify_submission_artifact.py: PASS).",
-        "Reasoning: 100% unique, Stage 4 mock 10/10 rows pass.",
-    ], body_size=11)
-    _rect(slide, Inches(0.55), Inches(3.85), Inches(8.9), Inches(1.35), ACCENT_BG)
-    _textbox(slide, Inches(0.75), Inches(3.95), Inches(2.8), Inches(0.55), "~49–60s", size=28, bold=True, color=NAVY)
-    _textbox(slide, Inches(0.75), Inches(4.5), Inches(2.8), Inches(0.3), "on 100K candidates", size=11, color=MUTED)
-    _textbox(slide, Inches(3.5), Inches(3.95), Inches(2.5), Inches(0.55), "CPU only", size=28, bold=True, color=TEAL)
-    _textbox(slide, Inches(3.5), Inches(4.5), Inches(2.5), Inches(0.3), "no GPU · no network", size=11, color=MUTED)
-    _textbox(slide, Inches(6.2), Inches(3.95), Inches(2.5), Inches(0.55), "16 GB", size=28, bold=True, color=NAVY)
-    _textbox(slide, Inches(6.2), Inches(4.5), Inches(2.5), Inches(0.3), "RAM limit met", size=11, color=MUTED)
-    _textbox(slide, Inches(0.75), Inches(4.85), Inches(8.5), Inches(0.35),
-             "Well under 5-minute wall-clock limit · embeddings bundle ~68MB fp16 · Docker reproduction supported",
-             size=10, color=MUTED)
+
+    _card(slide, Inches(5.1), Inches(1.28), Inches(4.35), Inches(2.55), tint=True)
+    _rich_bullets(slide, Inches(5.3), Inches(1.4), Inches(3.95), Inches(2.3), "Validation", [
+        "100 rows · unique ranks · monotonic scores · 0 honeypots",
+        "All IDs verified in official candidates.jsonl",
+        "Byte-reproducible artifact: PASS",
+        "Reasoning: 100% unique · Stage 4: 10/10 pass",
+    ], body_size=10.5)
+
+    _stat_tile(slide, Inches(0.55), Inches(4.05), "~49–60s", "Runtime on 100K", "≪ 5 min limit")
+    _stat_tile(slide, Inches(3.25), Inches(4.05), "CPU", "No GPU · No network", "Spec compliant")
+    _stat_tile(slide, Inches(5.95), Inches(4.05), "16 GB", "RAM envelope", "~68MB embeddings")
 
 
 def slide_tech(prs: Presentation):
-    slide = _blank_slide(prs)
-    _header_bar(slide, "Technologies Used", "Chosen for reproducibility, scale, and spec compliance")
-    _bullets(slide, Inches(0.55), Inches(1.15), Inches(4.4), Inches(4.0), "Submission Ranker (Graded)", [
-        "Python 3.11 · NumPy · PyYAML — minimal deps, no torch at rank time.",
-        "all-MiniLM-L6-v2 bi-encoder — precomputed, committed as embeddings.fp16.npz.",
-        "TF-IDF + lexical matchers for JD overlap and skill phrase detection.",
-        "Docker: docker-compose.ranker.yml for Stage 3 sandbox reproduction.",
-        "pytest: challenge/test_ranker.py (31 tests passing).",
-        "AI dev tools: Cursor + Grok (architecture/review only — no candidate data to LLMs).",
-    ], body_size=11)
-    _bullets(slide, Inches(5.1), Inches(1.15), Inches(4.35), Inches(4.0), "Demo Platform (Optional)", [
-        "Next.js 14 + Tailwind — recruiter dashboard, analytics, candidate actions.",
-        "FastAPI + LangGraph — 7-agent pipeline for interactive ranking explanations.",
-        "PostgreSQL / SQLite — workspace data; top-100 import from submission.csv.",
-        "HuggingFace Spaces — sandbox for sample ranking (≤100 candidates).",
-        "Vercel + Render — live product demo at recruitgpt-x.vercel.app.",
-    ], body_size=11)
+    slide = _blank(prs)
+    _slide_canvas(slide, "Technology", 9)
+    _slide_title(slide, "Technologies Used", "Deliberate stack choices for reproducibility and scale")
+
+    _card(slide, Inches(0.55), Inches(1.28), Inches(4.4), Inches(3.82))
+    _rich_bullets(slide, Inches(0.75), Inches(1.4), Inches(4.0), Inches(3.55), "Submission Ranker", [
+        "Python 3.11 · NumPy · PyYAML — no torch at rank time",
+        "all-MiniLM-L6-v2 — committed embeddings.fp16.npz",
+        "Docker: docker-compose.ranker.yml for Stage 3 reproduction",
+        "pytest: 31 tests passing in challenge/test_ranker.py",
+        "AI tools: Cursor + Grok (dev only — no candidate data to LLMs)",
+    ], body_size=10.5)
+
+    _card(slide, Inches(5.1), Inches(1.28), Inches(4.35), Inches(3.82), tint=True)
+    _rich_bullets(slide, Inches(5.3), Inches(1.4), Inches(3.95), Inches(3.55), "Demo Platform", [
+        "Next.js 14 + Tailwind — recruiter command center",
+        "FastAPI + LangGraph — 7-agent explainability pipeline",
+        "PostgreSQL / SQLite — workspace + top-100 import",
+        "HuggingFace Spaces — sample ranking sandbox",
+        "Vercel + Render — recruitgpt-x.vercel.app",
+    ], body_size=10.5)
 
 
 def slide_assets(prs: Presentation):
-    slide = _blank_slide(prs)
-    _header_bar(slide, "Submission Assets", "Everything judges need to reproduce and review")
+    slide = _blank(prs)
+    _slide_canvas(slide, "Assets", 10)
+    _slide_title(slide, "Submission Assets", "Complete reproducibility package for judges")
+
     assets = [
-        ("GitHub Repository", "github.com/rahulx2001/recruitgpt-x", "rank.py + challenge/ + validate_submission.py from bundle"),
-        ("Ranked CSV", "submission.csv (top-100)", "submission_spec v4: UTF-8, 100 rows, monotonic scores"),
-        ("HF Sandbox", "huggingface.co/spaces/rahulsinghx2001/recruitgpt-ranker", "§10.5 — sample_candidates.json end-to-end"),
-        ("Official data", "candidates.jsonl (100K) + job_description.docx", "Synced via scripts/sync_challenge_data.sh"),
-        ("Reproduce", "./scripts/reproduce_ranking.sh", "CPU ≤5min · 16GB · no network · byte-verified artifact"),
-        ("Metadata", "submission_metadata.yaml", "Team Schadn · Rahul Kumar Singh · AI tools declared"),
+        ("GitHub", "github.com/rahulx2001/recruitgpt-x", "rank.py + challenge/ + bundle validators"),
+        ("Ranked CSV", "submission.csv", "submission_spec v4 · UTF-8 · 100 rows"),
+        ("HF Sandbox", "huggingface.co/.../recruitgpt-ranker", "§10.5 sample_candidates.json"),
+        ("Official Data", "candidates.jsonl + job_description.docx", "sync_challenge_data.sh"),
+        ("Reproduce", "./scripts/reproduce_ranking.sh", "CPU ≤5min · byte-verified"),
+        ("Metadata", "submission_metadata.yaml", "Team Schadn · Rahul Kumar Singh"),
     ]
-    y = 1.2
-    for title, url, note in assets:
-        _rect(slide, Inches(0.55), Inches(y), Inches(8.9), Inches(0.62), LIGHT if y % 1.2 < 0.7 else ACCENT_BG)
-        _textbox(slide, Inches(0.75), Inches(y + 0.06), Inches(2.2), Inches(0.25), title, size=12, bold=True, color=NAVY)
-        _textbox(slide, Inches(2.95), Inches(y + 0.06), Inches(4.5), Inches(0.25), url, size=10, color=TEAL)
-        _textbox(slide, Inches(0.75), Inches(y + 0.3), Inches(8.3), Inches(0.25), note, size=9, color=MUTED)
-        y += 0.68
-    _textbox(slide, Inches(0.55), Inches(5.15), Inches(8.9), Inches(0.35),
-             "Contact: rahulsinghx2001@gmail.com · +91-8539816642 · Team Schadn · Rahul Kumar Singh",
-             size=10, color=MUTED, align=PP_ALIGN.CENTER)
+    y = 1.3
+    for i, (title, url, note) in enumerate(assets):
+        _round_rect(slide, Inches(0.55), Inches(y), Inches(8.9), Inches(0.58),
+                    CARD_TINT if i % 2 else CARD, line=MINT_PALE)
+        _rect(slide, Inches(0.55), Inches(y), Inches(0.08), Inches(0.58), LEAF if i % 2 else SAGE)
+        _text(slide, Inches(0.78), Inches(y + 0.07), Inches(1.55), Inches(0.22), title, size=11, bold=True, color=FOREST)
+        _text(slide, Inches(2.35), Inches(y + 0.07), Inches(4.8), Inches(0.22), url, size=9.5, color=SAGE)
+        _text(slide, Inches(0.78), Inches(y + 0.3), Inches(8.4), Inches(0.2), note, size=8.5, color=MUTED)
+        y += 0.63
 
 
 def slide_closing(prs: Presentation):
-    slide = _blank_slide(prs)
-    _rect(slide, Inches(0), Inches(0), Inches(10), Inches(5.625), NAVY)
-    _textbox(slide, Inches(0.7), Inches(1.8), Inches(8.6), Inches(0.8), "Thank You", size=40, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
-    _textbox(slide, Inches(0.7), Inches(2.8), Inches(8.6), Inches(0.5),
-             "Schadn · Rahul Kumar Singh\nRecruitGPT X — Ranking candidates like a great recruiter, not a keyword filter.",
-             size=16, color=RGBColor(0xCA, 0xDC, 0xFC), align=PP_ALIGN.CENTER)
-    _textbox(slide, Inches(0.7), Inches(3.8), Inches(8.6), Inches(0.4),
-             "github.com/rahulx2001/recruitgpt-x",
-             size=13, color=MINT, align=PP_ALIGN.CENTER)
+    slide = _blank(prs)
+    _rect(slide, Inches(0), Inches(0), SLIDE_W, SLIDE_H, CREAM)
+    _rect(slide, Inches(0), Inches(0), SLIDE_W, Inches(0.12), LEAF)
+    _shape(slide, MSO_SHAPE.OVAL, Inches(7.5), Inches(-0.8), Inches(3.5), Inches(3.5), MINT_PALE)
+    _shape(slide, MSO_SHAPE.OVAL, Inches(-0.6), Inches(4.2), Inches(2.4), Inches(2.4), CARD_TINT)
+
+    _text(slide, Inches(0.9), Inches(1.5), Inches(8.2), Inches(0.75), "Thank You", size=42, bold=True, color=FOREST, align=PP_ALIGN.CENTER)
+    _text(slide, Inches(0.9), Inches(2.45), Inches(8.2), Inches(0.55),
+          "Schadn  ·  Rahul Kumar Singh", size=18, color=SAGE, align=PP_ALIGN.CENTER)
+    _text(slide, Inches(0.9), Inches(3.1), Inches(8.2), Inches(0.45),
+          "Ranking candidates like a great recruiter — not a keyword filter.",
+          size=13, color=MUTED, align=PP_ALIGN.CENTER)
+    _round_rect(slide, Inches(3.1), Inches(3.85), Inches(3.8), Inches(0.55), CARD, line=MINT)
+    _text(slide, Inches(3.1), Inches(4.0), Inches(3.8), Inches(0.35),
+          "github.com/rahulx2001/recruitgpt-x", size=11, bold=True, color=FOREST, align=PP_ALIGN.CENTER)
 
 
 def main():
+    global _slide_no
+    _slide_no = 0
     prs = Presentation()
-    prs.slide_width = Inches(10)
-    prs.slide_height = Inches(5.625)
+    prs.slide_width = SLIDE_W
+    prs.slide_height = SLIDE_H
 
     slide_cover(prs)
     slide_solution(prs)
