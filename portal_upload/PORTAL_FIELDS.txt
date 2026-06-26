@@ -1,0 +1,37 @@
+H2S / India Runs — FINAL portal upload checklist
+================================================
+
+Team name:        Schadn          (same as Team ID from intro session)
+Primary contact:  Rahul Kumar Singh
+Email:            rahulsinghx2001@gmail.com
+Phone:            +91-8539816642
+
+GitHub repo:      https://github.com/rahulx2001/recruitgpt-x
+Sandbox (HF):     https://huggingface.co/spaces/rahulsinghx2001/recruitgpt-ranker
+
+Demo video:       https://github.com/rahulx2001/recruitgpt-x/blob/main/portal_upload/Schadn_Demo_Video_Final.mp4
+                  (optional — paste if form has a video/demo link field)
+
+AI tools:         Cursor + Other (Grok)
+Compute:          MacBook Pro (Apple Silicon), 16GB RAM, Python 3.11, CPU only
+
+--- FILES TO UPLOAD ON PORTAL ---
+
+CSV:              portal_upload/submission.csv
+                  (if form asks for team filename, try Schadn.csv)
+
+PDF:              portal_upload/submission.pdf
+                  (your updated deck with graphics — mandatory Redrob template)
+
+--- BEFORE YOU CLICK SUBMIT ---
+
+[ ] PDF is submission.pdf (official template, 11 slides, Team Schadn on slide 1)
+[ ] CSV validates (run: python3 scripts/validate_submission.py submission.csv)
+[ ] GitHub repo is public/reachable
+[ ] HF sandbox opens and runs sample ranking
+[ ] Demo video link works (optional)
+
+Methodology (optional paste if asked):
+Hybrid offline ranker: lexical + TF-IDF + committed MiniLM bi-encoder,
+honeypot detection, availability signals, template-blurb penalty.
+Cross-encoder OFF. ~49s on 100K CPU. Byte-reproducible via ./scripts/reproduce_ranking.sh.

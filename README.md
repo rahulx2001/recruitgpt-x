@@ -8,6 +8,7 @@ RecruitGPT X answers a single hiring question with evidence, not keywords: *who 
 |---|---|
 | **Repository** | [github.com/rahulx2001/recruitgpt-x](https://github.com/rahulx2001/recruitgpt-x) |
 | **Sandbox** | [HuggingFace Space — sample ranker](https://huggingface.co/spaces/rahulsinghx2001/recruitgpt-ranker) |
+| **Demo video** | [Approach walkthrough (MP4)](https://github.com/rahulx2001/recruitgpt-x/blob/main/portal_upload/Schadn_Demo_Video_Final.mp4) |
 | **Judges** | Start with [JUDGES.md](JUDGES.md) (60-second orientation) |
 
 ---
