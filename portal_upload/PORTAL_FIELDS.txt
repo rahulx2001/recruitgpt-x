@@ -4,7 +4,6 @@ H2S / India Runs — FINAL portal upload checklist
 Team name:        Schadn          (same as Team ID from intro session)
 Primary contact:  Rahul Kumar Singh
 Email:            rahulsinghx2001@gmail.com
-Phone:            +91-8539816642
 
 GitHub repo:      https://github.com/rahulx2001/recruitgpt-x
 Sandbox (HF):     https://huggingface.co/spaces/rahulsinghx2001/recruitgpt-ranker
