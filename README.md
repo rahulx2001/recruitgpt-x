@@ -8,22 +8,36 @@ RecruitGPT X answers a single hiring question with evidence, not keywords: *who 
 |---|---|
 | **Repository** | [github.com/rahulx2001/recruitgpt-x](https://github.com/rahulx2001/recruitgpt-x) |
 | **Sandbox** | [HuggingFace Space — sample ranker](https://huggingface.co/spaces/rahulsinghx2001/recruitgpt-ranker) |
+| **Demo video** | [Walkthrough below](#demo-walkthrough) · [Google Drive](https://drive.google.com/file/d/1A_lDtpB1oP5CiYhAGqskR54T6SUcgtNk/view?usp=sharing) |
 | **Judges** | Start with [JUDGES.md](JUDGES.md) (60-second orientation) |
+
+---
+
+## Demo walkthrough
+
+~4-minute narrated walkthrough of our approach deck (Team **Schadn** · India Runs Data & AI Challenge).  
+Play inline on GitHub:
+
+https://github.com/rahulx2001/recruitgpt-x/blob/main/portal_upload/Schadn_Demo_Video_Final.mp4
+
+Also available on Google Drive (anyone with the link):  
+[https://drive.google.com/file/d/1A_lDtpB1oP5CiYhAGqskR54T6SUcgtNk/view?usp=sharing](https://drive.google.com/file/d/1A_lDtpB1oP5CiYhAGqskR54T6SUcgtNk/view?usp=sharing)
 
 ---
 
 ## Table of contents
 
-1. [Two systems, one repository](#two-systems-one-repository)
-2. [Hackathon submission (graded)](#hackathon-submission-graded)
-3. [Ranking methodology (v6)](#ranking-methodology-v6)
-4. [Demo platform (optional)](#demo-platform-optional)
-5. [Architecture](#architecture)
-6. [Quick start](#quick-start)
-7. [Repository layout](#repository-layout)
-8. [Validation and reproduction](#validation-and-reproduction)
-9. [Documentation](#documentation)
-10. [AI disclosure](#ai-disclosure)
+1. [Demo walkthrough](#demo-walkthrough)
+2. [Two systems, one repository](#two-systems-one-repository)
+3. [Hackathon submission (graded)](#hackathon-submission-graded)
+4. [Ranking methodology (v6)](#ranking-methodology-v6)
+5. [Demo platform (optional)](#demo-platform-optional)
+6. [Architecture](#architecture)
+7. [Quick start](#quick-start)
+8. [Repository layout](#repository-layout)
+9. [Validation and reproduction](#validation-and-reproduction)
+10. [Documentation](#documentation)
+11. [AI disclosure](#ai-disclosure)
 
 ---
 
