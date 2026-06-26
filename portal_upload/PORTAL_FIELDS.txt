@@ -12,8 +12,6 @@ Sandbox (HF):     https://huggingface.co/spaces/rahulsinghx2001/recruitgpt-ranke
 Demo video:       https://drive.google.com/file/d/1A_lDtpB1oP5CiYhAGqskR54T6SUcgtNk/view?usp=sharing
                   (also in repo README + portal_upload/Schadn_Demo_Video_Final.mp4)
 
-AI tools:         Cursor + Other (Grok)
-Compute:          MacBook Pro (Apple Silicon), 16GB RAM, Python 3.11, CPU only
 
 --- FILES TO UPLOAD ON PORTAL ---
 
